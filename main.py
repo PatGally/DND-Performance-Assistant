@@ -4705,37 +4705,6 @@ def runEncounter(encounter):
         turn["currentTurn"] = initiative[inIdx]["currentTurn"]
         inIdx += 1
     saveEncounter(encounter, ENCOUNTER_LIST_FILE)
-
-# def main():
-#     print("\nType 1 to load a previous Encounter")
-#     print("Type 2 to create a new Encounter")
-#     encChoice = input()
-#     while encChoice != "1" and encChoice != "2":
-#         print("Type 1 to load a previous Encounter")
-#         print("Type 2 to create a new Encounter")
-#         encChoice = input()
-#     if encChoice == "1":
-#         encounterIdx = chooseEncounter()
-#         if encounterIdx == -1:
-#             print("No encounters saved! Creating a new encounter...")
-#             encounter = createEncounter()
-#             saveEncounter(encounter, ENCOUNTER_LIST_FILE)
-#         else:
-#             encounter = loadEncounter(encounterIdx)
-#             print("Encounter prepared!")
-#             if encounter.getName().lower() == "testlvls1":
-#                 encounter.setComplete(True)
-#                 exportEncounterResultsToExcel(encounter)
-#     else:
-#         encounter = createEncounter()
-#         print("Encounter created!")
-#         saveEncounter(encounter, ENCOUNTER_LIST_FILE)
-#
-#         if TEST_MODE:
-#             print("TEST MODE - EXITING")
-#             return
-#     if encounter is not None and not TEST_MODE:
-#         runEncounter(encounter)
 def main():
     try:
         print("Welcome to Encounter Simulator!")
@@ -4757,11 +4726,6 @@ def main():
         else:
             encounter = createEncounter()
             saveEncounter(encounter, ENCOUNTER_LIST_FILE)
-        # if TEST_MODE:
-        #     print("[TEST MODE] Encounter creation complete — exiting early.")
-        #     return
-
-        # Otherwise run the encounter loop normally
         runEncounter(encounter)
     finally:
         # --- Clean shutdown for pytest and normal runs ---
@@ -4774,7 +4738,6 @@ def main():
         except Exception:
             pass
 
-        # Don't touch sys.stdout / sys.stderr at all; pytest manages them
         # Only perform hard exit for pytest-controlled sessions
         if "pytest" in sys.modules:
             import atexit
