@@ -1,0 +1,20 @@
+IDE / Editor files
+.idea/
+workspace.xml
+
+Editor-based HTTP Client requests
+httpRequests/
+
+Datasource local storage
+dataSources/
+dataSources.local.xml
+
+Python cache
+pycache/
+*.pyc
+*.pyo
+
+Project-specific folders
+shelf/
+.venv/
+.env

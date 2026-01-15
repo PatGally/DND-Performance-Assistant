@@ -1,0 +1,116 @@
+[
+  {
+    "name": "Advantage",
+    "effect": {
+      "roll": "4",
+      "attribute": [],
+      "resultID": []
+    }
+  },
+  {
+    "name": "Disadvantage",
+    "effect": {
+      "roll": "-4",
+      "attribute": [],
+      "resultID": []
+    }
+  },
+  {
+    "name": "Debuff",
+    "effect": {
+      "roll": "1d4",
+      "attribute": [
+        "attack rolls for",
+        "ALL save"
+      ]
+    }
+  },
+  {
+    "name": "Buff",
+    "effect": {
+      "roll": "1d4",
+      "attribute": [
+        "attack rolls for",
+        "ALL save"
+      ]
+    }
+  },
+  {
+    "name": "Resistance",
+    "effect": {
+      "damage": "/2",
+      "attribute": ""
+    }
+  },
+  {
+    "name": "Immunity",
+    "effect": {
+      "damage": "*0",
+      "attribute": ""
+    }
+  },
+  {
+    "name": "Vulnerability",
+    "effect": {
+      "damage": "*2",
+      "attribute": ""
+    }
+  },
+  {
+    "name": "Autofail",
+    "effect": {
+      "roll": "-30",
+      "attribute": ""
+    }
+  },
+  {
+    "name": "autocrit",
+    "effect": {
+      "damage": "*2",
+      "attribute": ""
+    }
+  },
+  {
+    "name": "Concentration",
+    "effect": {
+      "spellName": "",
+      "resultID": ""
+    }
+  },
+  {
+    "name" : "lingEffect",
+    "effect": {
+      "spell": [],
+      "resultID": []
+    }
+  },
+  {
+    "name": "lingSave",
+    "effect": {
+      "spellName": [],
+      "resultID": []
+    }
+  },
+  {
+    "name" : "Summon",
+    "effect": {
+      "type": "",
+      "monsterName": "",
+      "crCap": "",
+      "numSummons": ""
+    }
+  },
+  {
+    "name": "SwitchSides",
+    "effect": {
+      "value": "T/F"
+    }
+  },
+  {
+          "name": "Time Stop",
+          "effect": {
+            "roll": "1d4",
+            "attribute": "Turns"
+          }
+  }
+]

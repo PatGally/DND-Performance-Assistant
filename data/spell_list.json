@@ -1,0 +1,4646 @@
+[
+  {
+    "spellname": "Acid Splash",
+    "classes": ["Wizard", "Sorcerer"],
+    "level": 0,
+    "targeting": {
+      "self": false,
+      
+      "number": 2,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "DEX",
+        "halfSave": false,
+        "damage": "1d6",
+        "damageMod": ""
+      },
+      "damType": "acid",
+      "conditions": [],
+      "statusEffect": {},
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d6",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Chill Touch",
+    "classes": ["Wizard", "Sorcerer", "Warlock"],
+    "level": 0,
+    "targeting": {
+      "self": false,
+      
+      "number": 1,
+      "rolls": {
+        "rollType": "toHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "1d8",
+        "damageMod": ""
+      },
+      "damType": "necrotic",
+      "conditions": [],
+      "statusEffect": {},
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d8",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Eldritch Blast",
+    "classes": ["Warlock"],
+    "level": 0,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "toHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "1d10",
+        "damageMod": ""
+      },
+      "damType": "force",
+      "conditions": [],
+      "statusEffect": {},
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "extraTarget",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Fire Bolt",
+    "classes": [
+      "Wizard",
+      "Sorcerer"
+    ],
+    "level": 0,
+    "targeting": {
+      "self": false,
+      
+      "number": 1,
+      "rolls": {
+        "rollType": "toHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "1d10",
+        "damageMod": ""
+      },
+      "damType": "fire",
+      "conditions": [],
+      "statusEffect": {},
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d10",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname" : "Poison Spray",
+    "classes" : ["Artificer", "Druid", "Sorcerer", "Warlock", "Wizard"],
+    "level" : 0,
+    "targeting" : {
+      "self": false,
+
+      "number": 1,
+      "rolls" : {
+        "rollType" : "save",
+        "saveType" : "CON",
+        "halfSave": false,
+        "damage" : "1d12",
+        "damageMod" : ""
+      },
+      "damType" : "poison",
+      "conditions" : [],
+      "statusEffect" : [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d8",
+      "specialNotes" : []
+    }
+  },
+  {
+    "spellname": "Produce Flame",
+    "classes": ["Druid, Cleric"],
+    "level": 0,
+    "targeting": {
+      "self": false,
+      
+      "number": 1,
+      "rolls": {
+        "rollType": "toHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "1d8",
+        "damageMod": ""
+      },
+      "damType": "fire",
+      "conditions": [],
+      "statusEffect": {},
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d8",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Ray of Frost",
+    "classes": ["Artificer","Wizard", "Sorcerer", "Rogue", "Fighter"],
+    "level": 0,
+    "targeting": {
+      "self": false,
+      
+      "number": 1,
+      "rolls": {
+        "rollType": "toHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "1d8",
+        "damageMod": ""
+      },
+      "damType": "cold",
+      "conditions": [],
+      "statusEffect": {},
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d8",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Sacred Flame",
+    "classes": ["Cleric", "Sorcerer", "Warlock"],
+    "level": 0,
+    "targeting": {
+      "self": false,
+      
+      "number": 1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "DEX",
+        "halfSave": false,
+        "damage": "1d8",
+        "damageMod": ""
+      },
+      "damType": "radiant",
+      "conditions": [],
+      "statusEffect": {},
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d8",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Shocking Grasp",
+    "classes": ["Artificer","Wizard", "Sorcerer", "Cleric", "Rogue", "Fighter"],
+    "level": 0,
+    "targeting": {
+      "self": false,
+      
+      "number": 1,
+      "rolls": {
+        "rollType": "toHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "1d8",
+        "damageMod": ""
+      },
+      "damType": "lightning",
+      "conditions": [],
+      "statusEffect": {},
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d8",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Thorn Whip",
+    "classes": ["Artificer","Druid", "Cleric"],
+    "level": 0,
+    "targeting": {
+      "self": false,
+      
+      "number": 1,
+      "rolls": {
+        "rollType": "toHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "1d6",
+        "damageMod": ""
+      },
+      "damType": "piercing",
+      "conditions": [],
+      "statusEffect": {},
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d6",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "True Strike",
+    "classes": ["Wizard", "Sorcerer", "Bard", "Warlock", "Rogue", "Fighter", "Cleric"],
+    "level": 0,
+    "targeting": {
+      "self": true,
+      "number": 0,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "healing",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Advantage",
+          "effect": { "rolls": "4", "attribute": "attack rolls for" }
+        },
+        {
+          "name": "Concentration",
+          "effect": {}
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": ["1Turn"]
+    }
+  },
+  {
+    "spellname": "Vicious Mockery",
+    "classes": ["Bard"],
+    "level": 0,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "WIS",
+        "halfSave": false,
+        "damage": "1d4",
+        "damageMod": ""
+      },
+      "damType": "psychic",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Disadvantage",
+          "effect": { "attribute": "attack rolls for" }
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d4",
+      "specialNotes": ["1Turn"]
+    }
+  },
+  {
+    "spellname": "Arms of Hadar",
+    "classes": ["Warlock", "Sorcerer"],
+    "level": 1,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "STR",
+        "halfSave": true,
+        "damage": "2d6",
+        "damageMod": ""
+      },
+      "damType": "necrotic",
+      "conditions": [],
+      "statusEffect" : [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d6",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Bane",
+    "classes": ["Bard", "Cleric", "Sorcerer", "Paladin", "Warlock"],
+    "level": 1,
+    "targeting": {
+      "self": false,
+      "number": 3,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "CHA",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "none",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Debuff",
+          "effect": {
+            "rolls": "1d4",
+            "attribute": [
+              "attack rolls for",
+              "ALL save"
+            ]
+          }
+        },
+        {
+          "name": "Concentration",
+          "effect": {}
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "extraTarget",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Bless",
+    "classes": ["Cleric", "Paladin", "Sorcerer"],
+    "level": 1,
+    "targeting": {
+      "self": false,
+      "number": 3,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "healing",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Buff",
+          "effect": {
+            "rolls": "1d4",
+            "attribute": [
+              "attack rolls for",
+              "ALL save"
+            ]
+          }
+        },
+        {
+          "name": "Concentration",
+          "effect": {}
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "extraTarget",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Burning Hands",
+    "classes": ["Wizard", "Sorcerer", "Rogue", "Druid", "Fighter", "Cleric", "Warlock", "Monk"],
+    "level": 1,
+    "targeting": {
+      "self": false,
+      
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "DEX",
+        "halfSave": true,
+        "damage": "3d6",
+        "damageMod": ""
+      },
+      "damType": "fire",
+      "conditions": [],
+      "statusEffect" : [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d6",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Charm Person",
+    "classes": ["Bard", "Cleric", "Druid", "Sorcerer", "Wizard", "Warlock", "Rogue", "Fighter", "Ranger"],
+    "level": 1,
+    "targeting": {
+      "self": false,
+      
+      "number": 1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "WIS",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "none",
+      "conditions": ["Charmed"],
+      "statusEffect" : [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "extraTarget",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Chromatic Orb",
+    "classes": ["Sorcerer", "Wizard", "Rogue", "Fighter"],
+    "level": 1,
+    "targeting": {
+      "self": false,
+      
+      "number": 1,
+      "rolls": {
+        "rollType": "toHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "3d8",
+        "damageMod": ""
+      },
+      "damType": ["acid", "cold", "fire", "lightning", "poison", "thunder", "OR"],
+      "conditions": [],
+      "statusEffect" : [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d8",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Cure Wounds",
+    "classes": ["Artificer", "Bard", "Cleric", "Druid", "Paladin", "Ranger", "Warlock"],
+    "level": 1,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "1d8",
+        "damageMod": "spellMod"
+      },
+      "damType": "healing",
+      "conditions": [],
+      "statusEffect" : [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d8",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Dissonant Whispers",
+    "classes": ["Bard", "Sorcerer", "Warlock"],
+    "level": 1,
+    "targeting": {
+      "self": false,
+      
+      "number": 1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "WIS",
+        "halfSave": true,
+        "damage": "3d6",
+        "damageMod": ""
+      },
+      "damType": "psychic",
+      "conditions": [],
+      "statusEffect" : [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d6",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Entangle",
+    "classes": ["Druid", "Ranger"],
+    "level": 1,
+    "targeting": {
+      "self": false,
+      
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "STR",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "none",
+      "conditions": ["Restrained"],
+      "statusEffect" : [
+        {
+          "name": "Concentration",
+          "effect": {}
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {
+        "saveType" : "STR"
+      },
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Ensnaring Strike",
+    "classes": ["Ranger", "Paladin"],
+    "level": 1,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "onHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "",
+      "conditions": [],
+      "statusEffect" : [
+        {
+          "name": "Concentration",
+          "effect": {}
+        }
+      ],
+      "lingEffect": {
+            "rolls": {
+              "rollType": "autoHit",
+              "saveType": "none",
+              "halfSave": false,
+              "damage": "1d6",
+              "damageMod": ""
+            },
+        "damType": "piercing"
+      },
+      "extraEffect": {
+        "rolls": {
+          "rollType": "save",
+          "saveType": "STR",
+          "halfSave": false,
+          "damage": "",
+          "damageMod": ""
+        },
+        "damType": "none",
+        "conditions": ["Restrained"],
+        "statusEffect": {}
+      },
+      "lingSave": {
+        "saveType" : "STR"
+      },
+      "scaling": "1d6",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Faerie Fire",
+    "classes": ["Artificer", "Bard", "Druid", "Cleric", "Ranger", "Warlock"],
+    "level": 1,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "DEX",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "none",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Advantage",
+          "effect": {
+            "rolls": "4",
+            "attribute": "attack rolls against"
+          }
+        },
+        {
+          "name": "Concentration",
+          "effect": {}
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Guiding Bolt",
+    "classes": ["Cleric", "Druid", "Sorcerer", "Paladin", "Warlock"],
+    "level": 1,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "toHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "4d6",
+        "damageMod": ""
+      },
+      "damType": "radiant",
+      "conditions": [],
+      "statusEffect": [
+        {
+            "name": "Advantage",
+            "effect": {
+              "rolls": "4",
+              "attribute": "attack rolls against"
+            }
+          }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d6",
+      "specialNotes": ["1Turn"]
+    }
+  },
+  {
+    "spellname": "Hail of Thorns",
+    "classes": ["Ranger"],
+    "level": 1,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "onHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "",
+      "conditions": [],
+      "statusEffect" : [],
+      "lingEffect": {},
+      "extraEffect": {
+        "number": -1,
+        "rolls": {
+          "rollType": "save",
+          "saveType": "DEX",
+          "halfSave": true,
+          "damage": "1d10",
+          "damageMod": ""
+        },
+        "damType": "piercing",
+        "conditions": [],
+        "statusEffect": []
+      },
+      "lingSave": {},
+      "scaling": "1d10",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Healing Word",
+    "classes": ["Artificer", "Bard", "Cleric", "Druid", "Sorcerer"],
+    "level": 1,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "1d4",
+        "damageMod": "spellMod"
+      },
+      "damType": "healing",
+      "conditions": [],
+      "statusEffect" : [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d4",
+      "specialNotes": []
+    }
+  },
+   {
+    "spellname": "Hex",
+    "classes": ["Warlock"],
+    "level": 1,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "onHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "1d6",
+        "damageMod": ""
+      },
+      "damType": "necrotic",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Concentration",
+          "effect": {}
+        }
+      ],
+      "lingEffect": {
+        "repeat": true
+      },
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d6",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Hunter's Mark",
+    "classes": ["Ranger", "Paladin"],
+    "level": 1,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "onHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "1d6",
+        "damageMod": ""
+      },
+      "damType": "piercing",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Concentration",
+          "effect": {}
+        }
+      ],
+      "lingEffect": {
+        "repeat": true
+      },
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d6",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Inflict Wounds",
+    "classes": ["Cleric", "Sorcerer", "Paladin"],
+    "level": 1,
+    "targeting": {
+      "self": false,
+      
+      "number": 1,
+      "rolls": {
+        "rollType": "toHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "3d10",
+        "damageMod": ""
+      },
+      "damType": "necrotic",
+      "conditions": [],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d10",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Magic Missile",
+    "classes": ["Wizard", "Sorcerer", "Cleric", "Rogue", "Artificer", "Fighter"],
+    "level": 1,
+    "targeting": {
+      "self": false,
+      "number": 3,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "1d4",
+        "damageMod": "1"
+      },
+      "damType": "force",
+      "conditions": [],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "extraTarget",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Ray of Sickness",
+    "classes": ["Wizard", "Sorcerer", "Artificer", "Rogue", "Cleric", "Fighter", "Warlock"],
+    "level": 1,
+    "targeting": {
+      "self": false,
+      
+      "number": 1,
+      "rolls": {
+        "rollType": "toHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "2d8",
+        "damageMod": ""
+      },
+      "damType": "poison",
+      "conditions": [],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect" : {
+        "rolls" : {
+          "rollType": "save",
+          "saveType": "CON",
+          "halfSave": false,
+          "damage": "",
+          "damageMod": ""
+        },
+        "damType" : "",
+        "conditions": ["Poisoned"],
+        "statusEffect": []
+      },
+      "lingSave": {},
+      "scaling": "1d8",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Searing Smite",
+    "classes": ["Paladin", "Cleric"],
+    "level": 1,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "onHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "1d6",
+        "damageMod": ""
+      },
+      "damType": "fire",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Concentration",
+          "effect": {}
+        }
+      ],
+      "lingEffect": {
+        "rolls": {
+          "rollType": "save",
+          "saveType": "CON",
+          "halfSave": false,
+          "damage": "1d6",
+          "damageMod": ""
+        },
+        "damType": "fire"
+      },
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d6",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Shield of Faith",
+    "classes": ["Cleric", "Paladin"],
+    "level": 1,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "healing",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Buff",
+          "effect": {
+            "rolls": "2",
+            "attribute": "AC"
+          }
+        },
+        {
+          "name": "Concentration",
+          "effect": {}
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Tasha's Hideous Laughter",
+    "classes": ["Bard", "Wizard", "Rogue", "Fighter", "Warlock"],
+    "level": 1,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "WIS",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "none",
+      "conditions": ["Prone", "Incapacitated"],
+      "statusEffect": [
+        {
+          "name": "Concentration",
+          "effect": {
+          }
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {
+        "saveType": "WIS"
+      },
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Thunderous Smite",
+    "classes": ["Paladin"],
+    "level": 1,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "onHit",
+        "saveType": "",
+        "halfSave": false,
+        "damage": "2d6",
+        "damageMod": ""
+      },
+      "damType": "thunder",
+      "conditions": [],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect" : {
+        "rolls": {
+          "rollType" : "save",
+          "saveType": "STR",
+          "halfSave": false,
+          "damage": "",
+          "damageMod": ""
+        },
+        "damType": "",
+        "conditions": ["Prone"],
+        "statusEffect": []
+      },
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Thunderwave",
+    "classes": ["Bard", "Cleric", "Druid", "Sorcerer", "Wizard", "Rogue", "Artificer", "Fighter", "Warlock"],
+    "level": 1,
+    "targeting": {
+      "self": false,
+      
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "CON",
+        "halfSave": true,
+        "damage": "2d8",
+        "damageMod": ""
+      },
+      "damType": "thunder",
+      "conditions": [],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d8",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Witchbolt",
+    "classes": ["Sorcerer", "Warlock", "Wizard", "Rogue", "Fighter"],
+    "level": 1,
+    "targeting": {
+      "self": false,
+      
+      "number": 1,
+      "rolls": {
+        "rollType": "toHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "1d12",
+        "damageMod": ""
+      },
+      "damType": "lightning",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Concentration",
+          "effect": {}
+        }
+      ],
+      "lingEffect": {
+        "rolls": {
+          "rollType": "autoHit",
+          "saveType": "none",
+          "halfSave": false,
+          "damage": "1d12",
+          "damageMod": ""
+        },
+        "damType": "Lightning"
+      },
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d12",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Wrathful Smite",
+    "classes": ["Paladin", "Warlock"],
+    "level": 1,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "onHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "1d6",
+        "damageMod": ""
+      },
+      "damType": "psychic",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Concentration",
+          "effect": {}
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect" : {
+        "rolls": {
+          "rollType": "save",
+          "saveType": "WIS",
+          "halfSave": false,
+          "damage": "",
+          "damageMod": ""
+        },
+        "damType": "none",
+        "conditions": ["Frightened"],
+        "statusEffect": []
+      },
+      "lingSave": {
+        "saveType": "WIS"
+      },
+      "scaling": "1d6",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Aid",
+    "classes": ["Artificer","Cleric", "Paladin", "Sorcerer", "Bard", "Ranger"],
+    "level": 2,
+    "targeting": {
+      "self": false,
+      "number": 3,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": "5"
+      },
+      "damType": "healing",
+      "conditions": [],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "5",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Blindness/Deafness",
+    "classes": ["Cleric", "Bard", "Sorcerer", "Wizard", "Rogue", "Druid", "Warlock", "Fighter"],
+    "level": 2,
+    "targeting": {
+      "self": false,
+      
+      "number": 1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "CON",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "none",
+      "conditions": ["Blinded"],
+      "statusEffect": [
+        {
+          "name": "Concentration",
+          "effect": {
+            "spellName": "",
+            "resultID": ""
+          }
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": { "saveType": "CON" },
+      "scaling": "extraTarget",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Blur",
+    "classes": ["Artificer","Sorcerer", "Wizard", "Rogue", "Druid", "Fighter", "Warlock"],
+    "level": 2,
+    "targeting": {
+      "self": true,
+      "number": 0,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "healing",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Disadvantage",
+          "effect": { "rolls": "-4",
+            "attribute": "attack rolls against"
+          }
+        },
+        {
+          "name": "Concentration",
+          "effect": {}
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Branding Smite",
+    "classes": ["Paladin", "Artificer", "Warlock"],
+    "level": 2,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "onHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "2d6",
+        "damageMod": ""
+      },
+      "damType": "radiant",
+      "conditions": [],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d6",
+      "specialNotes": ["endsInvisibility"]
+    }
+  },
+  {
+    "spellname": "Cloud of Daggers",
+    "classes": ["Bard", "Sorcerer", "Warlock", "Wizard", "Rogue", "Fighter"],
+    "level": 2,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "4d4",
+        "damageMod": ""
+      },
+      "damType": "slashing",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Concentration",
+          "effect": {}
+        }
+      ],
+      "lingEffect": {
+        "repeat": true
+      },
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "2d4",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Cordon of Arrows",
+    "classes": ["Ranger"],
+    "level": 2,
+    "targeting": {
+      "self": false,
+      
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "DEX",
+        "halfSave": false,
+        "damage": "1d6",
+        "damageMod": ""
+      },
+      "damType": "piercing",
+      "conditions": [],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "extraTarget2",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Flaming Sphere",
+    "classes": ["Artificer", "Druid", "Wizard", "Rogue", "Fighter", "Cleric", "Warlock"],
+    "level": 2,
+    "targeting": {
+      "self": false,
+      
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "DEX",
+        "halfSave": true,
+        "damage": "2d6",
+        "damageMod": ""
+      },
+      "damType": "fire",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Concentration",
+          "effect": {}
+        }
+      ],
+      "lingEffect": {
+        "repeat": true
+      },
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d6",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Heat Metal",
+    "classes": ["Artificer", "Druid", "Bard", "Cleric"],
+    "level": 2,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "",
+        "halfSave": false,
+        "damage": "2d8",
+        "damageMod": ""
+      },
+      "damType": "fire",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Disadvantage",
+          "effect": { "attribute": "attack rolls for" }
+        },
+        {
+          "name": "Concentration",
+          "effect": {}
+        }
+      ],
+      "lingEffect": {
+        "repeat": true
+      },
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d8",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Hold Person",
+    "classes": ["Bard", "Cleric", "Druid", "Sorcerer", "Warlock", "Wizard", "Rogue", "Fighter", "Paladin"],
+    "level": 2,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "WIS",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "none",
+      "conditions": ["Paralyzed"],
+      "statusEffect": [
+        {
+          "name": "Concentration",
+          "effect": {}
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": { "saveType": "WIS" },
+      "scaling": "extraTarget",
+      "specialNotes": ["humanoidOnly"]
+    }
+  },
+  {
+    "spellname": "Invisibility",
+    "classes": ["Artificer", "Bard", "Sorcerer", "Wizard", "Warlock", "Rogue", "Druid", "Fighter", "Cleric"],
+    "level": 2,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "healing",
+      "conditions": ["Invisible"],
+      "statusEffect": [
+        {
+          "name": "Concentration",
+          "effect": {}
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "extraTarget",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Melf's Acid Arrow",
+    "classes": ["Wizard", "Artificer", "Rogue", "Druid", "Fighter"],
+    "level": 2,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "toHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "4d4"
+      },
+      "damType": "acid",
+      "conditions": [],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect": {
+        "rolls": {
+          "rollType": "autoHit",
+          "saveType": "none",
+          "halfSave": false,
+          "damage": "2d4"
+        },
+        "damType": "acid",
+        "conditions" : [],
+        "statusEffect": []
+      },
+      "lingSave": {},
+      "scaling": "2d4",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Mirror Image",
+    "classes": ["Wizard", "Sorcerer", "Warlock", "Rogue", "Artificer", "Druid", "Fighter", "Cleric"],
+    "level": 2,
+    "targeting": {
+      "self": true,
+      "number": 0,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": ""
+      },
+      "damType": "healing",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Buff",
+          "effect": {
+            "rolls": "9",
+            "attribute": "AC"
+          }
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": ["3Turn"]
+    }
+  },
+  {
+    "spellname": "Moonbeam",
+    "classes": ["Druid", "Cleric", "Paladin"],
+    "level": 2,
+    "targeting": {
+      "self": false,
+      
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "CON",
+        "halfSave": true,
+        "damage": "2d10"
+      },
+      "damType": "radiant",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Concentration",
+          "effect": {}
+        }
+      ],
+      "lingEffect": {
+        "repeat": true
+      },
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d10",
+      "specialNotes": ["ShapeChangerDisadvantage"]
+    }
+  },
+  {
+    "spellname": "Scorching Ray",
+    "classes": ["Wizard", "Sorcerer", "Rogue", "Artificer", "Druid", "Fighter", "Cleric", "Warlock"],
+    "level": 2,
+    "targeting": {
+      "self": false,
+      "number": 3,
+      "rolls": {
+        "rollType": "toHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "2d6"
+      },
+      "damType": "fire",
+      "conditions": [],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "extraTarget",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Shatter",
+    "classes": ["Bard", "Wizard", "Sorcerer", "Warlock", "Rogue", "Artificer", "Fighter", "Cleric"],
+    "level": 2,
+    "targeting": {
+      "self": false,
+      
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "CON",
+        "halfSave": true,
+        "damage": "3d8"
+      },
+      "damType": "thunder",
+      "conditions": [],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d8",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Spiritual Weapon",
+    "classes": ["Cleric", "Sorcerer", "Paladin"],
+    "level": 2,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "toHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "1d8"
+      },
+      "damType": "force",
+      "conditions": [],
+      "statusEffect": [
+          {
+    "name": "Concentration",
+    "effect": {
+      "spellName": "",
+      "resultID": ""
+    }
+  }
+      ],
+      "lingEffect": {
+        "repeat": true
+      },
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d8 PER2",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Web",
+    "classes": ["Artificer", "Wizard", "Sorcerer", "Rogue", "Druid", "Fighter", "Ranger"],
+    "level": 2,
+    "targeting": {
+      "self": false,
+      
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "DEX",
+        "halfSave": false,
+        "damage": ""
+      },
+      "damType": "none",
+      "conditions": ["Restrained"],
+      "statusEffect": [
+        {
+          "name": "Concentration",
+          "effect": {}
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {
+        "saveType": "DEX"
+      },
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Animate Dead",
+    "classes": ["Cleric", "Wizard", "Rogue", "Druid", "Sorcerer", "Fighter", "Paladin"],
+    "level": 3,
+    "targeting": {
+      "self": false,
+      "number": 0,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": ""
+      },
+      "damType": "none",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Summon",
+          "effect": {
+            "type": "Undead",
+            "monsterName": "Skeleton",
+            "crCap": "1/4",
+            "numSummons": "1"
+          }
+        },
+        {
+          "name": "Summon",
+          "effect": {
+            "type": "Undead",
+            "monsterName": "Zombie",
+            "crCap": "1/4",
+            "numSummons": "1"
+          }
+        },
+        {
+          "name": "Concentration",
+          "effect": {}
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "extraTarget2",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Aura of Vitality",
+    "classes": ["Artificer", "Paladin", "Sorcerer", "Cleric", "Druid"],
+    "level": 3,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "2d6"
+      },
+      "damType": "healing",
+      "conditions": [],
+      "statusEffect": [
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {
+        "repeat": true
+      },
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Blinding Smite",
+    "classes": ["Paladin"],
+    "level": 3,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "onHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "3d8"
+      },
+      "damType": "radiant",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Concentration",
+          "effect": {}
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect" : {
+        "rolls": {
+          "rollType": "save",
+          "saveType": "CON",
+          "halfSave": false,
+          "damage": "",
+          "damageMod": ""
+        },
+        "damType": "none",
+        "conditions": ["Blinded"],
+        "statusEffect": []
+      },
+      "lingSave": { "saveType": "CON" },
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Call Lightning",
+    "classes": ["Druid", "Cleric"],
+    "level": 3,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "DEX",
+        "halfSave": true,
+        "damage": "3d10"
+      },
+      "damType": "lightning",
+      "conditions": [],
+      "statusEffect": [{ "name": "Concentration", "effect": {} }],
+      "lingEffect": {
+        "repeat": true
+      },
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d10",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Conjure Animals",
+    "classes": ["Druid","Ranger"],
+    "level": 3,
+    "targeting": {
+      "self": false,
+      "number": 0,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": ""
+      },
+      "damType": "none",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Summon",
+          "effect": {
+            "type": "Beast",
+            "monsterName": "",
+            "crCap": "2",
+            "numSummons": "1"
+          }
+        },
+        {
+          "name": "Summon",
+          "effect": {
+            "type": "Beast",
+            "monsterName": "",
+            "crCap": "1",
+            "numSummons": "2"
+          }
+        },
+        {
+          "name": "Summon",
+          "effect": {
+            "type": "Beast",
+            "monsterName": "",
+            "crCap": "1/2",
+            "numSummons": "4"
+          }
+        },
+        {
+          "name": "Summon",
+          "effect": {
+            "type": "Beast",
+            "monsterName": "",
+            "crCap": "1/4",
+            "numSummons": "8"
+          }
+        },
+        {
+          "name": "Concentration",
+          "effect": {
+            "value": "T/F"
+          }
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "mult PER2",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Conjure Barrage",
+    "classes": ["Artificer", "Ranger"],
+    "level": 3,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "DEX",
+        "halfSave": true,
+        "damage": "3d8"
+      },
+      "damType": "piercing",
+      "conditions": [],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Fear",
+    "classes": ["Wizard", "Sorcerer", "Warlock", "Bard", "Rogue", "Fighter"],
+    "level": 3,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "WIS",
+        "halfSave": false,
+        "damage": ""
+      },
+      "damType": "none",
+      "conditions": ["Frightened"],
+      "statusEffect": [
+        {
+          "name": "Concentration",
+          "effect": {}
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {
+        "saveType": "WIS"
+      },
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Fireball",
+    "classes": ["Wizard", "Sorcerer", "Rogue", "Artificer", "Fighter", "Cleric", "Warlock"],
+    "level": 3,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "DEX",
+        "halfSave": true,
+        "damage": "8d6"
+      },
+      "damType": "fire",
+      "conditions": [],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d6",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Glyph of Warding",
+    "classes": ["Artificer", "Bard", "Cleric", "Wizard", "Rogue", "Fighter"],
+    "level": 3,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "DEX",
+        "halfSave": true,
+        "damage": "5d8"
+      },
+      "damType":  ["acid", "cold", "fire", "lightning", "poison", "thunder", "OR"],
+      "conditions": [],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d8",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Hunger of Hadar",
+    "classes": ["Warlock", "Sorcerer"],
+    "level": 3,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "2d6"
+      },
+      "damType": "cold",
+      "conditions": ["Blinded"],
+      "statusEffect": [
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {
+        "repeat": true
+      },
+      "extraEffect" : {
+        "rolls": {
+          "rollType": "save",
+          "saveType": "DEX",
+          "halfSave": false,
+          "damage": "2d6",
+          "damageMod": ""
+        },
+        "damType": "acid",
+        "conditions": [],
+        "statusEffect": []
+      },
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Hypnotic Pattern",
+    "classes": ["Bard","Sorcerer","Warlock","Wizard", "Rogue", "Artificer", "Fighter", "Cleric", "Paladin"],
+    "level": 3,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "WIS",
+        "halfSave": false,
+        "damage": ""
+      },
+      "damType": "none",
+      "conditions": ["Charmed", "Incapacitated"],
+      "statusEffect": [
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {
+        "saveType": "WIS"
+      },
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Lightning Arrow",
+    "classes": ["Ranger"],
+    "level": 3,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "onHit",
+        "saveType": "none",
+        "halfSave": true,
+        "damage": "4d8",
+        "damageMod": ""
+      },
+      "damType": "lightning",
+      "conditions": [],
+      "statusEffect": [
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {},
+      "extraEffect" : {
+        "number": -1,
+        "rolls": {
+          "rollType": "save",
+          "saveType": "DEX",
+          "halfSave": true,
+          "damage": "2d8",
+          "damageMod": ""
+        },
+        "damType": "lightning",
+        "conditions": [],
+        "statusEffect": []
+      },
+      "lingSave": {},
+      "scaling": "1d8",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Lightning Bolt",
+    "classes": ["Wizard", "Sorcerer", "Rogue", "Artificer", "Druid", "Fighter", "Warlock"],
+    "level": 3,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "DEX",
+        "halfSave": true,
+        "damage": "8d6",
+        "damageMod" : ""
+      },
+      "damType": "lightning",
+      "conditions": [],
+      "statusEffect": {},
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d6",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Mass Healing Word",
+    "classes": ["Cleric", "Artificer", "Sorcerer"],
+    "level": 3,
+    "targeting": {
+      "self": false,
+      "number": 6,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "1d4",
+        "damageMod" : "spellMod"
+      },
+      "damType": "healing",
+      "conditions": [],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d4",
+      "specialNotes": ["undeadImmune", "constructImmune"]
+    }
+  },
+  {
+    "spellname": "Protection from Energy",
+    "classes": ["Cleric","Druid","Ranger","Sorcerer","Wizard", "Rogue", "Fighter", "Paladin"],
+    "level": 3,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": ""
+      },
+      "damType": "healing",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Resistance",
+          "effect": {
+            "damage": "/2",
+            "attribute": ["acid","cold","fire","lightning","thunder", "OR"]
+          }
+        },
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Sleet Storm",
+    "classes": ["Druid","Sorcerer","Wizard", "Rogue", "Fighter", "Cleric", "Warlock"],
+    "level": 3,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": ""
+      },
+      "damType": "",
+      "conditions": ["Blinded"],
+      "statusEffect": [
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {},
+      "extraEffect" : {
+        "rolls": {
+          "rollType": "save",
+          "saveType": "DEX",
+          "halfSave": false,
+          "damage": "",
+          "damageMod": ""
+        },
+        "damType": "",
+        "conditions": ["Prone"],
+        "statusEffect": {}
+      },
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Slow",
+    "classes": ["Wizard","Sorcerer", "Rogue", "Cleric", "Druid", "Fighter", "Bard"],
+    "level": 3,
+    "targeting": {
+      "self": false,
+      "number": 6,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "WIS",
+        "halfSave": false,
+        "damage": ""
+      },
+      "damType": "none",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Debuff",
+          "effect": {
+            "rolls": "2",
+            "attribute": "AC"
+          }
+        },
+        {
+          "name": "Disadvantage",
+          "effect": {
+            "rolls": "4",
+            "attribute": "DEX save"
+          }
+        },
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {
+        "saveType": "WIS"
+      },
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Spirit Guardians",
+    "classes": ["Cleric", "Sorcerer", "Paladin"],
+    "level": 3,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "WIS",
+        "halfSave": true,
+        "damage": "3d8"
+      },
+      "damType": ["radiant", "necrotic", "OR"],
+      "conditions": [],
+      "statusEffect": [
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {
+        "repeat": true
+      },
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d8",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Stinking Cloud",
+    "classes": ["Wizard","Sorcerer","Bard"],
+    "level": 3,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "CON",
+        "halfSave": false,
+        "damage": ""
+      },
+      "damType": "",
+      "conditions": ["Incapacitated"],
+      "statusEffect": [
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {
+        "repeat" : true
+      },
+      "extraEffect" : {
+        "rolls": {
+          "rollType": "autoHit",
+          "saveType": "none",
+          "halfSave": false,
+          "damage": "",
+          "damageMod": ""
+        },
+        "damType": "",
+        "conditions": ["Blinded"],
+        "statusEffect": {}
+      },
+      "lingSave": {
+        "saveType": "CON"
+      },
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Wind Wall",
+    "classes": ["Druid","Ranger", "Artificer", "Cleric", "Warlock"],
+    "level": 3,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "STR",
+        "halfSave": true,
+        "damage": "3d8"
+      },
+      "damType": "bludgeoning",
+      "conditions": [],
+      "statusEffect": [
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Aura of Life",
+    "classes": ["Paladin", "Druid", "Sorcerer", "Warlock","Cleric"],
+    "level": 4,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": ""
+      },
+      "damType": "healing",
+      "conditions": [],
+      "statusEffect": [
+        { "name": "Concentration", "effect": {} },
+        {
+          "name": "Resistance",
+          "effect": {
+            "damage": "/2",
+            "attribute": "necrotic"
+          }
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+
+  {
+    "spellname": "Banishment",
+    "classes": ["Cleric", "Paladin", "Sorcerer", "Warlock", "Wizard", "Rogue", "Fighter", "Ranger"],
+    "level": 4,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "CHA",
+        "halfSave": false,
+        "damage": ""
+      },
+      "damType": "none",
+      "conditions": ["Out of Combat"],
+      "statusEffect": [
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "extraTarget",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Blight",
+    "classes": ["Wizard", "Druid", "Sorcerer", "Warlock", "Artificer", "Rogue", "Cleric", "Fighter", "Paladin"],
+    "level": 4,
+    "targeting": {
+      "self": false,
+      
+      "number": 1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "CON",
+        "halfSave": true,
+        "damage": "8d8",
+        "damageMod" : ""
+      },
+      "damType": "necrotic",
+      "conditions": [],
+      "statusEffect": {},
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d8",
+      "specialNotes": ["undeadImmune", "constructImmune", "plantVulnerable"]
+    }
+  },
+  {
+    "spellname": "Conjure Minor Elementals",
+    "classes": ["Druid","Wizard", "Rogue", "Fighter"],
+    "level": 4,
+    "targeting": {
+      "self": false,
+      "number": 0,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": ""
+      },
+      "damType": "none",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Summon",
+          "effect": {
+            "type": "Elemental",
+            "monsterName": "",
+            "crCap": "2",
+            "numSummons": "1"
+          }
+        },
+        {
+          "name": "Summon",
+          "effect": {
+            "type": "Elemental",
+            "monsterName": "",
+            "crCap": "1",
+            "numSummons": "2"
+          }
+        },
+        {
+          "name": "Summon",
+          "effect": {
+            "type": "Elemental",
+            "monsterName": "",
+            "crCap": "1/2",
+            "numSummons": "4"
+          }
+        },
+        {
+          "name": "Summon",
+          "effect": {
+            "type": "Elemental",
+            "monsterName": "",
+            "crCap": "1/4",
+            "numSummons": "8"
+          }
+        },
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "mult PER2",
+      "specialNotes": []
+    }
+  },
+
+  {
+    "spellname": "Conjure Woodland Beings",
+    "classes": ["Druid","Ranger"],
+    "level": 4,
+    "targeting": {
+      "self": false,
+      "number": 0,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": ""
+      },
+      "damType": "none",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Summon",
+          "effect": {
+            "type": "Fey",
+            "monsterName": "",
+            "crCap": "2",
+            "numSummons": "1"
+          }
+        },
+        {
+          "name": "Summon",
+          "effect": {
+            "type": "Fey",
+            "monsterName": "",
+            "crCap": "1",
+            "numSummons": "2"
+          }
+        },
+        {
+          "name": "Summon",
+          "effect": {
+            "type": "Fey",
+            "monsterName": "",
+            "crCap": "1/2",
+            "numSummons": "4"
+          }
+        },
+        {
+          "name": "Summon",
+          "effect": {
+            "type": "Fey",
+            "monsterName": "",
+            "crCap": "1/4",
+            "numSummons": "8"
+          }
+        },
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "mult PER2",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Dominate Beast",
+    "classes": ["Druid","Sorcerer", "Cleric", "Paladin", "Warlock"],
+    "level": 4,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "WIS",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "none",
+      "conditions": ["Charmed"],
+      "statusEffect": [
+        {"name": "switchSides", "effect": {"attribute": ["T"]}},
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": { "saveType": "WIS" },
+      "scaling": "",
+      "specialNotes": ["BeastOnly"]
+    }
+  },
+  {
+    "spellname": "Evard's Black Tentacles",
+    "classes": ["Wizard", "Sorcerer", "Rogue", "Fighter", "Warlock"],
+    "level": 4,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "DEX",
+        "halfSave": false,
+        "damage": "3d6",
+        "damageMod": ""
+      },
+      "damType": "bludgeoning",
+      "conditions": ["Restrained"],
+      "statusEffect": [
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {
+        "repeat": true
+      },
+      "extraEffect": {},
+      "lingSave": { "saveType": "STR" },
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Giant Insect",
+    "classes": ["Druid"],
+    "level": 4,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "none",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Summon",
+          "effect": {
+            "type": "Beast",
+            "monsterName": "Giant Centipede",
+            "crCap": "1/4",
+            "numSummons": "10"
+          }
+        },
+        {
+          "name": "Summon",
+          "effect": {
+            "type": "Beast",
+            "monsterName": "Giant Wasp",
+            "crCap": "1/2",
+            "numSummons": "5"
+          }
+        },
+        {
+          "name": "Summon",
+          "effect": {
+            "type": "Beast",
+            "monsterName": "Giant Spider",
+            "crCap": "1/2",
+            "numSummons": "3"
+          }
+        },
+        {
+          "name": "Summon",
+          "effect": {
+            "type": "Beast",
+            "monsterName": "Giant Scorpion",
+            "crCap": "3",
+            "numSummons": "1"
+          }
+        },
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Greater Invisibility",
+    "classes": ["Bard", "Cleric","Sorcerer","Wizard", "Rogue", "Artificer", "Druid", "Fighter", "Ranger", "Warlock"],
+    "level": 4,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "healing",
+      "conditions": ["GreaterInvisible"],
+      "statusEffect": [
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Guardian of Faith",
+    "classes": ["Cleric"],
+    "level": 4,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "DEX",
+        "halfSave": true,
+        "damage": "",
+        "damageMod": "20"
+      },
+      "damType": "radiant",
+      "conditions": [],
+      "statusEffect": [],
+      "lingEffect": {
+        "repeat": true
+      },
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": ["3Turn"]
+    }
+  },
+  {
+    "spellname": "Ice Storm",
+    "classes": ["Druid","Sorcerer","Wizard", "Rogue", "Artificer", "Fighter", "Paladin", "Cleric"],
+    "level": 4,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "DEX",
+        "halfSave": true,
+        "damage": "8d6",
+        "damageMod": "-1"
+      },
+      "damType": ["bludgeoning", "cold", "AND"],
+      "conditions": [],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d6",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Otiluke's Resilient Sphere",
+    "classes": ["Wizard", "Artificer", "Rogue", "Fighter", "Paladin", "Cleric"],
+    "level": 4,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "DEX",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "none",
+      "conditions": ["Out of Combat"],
+      "statusEffect": [
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Phantasmal Killer",
+    "classes": ["Wizard"],
+    "level": 4,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "WIS",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "",
+      "conditions": ["Frightened"],
+      "statusEffect": [
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {
+        "rolls": {
+          "rollType": "save",
+          "saveType": "WIS",
+          "halfSave": false,
+          "damage": "4d10",
+          "damageMod": ""
+        },
+        "damType": "psychic"
+      },
+      "extraEffect" : {
+        "rolls": {
+          "rollType": "save",
+          "saveType": "WIS",
+          "halfSave": false,
+          "damage": "4d10",
+          "damageMod": ""
+        },
+        "damType": "psychic",
+        "conditions": [],
+        "statusEffect": {}
+      },
+      "lingSave": { "saveType": "WIS" },
+      "scaling": "1d10",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Staggering Smite",
+    "classes": ["Paladin", "Warlock"],
+    "level": 4,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "onHit",
+        "saveType": "",
+        "halfSave": false,
+        "damage": "4d6",
+        "damageMod": ""
+      },
+      "damType": "psychic",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Concentration",
+          "effect": {}
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect" : {
+        "rolls": {
+          "rollType": "save",
+          "saveType": "WIS",
+          "halfSave": false,
+          "damage": "",
+          "damageMod": ""
+        },
+        "damType": "none",
+        "conditions": [],
+        "statusEffect": [
+          {
+            "name": "Disadvantage",
+            "effect": {
+              "rolls": "-4",
+              "attribute": "attack rolls for"
+            }
+          }
+        ],
+        "extraEffect": {}
+      },
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": ["1Turn"]
+    }
+  },
+  {
+    "spellname": "Stoneskin",
+    "classes": ["Druid","Ranger","Sorcerer","Wizard", "Artificer", "Rogue", "Cleric", "Fighter", "Paladin"],
+    "level": 4,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "healing",
+      "conditions": [],
+      "statusEffect": [
+        { "name": "Resistance",
+          "effect": {
+            "damage": "/2",
+            "attribute": ["nonmagical bludgeoning", "nonmagical piercing", "nonmagical slashing"]
+          }
+        },
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Wall of Fire",
+    "classes": ["Druid","Sorcerer","Wizard", "Rogue", "Artificer", "Fighter", "Cleric", "Warlock"],
+    "level": 4,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "DEX",
+        "halfSave": true,
+        "damage": "5d8",
+        "damageMod": ""
+      },
+      "damType": "fire",
+      "conditions": [],
+      "statusEffect": [
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {
+        "repeat": true
+      },
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d8",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Animate Objects",
+    "classes": [
+      "Bard",
+      "Sorcerer",
+      "Wizard"
+    ],
+    "level": 5,
+    "targeting": {
+      "self": false,
+      "number": 0,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Summon",
+          "effect": {
+            "type": "Construct",
+            "monsterName": "Animated Object (Tiny)",
+            "crCap": "1/4",
+            "numSummons": "10"
+          }
+        },
+        {
+          "name": "Summon",
+          "effect": {
+            "type": "Construct",
+            "monsterName": "Animated Object (Medium)",
+            "crCap": "1/2",
+            "numSummons": "5"
+          }
+        },
+        {
+          "name": "Summon",
+          "effect": {
+            "type": "Construct",
+            "monsterName": "Animated Object (Large)",
+            "crCap": "1",
+            "numSummons": "2"
+          }
+        },
+        {
+          "name": "Summon",
+          "effect": {
+            "type": "Construct",
+            "monsterName": "Animated Object (Huge)",
+            "crCap": "2",
+            "numSummons": "1"
+          }
+        },
+        {
+          "name": "Concentration",
+          "effect": {}
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Banishing Smite",
+    "classes": [
+      "Paladin",
+      "Artificer",
+      "Warlock"
+    ],
+    "level": 5,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "onHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "5d10",
+        "damageMod": ""
+      },
+      "damType": "force",
+      "conditions": [],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect" : {
+        "rolls": {
+          "rollType": "autoHit",
+          "saveType": "none",
+          "halfSave": false,
+          "damage": "",
+          "damageMod": ""
+        },
+        "damType": "none",
+        "conditions": ["Out of Combat"],
+        "statusEffect": [],
+        "specialNotes": ["hpCap50"]
+      },
+      "lingSave": {},
+      "scaling": "1d10",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Bigby's Hand",
+    "classes": [
+      "Wizard",
+      "Artificer",
+      "Sorcerer"
+    ],
+    "level": 5,
+    "targeting": [
+      {
+        "targetType": "Bigby's Hand ATTACK",
+        "self": false,
+        "number": 1,
+        "rolls": {
+          "rollType": "toHit",
+          "saveType": "none",
+          "halfSave": false,
+          "damage": "4d8",
+          "damageMod": ""
+        },
+        "damType": "force",
+        "conditions": [],
+        "statusEffect": [
+          {
+            "name": "Concentration",
+            "effect": {}
+          }
+        ],
+        "lingEffect": {
+          "repeat": true
+        },
+        "extraEffect": {},
+        "lingSave": {},
+        "scaling": "2d8",
+        "specialNotes": []
+      },
+      {
+        "targetType": "Bigby's Hand GRAPPLE",
+        "self": false,
+        "number": 1,
+        "rolls": {
+          "rollType": "save",
+          "saveType": "STR",
+          "halfSave": false,
+          "damage": "2d6",
+          "damageMod": "spellMod"
+        },
+        "damType": "bludgeoning",
+        "conditions": [
+          "Restrained"
+        ],
+        "statusEffect": [
+          {
+            "name": "Concentration",
+            "effect": {}
+          }
+        ],
+        "lingEffect": {
+          "repeat": true
+        },
+        "extraEffect": {},
+        "lingSave": {},
+        "scaling": "2d6",
+        "specialNotes": []
+      }
+    ]
+  },
+  {
+    "spellname": "Circle of Power",
+    "classes": ["Paladin", "Cleric"],
+    "level": 5,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "healing",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Concentration",
+          "effect": {}
+        },
+        {
+          "name": "Advantage",
+          "effect": {
+            "attribute": "ALL save"
+          }
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Cloudkill",
+    "classes": ["Sorcerer", "Wizard", "Artificer", "Druid", "Cleric", "Paladin", "Warlock"],
+    "level": 5,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "CON",
+        "halfSave": true,
+        "damage": "5d8",
+        "damageMod": ""
+      },
+      "damType": "poison",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Concentration",
+          "effect": {}
+        }
+      ],
+      "lingEffect": {
+        "repeat": true
+      },
+      "extraEffect" : {
+        "rolls": {
+          "rollType": "autoHit",
+          "saveType": "none",
+          "halfSave": "",
+          "damage": "",
+          "damageMod": ""
+        },
+        "damType": "none",
+        "conditions": ["Blinded"],
+        "statusEffect": {}
+      },
+      "lingSave": {},
+      "scaling": "1d8",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Cone of Cold",
+    "classes": ["Wizard", "Sorcerer", "Artificer", "Druid", "Warlock"],
+    "level": 5,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "CON",
+        "halfSave": true,
+        "damage": "8d8",
+        "damageMod": ""
+      },
+      "damType": "cold",
+      "conditions": [],
+      "statusEffect": {},
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d8",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Conjure Elemental",
+    "classes": ["Druid", "Wizard"],
+    "level": 5,
+    "targeting": {
+      "self": false,
+      "number": 0,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "none",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Summon",
+          "effect": {
+            "type": "Elemental",
+            "monsterName": "",
+            "crCap": "5",
+            "numSummons": "1"
+          }
+        },
+        {
+          "name": "Concentration",
+          "effect": {}
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1CR",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Conjure Volley",
+    "classes": [
+      "Ranger"
+    ],
+    "level": 5,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "DEX",
+        "halfSave": true,
+        "damage": "8d8",
+        "damageMod": ""
+      },
+      "damType": "piercing",
+      "conditions": [],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Destructive Wave",
+    "classes": ["Paladin", "Cleric"],
+    "level": 5,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "CON",
+        "halfSave": true,
+        "damage": "10d6",
+        "damageMod": ""
+      },
+      "damType": ["thunder", "radiant", "AND"],
+      "conditions": ["Prone"],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": ["1Turn"]
+    }
+  },
+  {
+    "spellname": "Dominate Person",
+    "classes": ["Bard", "Sorcerer", "Wizard", "Cleric", "Paladin", "Warlock"],
+    "level": 5,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "WIS",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "none",
+      "conditions": ["Charmed"],
+      "statusEffect": [
+        {
+          "name": "Concentration",
+          "effect": {}
+        },
+        {
+          "name": "SwitchSides",
+          "effect": {
+            "attribute": ["T"]
+          }
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {
+        "saveType": "WIS"
+      },
+      "scaling": "extraTarget",
+      "specialNotes": ["HumanoidOnly"]
+    }
+  },
+  {
+    "spellname": "Flame Strike",
+    "classes": ["Cleric", "Druid", "Sorcerer", "Paladin", "Warlock"],
+    "level": 5,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "DEX",
+        "halfSave": true,
+        "damage": "8d6",
+        "damageMod": ""
+      },
+      "damType": ["fire","radiant", "AND"],
+      "conditions": [],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d6",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Hold Monster",
+    "classes": ["Bard", "Sorcerer", "Wizard"],
+    "level": 5,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "WIS",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "none",
+      "conditions": ["Paralyzed"],
+      "statusEffect": [
+        {
+          "name": "Concentration",
+          "effect": {}
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {
+        "saveType": "WIS"
+      },
+      "scaling": "extraTarget",
+      "specialNotes": ["undeadImmune"]
+    }
+  },
+  {
+    "spellname": "Insect Plague",
+    "classes": ["Cleric", "Druid", "Sorcerer", "Ranger"],
+    "level": 5,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "CON",
+        "halfSave": true,
+        "damage": "4d10",
+        "damageMod": ""
+      },
+      "damType": "piercing",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Concentration",
+          "effect": {}
+        }
+      ],
+      "lingEffect": {
+        "repeat": true
+      },
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d10",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Immolation",
+    "classes": [
+      "Sorcerer",
+      "Wizard"
+    ],
+    "level": 5,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "DEX",
+        "halfSave": true,
+        "damage": "8d6",
+        "damageMod": ""
+      },
+      "damType": "fire",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Concentration",
+          "effect": {
+            "spellName": "",
+            "resultID": ""
+          }
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {
+        "saveType": "DEX"
+      },
+      "scaling": "1d6",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Mass Cure Wounds",
+    "classes": ["Cleric", "Druid", "Bard", "Artificer", "Sorcerer"],
+    "level": 5,
+    "targeting": {
+      "self": false,
+      "number": 6,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "3d8",
+        "damageMod": "spellMod"
+      },
+      "damType": "healing",
+      "conditions": [],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d8",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Wall of Force",
+    "classes": ["Wizard", "Artificer", "Sorcerer", "Paladin"],
+    "level": 5,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "none",
+      "conditions": ["Out of Combat"],
+      "statusEffect": [
+        {
+          "name": "Concentration",
+          "effect": {}
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Wall of Stone",
+    "classes": ["Druid", "Wizard"],
+    "level": 5,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "DEX",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "none",
+      "conditions": [
+        "Out of Combat"
+      ],
+      "statusEffect": [
+        {
+          "name": "Concentration",
+          "effect": {}
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+    {
+    "spellname": "Blade Barrier",
+    "classes": ["Cleric", "Sorcerer"],
+    "level": 6,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "DEX",
+        "halfSave": true,
+        "damage": "6d10",
+        "damageMod": ""
+      },
+      "damType": "slashing",
+      "conditions": [],
+      "statusEffect": [
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {
+        "repeat": true
+      },
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Chain Lightning",
+    "classes": ["Sorcerer", "Wizard", "Cleric"],
+    "level": 6,
+    "targeting": {
+      "self": false,
+      "number": 4,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "DEX",
+        "halfSave": true,
+        "damage": "10d8",
+        "damageMod": ""
+      },
+      "damType": "lightning",
+      "conditions": [],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "extraTarget",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Conjure Fey",
+    "classes": ["Druid", "Warlock"],
+    "level": 6,
+    "targeting": {
+      "self": false,
+      "number": 0,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "none",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Summon",
+          "effect": {
+            "type": "Fey",
+            "monsterName": "",
+            "crCap": "6",
+            "numSummons": "1"
+          }
+        },
+                {
+          "name": "Summon",
+          "effect": {
+            "type": "Beast",
+            "monsterName": "",
+            "crCap": "6",
+            "numSummons": "1"
+          }
+        },
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1CR",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Create Undead",
+    "classes": ["Cleric","Wizard", "Warlock", "Sorcerer"],
+    "level": 6,
+    "targeting": {
+      "self": false,
+      "number": 0,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "none",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Summon",
+          "effect": {
+            "type": "Undead",
+            "monsterName": "Ghoul",
+            "crCap": "1",
+            "numSummons": "3"
+          }
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "extraSummon1",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Circle of Death",
+    "classes": ["Sorcerer","Warlock","Wizard", "Cleric"],
+    "level": 6,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "CON",
+        "halfSave": true,
+        "damage": "8d6",
+        "damageMod": ""
+      },
+      "damType": "necrotic",
+      "conditions": [],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "2d6",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Disintegrate",
+    "classes": ["Wizard", "Sorcerer", "Cleric"],
+    "level": 6,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "DEX",
+        "halfSave": false,
+        "damage": "10d6",
+        "damageMod" : "40"
+      },
+      "damType": "force",
+      "conditions": [],
+      "statusEffect": {},
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "3d6",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Eyebite",
+    "classes": ["Bard", "Sorcerer", "Wizard", "Warlock", "Cleric"],
+    "level": 6,
+    "targeting": [
+      {
+        "targetType": "Eyebite UNCONSCIOUS",
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "WIS",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "none",
+      "conditions": ["Unconscious"],
+      "statusEffect": [
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {
+        "repeat": true
+      },
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": []
+    },
+      {
+        "targetType": "Eyebite FRIGHTEN",
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "WIS",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "none",
+      "conditions": ["Frightened"],
+      "statusEffect": [
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {
+        "repeat": true
+      },
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": []
+    },
+      {
+        "targetType": "Eyebite DISADVANTAGE",
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "WIS",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "none",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Disadvantage",
+          "effect": {
+            "rolls": "-4",
+            "attribute": "attack rolls for"
+          }
+        },
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {
+        "repeat": true
+      },
+      "extraEffect": {},
+      "lingSave": {"saveType": "WIS"},
+      "scaling": "",
+      "specialNotes": []
+    }
+    ]
+  },
+  {
+    "spellname": "Harm",
+    "classes": ["Cleric", "Sorcerer"],
+    "level": 6,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "CON",
+        "halfSave": false,
+        "damage": "14d6",
+        "damageMod": ""
+      },
+      "damType": "necrotic",
+      "conditions": [],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d6",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Heal",
+    "classes": ["Cleric","Druid", "Sorcerer"],
+    "level": 6,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": "70"
+      },
+      "damType": "healing",
+      "conditions": [],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "10",
+      "specialNotes": ["endsBlindness", "constructImmune", "undeadImmune"]
+    }
+  },
+  {
+    "spellname": "Otiluke's Freezing Sphere",
+    "classes": ["Wizard", "Cleric", "Sorcerer"],
+    "level": 6,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "CON",
+        "halfSave": true,
+        "damage": "10d6",
+        "damageMod": ""
+      },
+      "damType": "cold",
+      "conditions": [],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d6",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Otto's Irresistible Dance",
+    "classes": ["Bard", "Wizard", "Cleric"],
+    "level": 6,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "none",
+      "conditions": ["Incapacitated"],
+      "statusEffect": [
+        {
+          "name": "Disadvantage",
+          "effect": {
+            "rolls": "-4",
+            "attribute": ["DEX save", "attack rolls for"]
+          }
+        },
+                {
+          "name": "Advantage",
+          "effect": {
+            "rolls": "4",
+            "attribute": ["attack rolls against"]
+          }
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": { "saveType": "WIS" },
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Sunbeam",
+    "classes": ["Druid","Sorcerer","Wizard", "Cleric", "Sorcerer"],
+    "level": 6,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "CON",
+        "halfSave": true,
+        "damage": "6d8",
+        "damageMod": ""
+      },
+      "damType": "radiant",
+      "conditions": ["Blinded"],
+      "statusEffect": [
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {
+        "repeat": true
+      },
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": ["undeadVulnerable", "oozeVulnerable"]
+    }
+  },
+  {
+    "spellname": "Wall of Ice",
+    "classes": ["Wizard", "Cleric"],
+    "level": 6,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "DEX",
+        "halfSave": true,
+        "damage": "10d6",
+        "damageMod": ""
+      },
+      "damType": "cold",
+      "conditions": [],
+      "statusEffect": [
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {
+        "rolls" : {
+          "rollType": "save",
+          "saveType": "CON",
+          "halfSave": true,
+          "damage": "5d6",
+          "damageMod": ""
+        },
+        "damType": "cold"
+      },
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "2d6",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Wall of Thorns",
+    "classes": ["Druid"],
+    "level": 6,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "DEX",
+        "halfSave": true,
+        "damage": "7d8",
+        "damageMod": ""
+      },
+      "damType": "piercing",
+      "conditions": [],
+      "statusEffect": [
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {
+        "rolls": {
+          "rollType": "save",
+          "saveType": "DEX",
+          "halfSave": true,
+          "damage": "7d8",
+          "damageMod": ""
+        },
+        "damType": "slashing"
+      },
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d8",
+      "specialNotes": []
+    }
+  },
+      {
+    "spellname": "Conjure Celestials",
+    "classes": ["Cleric", "Sorcerer"],
+    "level": 7,
+    "targeting": {
+      "self": false,
+      "number": 0,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": ""
+      },
+      "damType": "none",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Summon",
+          "effect": {
+            "type": "Celestial",
+            "monsterName": "",
+            "crCap": "4",
+            "numSummons": "1"
+          }
+        },
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1CR PER2",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Delayed Blast Fireball",
+    "classes": ["Sorcerer", "Wizard", "Cleric"],
+    "level": 7,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "DEX",
+        "halfSave": true,
+        "damage": "12d6"
+      },
+      "damType": "fire",
+      "conditions": [],
+      "statusEffect": [
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d6",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Divine Word",
+    "classes": ["Cleric", "Sorcerer"],
+    "level": 7,
+    "targeting": [
+      {
+        "targetType": "Divine Word 40",
+        "self": false,
+        "number": -1,
+        "rolls": {
+          "rollType": "save",
+          "saveType": "CHA",
+          "halfSave": false,
+          "damage": ""
+        },
+        "damType": "none",
+        "conditions": ["Blinded"],
+        "statusEffect": [],
+        "lingEffect": {},
+        "extraEffect": {},
+        "lingSave": {},
+        "scaling": "",
+        "specialNotes": ["hpCap40"]
+      },
+      {
+        "targetType": "Divine Word 30",
+        "self": false,
+        "number": -1,
+        "rolls": {
+          "rollType": "save",
+          "saveType": "CHA",
+          "halfSave": false,
+          "damage": ""
+        },
+        "damType": "none",
+        "conditions": ["Blinded", "Stunned"],
+        "statusEffect": [],
+        "lingEffect": {},
+        "extraEffect": {},
+        "lingSave": {},
+        "scaling": "",
+        "specialNotes": ["hpCap30"]
+      },
+      {
+        "targetType": "Divine Word 20",
+        "self": false,
+        "number": -1,
+        "rolls": {
+          "rollType": "save",
+          "saveType": "CHA",
+          "halfSave": false,
+          "damage": ""
+        },
+        "damType": "none",
+        "conditions": ["Dead"],
+        "statusEffect": [],
+        "lingEffect": {},
+        "extraEffect": {},
+        "lingSave": {},
+        "scaling": "",
+        "specialNotes": ["hpCap20"]
+      }
+    ]
+  },
+  {
+    "spellname": "Etherealness",
+    "classes": ["Bard","Cleric","Sorcerer","Warlock","Wizard"],
+    "level": 7,
+    "targeting": {
+      "self": true,
+      "number": 0,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": ""
+      },
+      "damType": "healing",
+      "conditions": ["Out of Combat"],
+      "statusEffect": [  {
+    "name": "Concentration",
+    "effect": {
+      "spellName": "",
+      "resultID": ""
+    }
+  }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Finger of Death",
+    "classes": ["Sorcerer","Warlock","Wizard"],
+    "level": 7,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "CON",
+        "halfSave": true,
+        "damage": "7d8",
+        "damageMod": "30"
+      },
+      "damType": "necrotic",
+      "conditions": [],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": ["summonZombieOnKill"]
+    }
+  },
+  {
+    "spellname": "Fire Storm",
+    "classes": ["Cleric","Druid","Sorcerer"],
+    "level": 7,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "DEX",
+        "halfSave": true,
+        "damage": "7d10"
+      },
+      "damType": "fire",
+      "conditions": [],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "1d10",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Force Cage",
+    "classes": ["Warlock","Wizard", "Bard", "Cleric"],
+    "level": 7,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": ""
+      },
+      "damType": "none",
+      "conditions": ["Out of Combat"],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Mordenkainen's Sword",
+    "classes": ["Bard","Wizard", "Cleric"],
+    "level": 7,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "toHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "3d10"
+      },
+      "damType": "force",
+      "conditions": [],
+      "statusEffect": [
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {
+        "repeat": true
+      },
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+    {
+    "spellname": "Dominate Monster",
+    "classes": ["Bard","Sorcerer","Warlock","Wizard", "Cleric"],
+    "level": 8,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "WIS",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "none",
+      "conditions": ["Charmed"],
+      "statusEffect": [
+        {
+          "name": "Concentration",
+          "effect": {}
+        },
+        {
+          "name": "SwitchSides",
+          "effect": {
+            "attribute": ["T"]
+          }
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": { "saveType": "WIS" },
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Earthquake",
+    "classes": ["Cleric","Druid","Sorcerer"],
+    "level": 8,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "DEX",
+        "halfSave": false,
+        "damage": "5d6"
+      },
+      "damType": "bludgeoning",
+      "conditions": ["Prone", "Restrained"],
+      "statusEffect": [
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": [""]
+    }
+  },
+  {
+    "spellname": "Holy Aura",
+    "classes": ["Cleric", "Sorcerer"],
+    "level": 8,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": ""
+      },
+      "damType": "healing",
+      "conditions": [],
+      "statusEffect": [
+        { "name": "Concentration", "effect": {} },
+        { "name": "Advantage",
+          "effect": {
+            "rolls": "4",
+            "attribute": "ALL save" }
+        },
+        { "name": "Disadvantage",
+          "effect": {
+            "rolls": "-4",
+            "attribute": "attack rolls against"
+          }
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Incendiary Cloud",
+    "classes": ["Sorcerer","Wizard", "Cleric", "Druid"],
+    "level": 8,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "DEX",
+        "halfSave": true,
+        "damage": "10d8"
+      },
+      "damType": "fire",
+      "conditions": [],
+      "statusEffect": [
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {
+        "repeat": true
+      },
+      "extraEffect": {
+        "rolls": {
+          "rollType": "autoHit",
+          "saveType": "none",
+          "halfSave": "false",
+          "damage": "",
+          "damageMod": ""
+        },
+        "damType": "none",
+        "conditions": ["Blinded"],
+        "statusEffect": []
+      },
+      "lingSave": {},
+      "scaling": "1d8",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Maze",
+    "classes": ["Wizard", "Cleric"],
+    "level": 8,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "",
+        "halfSave": false,
+        "damage": ""
+      },
+      "damType": "none",
+      "conditions": ["Out of Combat"],
+      "statusEffect": [
+        {
+          "name": "Concentration",
+          "effect": {}
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": { "saveType": "INT" },
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Mind Blank",
+    "classes": ["Bard","Wizard", "Cleric"],
+    "level": 8,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": ""
+      },
+      "damType": "healing",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Immunity",
+          "effect": {
+            "damage": "*0",
+            "attribute": "psychic damage"
+          }
+        },
+        {
+          "name": "Immunity",
+          "effect": {
+            "damage": "*0",
+            "attribute": "Charmed condition"
+          }
+        }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Power Word Stun",
+    "classes": ["Bard","Sorcerer","Warlock","Wizard", "Cleric"],
+    "level": 8,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "",
+        "halfSave": false,
+        "damage": ""
+      },
+      "damType": "none",
+      "conditions": ["Stunned"],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": { "saveType": "CON" },
+      "scaling": "",
+      "specialNotes": ["hpCap150"]
+    }
+  },
+  {
+    "spellname": "Sunburst",
+    "classes": ["Druid","Sorcerer","Wizard"],
+    "level": 8,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "CON",
+        "halfSave": true,
+        "damage": "12d6"
+      },
+      "damType": "radiant",
+      "conditions": ["Blinded"],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {
+        "saveType": "CON"
+      },
+      "scaling": "",
+      "specialNotes": ["undeadDisadvantage", "oozeDisadvantage"]
+    }
+  },
+    {
+    "spellname": "Mass Heal",
+    "classes": ["Cleric", "Sorcerer"],
+    "level": 9,
+    "targeting": {
+      "self": false,
+      "number": 10,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": "70"
+      },
+      "damType": "healing",
+      "conditions": [],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": ["endBlindness"]
+    }
+  },
+  {
+    "spellname": "Meteor Swarm",
+    "classes": ["Sorcerer","Wizard", "Cleric"],
+    "level": 9,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "DEX",
+        "halfSave": true,
+        "damage": "40d6",
+        "damageMod": ""
+      },
+      "damType": ["fire", "bludgeoning", "AND"],
+      "conditions": [],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": []
+    }
+  },
+  {
+    "spellname": "Power Word Heal",
+    "classes": ["Bard","Cleric", "Sorcerer"],
+    "level": 9,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "healing",
+      "conditions": [],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": ["fullHeal", "endCondition"]
+    }
+  },
+  {
+    "spellname": "Power Word Kill",
+    "classes": ["Bard", "Sorcerer","Warlock","Wizard", "Cleric"],
+    "level": 9,
+    "targeting": {
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "none",
+      "conditions": ["Dead"],
+      "statusEffect": [],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": ["hpCap100"]
+    }
+  },
+  {
+    "spellname": "True Polymorph",
+    "classes": ["Bard","Warlock","Wizard", "Cleric"],
+    "level": 9,
+    "targeting": [
+      {
+        "targetType": "True Polymorph OBJECT INTO CREATURE",
+      "self": false,
+      "number": 0,
+      "rolls": {
+        "rollType": "autoHit",
+        "saveType": "none",
+        "halfSave": false,
+        "damage": "",
+        "damageMod": ""
+      },
+      "damType": "none",
+      "conditions": [],
+      "statusEffect": [
+        {
+          "name": "Summon",
+          "effect": {
+            "type": "",
+            "monsterName": "",
+            "crCap": "9",
+            "numSummons": "1"
+          }
+        },
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {},
+      "scaling": "",
+      "specialNotes": []
+    },
+      {
+        "targetType": "True Polymorph CREATURE INTO OBJECT",
+      "self": false,
+      "number": 1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "WIS",
+        "halfSave": false,
+        "damage": ""
+      },
+      "damType": "none",
+      "conditions": ["Incapacitated"],
+      "statusEffect": [
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": { "saveType": "WIS" },
+      "scaling": "",
+      "specialNotes": []
+    }
+    ]
+  },
+  {
+    "spellname": "Weird",
+    "classes": ["Wizard", "Warlock", "Cleric"],
+    "level": 9,
+    "targeting": {
+      "self": false,
+      "number": -1,
+      "rolls": {
+        "rollType": "save",
+        "saveType": "WIS",
+        "halfSave": false,
+        "damage": "4d10"
+      },
+      "damType": "psychic",
+      "conditions": ["Frightened"],
+      "statusEffect": [
+        { "name": "Concentration", "effect": {} }
+      ],
+      "lingEffect": {},
+      "extraEffect": {},
+      "lingSave": {
+        "saveType": "WIS"
+      },
+      "scaling": "",
+      "specialNotes": []
+    }
+  }
+]
