@@ -1,4 +1,4 @@
-from Action import Action
+from .Action import Action
 
 
 class Weapon(Action):

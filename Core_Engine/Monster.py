@@ -1,4 +1,4 @@
-from Stats import Stats
+from .Stats import Stats
 
 class Monster(Stats):
     def __init__(self, name, cr, cType, stats, hp, maxHP, ac, saveProfs, lResists, damResists, damImmunes, damVulns,

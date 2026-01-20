@@ -1,4 +1,4 @@
-from Action import Action
+from .Action import Action
 
 class Spell(Action):
     def __init__(self, name, lvl, selfTarget,
