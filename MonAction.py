@@ -1,27 +1,31 @@
 from Action import Action
 
-class Spell(Action):
-    def __init__(self, name, lvl, selfTarget,
-                 numTarget, rollType, saveType, halfSave, damageMod, diceNum, diceType,
-                 damType, conditions, statusEffects, lingEffects, extraEffect, lingSaves,
-                 scaling, specialNotes):
+class MonAction(Action):
+    def __init__(self, name, desc, selfTarget, numTarget, actionRange, shape,
+                 rollType, saveType, saveDC, halfSave, damageMod, diceNum, diceType,
+                 extraDamage, damType, conditions, statusEffects, lingEffects, extraEffect,
+                 lingSaves, actionCost, recharge, specialNotes):
         super().__init__()
         self.__name = name
-        self.__lvl = lvl
+        self.__desc = desc
         self.__selfTarget = selfTarget
         self.__numTarget = numTarget
+        self.__actionRange = actionRange
+        self.__shape = shape
         self.__rollType = rollType
         self.__saveType = saveType
+        self.__saveDC = saveDC
         self.__halfSave = halfSave
+        self.__extraDamage = extraDamage
         self.__damType = damType
         self.__conditions = conditions
         self.__statusEffects = statusEffects
         self.__lingEffects = lingEffects
         self.__extraEffect = extraEffect
         self.__lingSaves = lingSaves
-        self.__scaling = scaling
         self.__specialNotes = specialNotes
-
+        self.__actionCost = actionCost
+        self.__recharge = recharge
         self.setDice(diceNum, diceType, damageMod)
 
     def toDict(self):
@@ -30,28 +34,22 @@ class Spell(Action):
         else:
             damType = self.__damType
         return {
-            "spellname" : self.__name,
-            "level" : str(self.__lvl),
-            "targeting" : {
-                "self" : self.__selfTarget,
-                "number" : str(self.__numTarget),
-                "rolls" : {
-                    "rollType" : self.__rollType,
-                    "saveType" : self.__saveType,
-                    "halfSave" : self.__halfSave,
-                    "damage" : f"{self.getDiceNum()}d{self.getSides()}" if self.getDiceNum() > 1 and self.getSides() > 1 else "",
-                    "damageMod" : str(self.getDamMod())
-                },
-                "damType" : damType,
-                "conditions" : self.__conditions,
-                "statusEffect" : self.__statusEffects,
-                "lingEffect" : self.__lingEffects,
-                "extraEffect": self.__extraEffect,
-                "lingSave" : self.__lingSaves,
-                "scaling" : self.__scaling,
-                "specialNotes" : self.__specialNotes
-            }
-
+            "name" : self.__name,
+            "number" : str(self.__numTarget),
+            "rolls": {
+                "rollType": self.__rollType,
+                "saveType": self.__saveType,
+                "halfSave": self.__halfSave,
+                "damage": f"{self.getDiceNum()}d{self.getSides()}" if self.getDiceNum() > 1 and self.getSides() > 1 else "",
+                "damageMod": str(self.getDamMod())
+            },
+            "damType": damType,
+            "conditions": self.__conditions,
+            "statusEffect": self.__statusEffects,
+            "lingEffect": self.__lingEffects,
+            "extraEffect": self.__extraEffect,
+            "lingSave": self.__lingSaves,
+            "specialNotes": self.__specialNotes
         }
 
     def getName(self):

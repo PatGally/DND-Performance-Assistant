@@ -2,7 +2,8 @@ from Stats import Stats
 
 class Monster(Stats):
     def __init__(self, name, cr, cType, stats, hp, maxHP, ac, saveProfs, lResists, damResists, damImmunes, damVulns,
-                 conImmunes, activeConditions, activeStatusEffects, lairAction, legAction, enemy):
+                 conImmunes, activeConditions, activeStatusEffects, lairAction, magicResist,
+                 enemy, actions, spellInfo, legActions):
         super().__init__(stats, damImmunes, damResists, damVulns, conImmunes, activeStatusEffects, activeConditions)
         self.__name = name
         self.__cr = cr
@@ -21,8 +22,12 @@ class Monster(Stats):
         }
         self.__lResists = lResists
         self.__lairAction = lairAction
-        self.__legAction = legAction
+        self.__magicResist = magicResist #TODO
         self.__enemy = enemy
+        self.__actions = actions #TODO
+        self.__spellInfo = spellInfo #TODO
+        self.__caster = True if spellInfo else False
+        self.__legActions = legActions #TODO
 
     def setName(self, name):
         self.__name = name
@@ -48,8 +53,6 @@ class Monster(Stats):
         return self.__saveProfs[stat]
     def hasLairAction(self):
         return self.__lairAction
-    def hasLegAction(self):
-        return self.__legAction
     def isEnemy(self):
         return self.__enemy
 
@@ -72,7 +75,10 @@ class Monster(Stats):
             "conImmunes" : self.getConImmunities(),
             "activeCons" : self.getActiveConditions(),
             "activeStatusEffects" : self.getActiveStatusEffects(),
+            "magicResist" : self.__magicResist,
             "lairAction" : self.__lairAction,
-            "legAction" : self.__legAction,
-            "enemy": self.__enemy
+            "enemy": self.__enemy,
+            "actions" : self.__actions,
+            "legActions" : self.__legActions,
+            "spellInfo" : self.__spellInfo
         }
