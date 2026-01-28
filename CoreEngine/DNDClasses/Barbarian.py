@@ -8,9 +8,62 @@ class Barbarian(Player):
         self.__rageCharges = self.calcRageCharges()
         self.__abilities = [
             {
-                "name": "Extra Attack",
-                "lvl" : "5",
-                "total": 2,
+                "name" : "Rage",
+                "lvl" : 1,
+                "action" : {
+                    "action": {
+                        "name": "Rage",
+                        "desc": "",
+                        "actionRange": "",
+                        "numTarget": "0",
+                        "shape": "",
+                        "rolls": {
+                            "rollType": "autoHit",
+                            "saveType": "",
+                            "halfSave": "",
+                            "saveDC": "",
+                            "damage": "",
+                            "attackBonus": "",
+                            "damMod": ""
+                        },
+                        "damType": [],
+                        "conditions": [],
+                        "statusEffect": [
+                            {
+                                "name": "Advantage",
+                                "effect": {
+                                    "roll": "4",
+                                    "attribute": ["STR save"],
+                                    "resultID": []
+                                },
+                            },
+                            {
+                                "name": "Resistance",
+                                "effect": {
+                                    "damage": "/2",
+                                    "attribute": ["bludgeoning", "piercing", "slashing"]
+                                }
+                            },
+                            {
+                                "name": "Buff",
+                                "effect": {
+                                    "roll": "3",
+                                    "attribute": [
+                                        "ALL damage"
+                                    ]
+                                }
+                            },
+                        ],
+                        "lingEffect": {},
+                        "extraEffect": {},
+                        "lingSave": {},
+
+                        "actionCost": "free action",
+                        "recharge": [],
+                        "specialNotes": [],
+                        "extraDamage": []
+                    }
+                }
             },
             {
                 "name": "Reckless Attack",
@@ -23,11 +76,11 @@ class Barbarian(Player):
                         "shape": "",
 
                         "rolls": {
-                            "rollType": "autoHit",     # or "save"
-                            "saveType": "",        # "STR", "CON", "DEX", etc
+                            "rollType": "autoHit",
+                            "saveType": "",
                             "halfSave": "",
                             "saveDC": "",
-                            "damage": "",          # e.g. "2d6"
+                            "damage": "",
                             "attackBonus": "",
                             "damMod": ""
                         },
@@ -62,6 +115,11 @@ class Barbarian(Player):
                         "extraDamage": []
                     }
             },
+            {
+                "name": "Extra Attack",
+                "lvl": "5",
+                "total": 2,
+            },
 
          ]
 
@@ -79,3 +137,13 @@ class Barbarian(Player):
         elif self.getLevel() == 20:
             return 999
         return -1
+
+    def getAbilities(self):
+        if self.getLevel() < 1:
+            return None
+        elif self.getLevel() < 2:
+            return self.__abilities[0]
+        elif self.getLevel() < 5:
+            return self.__abilities[0:2]
+        else:
+            return self.__abilities

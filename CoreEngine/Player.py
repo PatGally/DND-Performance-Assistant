@@ -1,8 +1,8 @@
 import math
 
-from Spell import Spell
-from Stats import Stats
-from Weapon import Weapon
+from .Spell import Spell
+from .Stats import Stats
+from .Weapon import Weapon
 
 
 class Player(Stats):

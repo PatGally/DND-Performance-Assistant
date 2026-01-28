@@ -1,4 +1,4 @@
-from Action import Action
+from .Action import Action
 
 class MonAction(Action):
     def __init__(self, name, desc, selfTarget, numTarget, actionRange, shape,
