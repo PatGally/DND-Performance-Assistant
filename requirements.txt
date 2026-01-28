@@ -1,5 +1,3 @@
 scipy
-openpyxl
-rich
 pymongo
 dotenv

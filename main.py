@@ -4,6 +4,7 @@ import json
 
 import math
 import random
+from json import JSONDecodeError
 
 import openpyxl
 from openpyxl.utils import get_column_letter
@@ -14,11 +15,8 @@ from rich.tree import Tree
 from rich.console import Console
 from rich.table import Table
 
-from Weapon import Weapon
-from Spell import Spell
-from Monster import Monster
-from Player import Player
-from Encounter import Encounter
+from Core_Engine import Weapon, Spell, Monster, Player, Encounter, MonAction
+from Core_Engine.DNDClasses import Barbarian, Bard, Cleric, Druid, Fighter, Monk, Paladin, Ranger, Rogue, Sorcerer
 
 from datetime import date, datetime
 import os
@@ -26,7 +24,7 @@ import os
 console = Console()
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(BASE_DIR, "data")
+DATA_DIR = os.path.join(BASE_DIR, "Core_Engine/data")
 
 PLAYER_LIST_FILE = os.path.join(DATA_DIR, "player_list.json")
 MONSTER_LIST_FILE = os.path.join(DATA_DIR, "monster_list.json")
@@ -45,9 +43,11 @@ else:
     TEST_MODE = False
 
 
-#PLAYER/SPELL/WEAPON CREATE/SAVE/LOAD METHODS
+#PLAYER/MONSTER/SPELL/WEAPON CREATE/SAVE/LOAD METHODS
 def getPlayerStats(data):
+    #Creates a player object based on pulled JSON player data.
     stats = data["stats"]
+    saveProfs = stats["saveProfs"]
     playerName = stats["name"]
     playerLvl = int(stats["level"])
     playerAC = int(stats["ac"])
@@ -68,8 +68,9 @@ def getPlayerStats(data):
     damResists = stats["damResists"]
     damVulns = stats["damVulns"]
 
-    player = Player(playerName, playerArray, playerAC, playerHP, class_type,
-                    playerLvl, conImmunities, damImmunes, damResists, damVulns, activeStatusEffects, activeConditions)
+    player = Player(playerName, playerArray,  saveProfs,playerAC, playerHP,
+                    class_type,playerLvl, conImmunities, damImmunes,
+        damResists, damVulns, activeStatusEffects, activeConditions)
     return player
 def getSavedWeapons(player, data):
     weapons = data["weapons"]
@@ -92,8 +93,12 @@ def getSavedSpells(player, data):
         spellLvl = int(spell["level"])
 
         target = spell["targeting"]
+        if isinstance(target, list):
+            target = target[0]
         targetNum = int(target["number"])
         damType = target["damType"]
+        if len(damType) == 1:
+            damType = damType[0]
         selfTarget = False
         if "self" in target and target["self"]:
             selfTarget = True
@@ -118,6 +123,7 @@ def getSavedSpells(player, data):
         specialNotes = False
         if "specialNotes" in target:
             specialNotes = target["specialNotes"]
+        actionCost = target["actionCost"]
 
         rolls = target["rolls"]
         rollType = rolls["rollType"]
@@ -157,7 +163,7 @@ def getSavedSpells(player, data):
         player.addSpell(spellName, spellLvl, selfTarget,
                         targetNum, rollType, saveType, halfSave, damageMod, diceNum, diceType,
                         damType, conditions, statusEffect, lingEffect, extraEffect, lingSaves,
-                        scaling, specialNotes)
+                        scaling, actionCost, specialNotes)
 def characterSelectionMenu(partydata):
     print("Select desired character: ")
     i = 0
@@ -233,7 +239,7 @@ def addChosenSpell(spell, player):
         spellName = spell["spellname"]
         spellLvl = spell["level"]
 
-        if isinstance(spell["targeting"], list): #Multiple possible effects
+        if isinstance(spell["targeting"], list) and len(spell["targeting"]) > 1: #Multiple possible effects
             for spellTarget in spell["targeting"]:
                 newSpell = {
                     "spellname": spellTarget["targetType"],
@@ -242,10 +248,16 @@ def addChosenSpell(spell, player):
                 }
                 addChosenSpell(newSpell, player) #Adds the multiple types of effects as individual spells.
         else:
-            targeting = spell["targeting"]
+            if isinstance(spell["targeting"], list):
+                targeting = spell["targeting"][0]
+            else:
+                targeting = spell["targeting" ]
             selfTarget = targeting["self"]
             targetNum = targeting["number"]
-            damType = targeting["damType"]
+            damType = targeting["damType"] #TODO: Ensure that damType is always a list when saved.
+            #TODO: Ensure that action costs are saved and loaded.
+            if len(damType) == 1:
+                damType = damType[0]
             conditions = None
             if len(targeting["conditions"]) != 0:
                 conditions = targeting["conditions"]
@@ -265,6 +277,7 @@ def addChosenSpell(spell, player):
             specialNotes = None
             if len(targeting["specialNotes"]) != 0:
                 specialNotes = targeting["specialNotes"]
+            actionCost = targeting["actionCost"]
 
             spellRolls = targeting["rolls"]
             rollType = spellRolls["rollType"]
@@ -304,7 +317,7 @@ def addChosenSpell(spell, player):
             player.addSpell(spellName, spellLvl, selfTarget,
                             targetNum, rollType, saveType, halfSave, damageMod, diceNum, diceType,
                             damType, conditions, statusEffect, lingEffect, extraEffect, lingSaves,
-                            scaling, specialNotes)
+                            scaling, actionCost, specialNotes)
 def chooseSpellsExecuteMenu(sChoice, data, player):
     idx = findSpell(sChoice, data)
     if idx != -1:
@@ -393,7 +406,7 @@ def choosePlayerStats():
     damResists = ""
     damVulns = ""
 
-    player = Player(name, stats, ac, hp, className, level, conImmunities,
+    player = Player(name, stats, {}, ac, hp, className, level, conImmunities,
                     damImmunes, damResists, damVulns, activeStatusEffects, activeConditions)
     return player
 def savePlayer(player, filename):
@@ -415,10 +428,12 @@ def savePlayer(player, filename):
         "conImmunities": player.getConImmunities(),
         "activeStatusEffects": player.getActiveStatusEffects(),
         "activeConditions": player.getActiveConditions(),
+        "saveProfs" : [str(player.getStat(stat)) for stat in ["STR", "DEX", "CON", "INT", "WIS", "CHA"]],
         "damImmunes": player.getDamImmunities(),
         "damResists": player.getDamResistances(),
         "damVulns": player.getDamVulnerabilities(),
-        "statArray": [str(player.getStat(stat)) for stat in ["STR", "DEX", "CON", "INT", "WIS", "CHA"]]
+        "statArray": [str(player.getStat(stat)) for stat in ["STR", "DEX", "CON", "INT", "WIS", "CHA"]],
+        "spellSlots" : player.getSpellSlots()
     }
 
     spells_list = []
@@ -497,12 +512,315 @@ def printMonsterChoices():
         chunk = entries[i:i + 4]
         # left-align each chunk inside the fixed width
         print("".join(f"{entry:<{col_width}}" for entry in chunk))
+def loadMonsterActions(monsterData):
+    #Loads the actions of a given monster into python objects from JSON format.
+    """ Action example:
+    {
+                "name": "Bite",
+                "desc": "Melee Weapon Attack: +11 to hit, reach 10 ft., one target. Hit: 17 (2d10 + 6) piercing damage plus 4 (1d8) acid damage.",
+                "actionRange": "10",
+                "numTarget": 1,
+                "shape": "",
+                "rolls": {
+                    "rollType": "toHit",
+                    "saveType": "",
+                    "halfSave": false,
+                    "saveDC": "",
+                    "damage": "2d10",
+                    "attackBonus": 11,
+                    "damMod": 6
+                },
+                "damType": [
+                    "piercing"
+                ],
+                "conditions": [
+                    ""
+                ],
+                "statusEffect": [],
+                "lingEffect": {},
+                "extraEffect": {},
+                "lingSave": {},
+                "actionCost": "action",
+                "recharge": "",
+                "specialNotes": [],
+                "extraDamage": [
+                    {
+                        "dice": "1d8",
+                        "mod": 0,
+                        "type": "acid"
+                    }
+                ]
+    """
+    actionData = monsterData["actions"]
+    actions = []
+    for action in actionData:
+        actionName = action["name"]
+        # if isinstance(action["targeting"][0], list) and len(action["targeting"][0] > 1):
+        # Multiple possible effects.
+        # NOTE: This is not possible right now, as all current statblocks are NOT including actions with multiple possible effects.
+        # It only takes the first possible effect from the list. If this is changed later, this code will be relevant.
+        #     for actionTarget in action["targeting"][0]:
+        #         newaction = {
+        #             "actionname": actionTarget["targetType"],
+        #             "level": actionLvl,
+        #             "targeting": actionTarget
+        #         }
+        #         addChosenaction(newaction, player)  # Adds the multiple types of effects as individual actions.
+        # else:
+        numTarget = action["numTarget"]
+        selfTarget = True if numTarget == 0 else False
+        damType = action["damType"]
+        if len(damType) == 1:
+            damType = damType[0]
+        actionCost = "action"
+        recharge = action["recharge"]
+        actionRange = action["actionRange"] #Unused for now, comes into play in mapping system
+        actionDesc = action["desc"]
+        actionShape = action["shape"] #Unused for now, comes into play in mapping system
+        extraDamage = action["extraDamage"] #TODO: Ensure extra damage is added in and calculated in expectedDamage calcs later on.
+
+        conditions = None
+        if len(action["conditions"]) != 0:
+            conditions = action["conditions"]
+        statusEffect = None
+        if action["statusEffect"]:
+            statusEffect = action["statusEffect"]
+        lingEffect = None
+        if action["lingEffect"]:
+            lingEffect = action["lingEffect"]
+        extraEffect = None
+        if action["extraEffect"]:
+            extraEffect = action["extraEffect"]
+        lingSaves = None
+        if action["lingSave"]:
+            lingSaves = action["lingSave"]
+        specialNotes = None
+        if len(action["specialNotes"]) != 0:
+            specialNotes = action["specialNotes"]
+
+        actionRolls = action["rolls"]
+        rollType = actionRolls["rollType"]
+        saveType = actionRolls["saveType"]
+        halfSave = actionRolls["halfSave"]
+        saveDC = actionRolls["saveDC"]
+        damageDice = actionRolls["damage"]
+        attackBonus = int(actionRolls["attackBonus"]) if "attackBonus" in actionRolls and actionRolls["attackBonus"] else ""
+        diceNum = 0
+        diceType = 0
+        if damageDice != "":
+            damageDice = damageDice.split("d")
+            diceNum = int(damageDice[0])
+            diceType = int(damageDice[1])
+        damageMod = 0
+        if "damMod" in actionRolls and actionRolls["damMod"] != "":  # Accounts for schema error
+            damageMod = int(actionRolls["damMod"])
+        actions.append(MonAction(actionName, actionDesc, selfTarget, numTarget, actionRange, actionShape,
+                 rollType, saveType, saveDC, halfSave, damageMod, diceNum, diceType,
+                 attackBonus, extraDamage, damType, conditions, statusEffect, lingEffect, extraEffect,
+                 lingSaves, actionCost, recharge, specialNotes))
+    return actions
+def loadMonsterSpells(monsterData):
+    """
+        {
+            "type": "wisdom",
+            "DC": "18",
+            "attackRoll": "10",
+            "spells": [
+                {
+                    "name": "sacred flame"
+                },
+                {
+                    "name": "spare the dying"
+                },
+                {
+                    "name": "thaumaturgy"
+                },
+                {
+                    "name": "command"
+                },
+                {
+                    "name": "detect evil and good"
+                },
+                {
+                    "name": "detect magic"
+                },
+                {
+                    "name": "lesser restoration"
+                },
+                {
+                    "name": "zone of truth"
+                },
+                {
+                    "name": "dispel magic"
+                },
+                {
+                    "name": "tongues"
+                },
+                {
+                    "name": "banishment"
+                },
+                {
+                    "name": "freedom of movement"
+                },
+                {
+                    "name": "flame strike"
+                },
+                {
+                    "name": "greater restoration"
+                },
+                {
+                    "name": "heroes' feast"
+                }
+            ],
+            "spellSlots": [
+                [
+                    "4",
+                    "4"
+                ],
+                [
+                    "3",
+                    "3"
+                ],
+                [
+                    "3",
+                    "3"
+                ],
+                [
+                    "3",
+                    "3"
+                ],
+                [
+                    "2",
+                    "2"
+                ],
+                [
+                    "1",
+                    "1"
+                ]
+            ]
+        },
+    """
+    def loadSpell(spell):
+        spellName = spell["spellname"]
+        spellLvl = spell["level"]
+
+        if isinstance(spell["targeting"], list) and len(
+                spell["targeting"]) > 1:  # Multiple possible effects
+            for spellTarget in spell["targeting"]:
+                newSpell = {
+                    "spellname": spellTarget["targetType"],
+                    "level": spellLvl,
+                    "targeting": spellTarget
+                }
+
+                loadSpell(newSpell)  # Adds the multiple types of effects as individual spells.
+        else:
+            if isinstance(spell["targeting"], list):
+                # TODO: Change so that "targeting" is always a list when saved, even with 1 option.
+                targeting = spell["targeting"][0]
+            else:
+                targeting = spell["targeting"]
+            selfTarget = targeting["self"]
+            targetNum = targeting["number"]
+            damType = targeting["damType"]  # TODO: Ensure that damType is always a list when saved.
+            # TODO: Ensure that action costs are saved and loaded.
+            if len(damType) == 1:
+                damType = damType[0]
+            conditions = None
+            if len(targeting["conditions"]) != 0:
+                conditions = targeting["conditions"]
+            statusEffect = None
+            if targeting["statusEffect"]:
+                statusEffect = targeting["statusEffect"]
+            lingEffect = None
+            if targeting["lingEffect"]:
+                lingEffect = targeting["lingEffect"]
+            extraEffect = None
+            if targeting["extraEffect"]:
+                extraEffect = targeting["extraEffect"]
+            lingSaves = None
+            if targeting["lingSave"]:
+                lingSaves = targeting["lingSave"]
+            scaling = targeting["scaling"]
+            specialNotes = None
+            if len(targeting["specialNotes"]) != 0:
+                specialNotes = targeting["specialNotes"]
+
+            spellRolls = targeting["rolls"]
+            rollType = spellRolls["rollType"]
+            saveType = spellRolls["saveType"]
+            halfSave = spellRolls["halfSave"]
+            damageDice = spellRolls["damage"]
+            diceNum = 0
+            diceType = 0
+            if damageDice != "":
+                damageDice = damageDice.split("d")
+                diceNum = int(damageDice[0])
+                diceType = int(damageDice[1])
+            damageMod = 0
+            if "damageMod" in spellRolls:  # Accounts for schema error
+                if spellRolls["damageMod"] != "":
+                    damageMod = int(spellRolls["damageMod"])
+            return {
+                "spellname": spellName,
+                "level": spellLvl,
+                "targeting": {
+                    "self": selfTarget,
+                    "number": str(targetNum),
+                    "rolls": {
+                        "rollType": rollType,
+                        "saveType": saveType,
+                        "halfSave": halfSave,
+                        "damage": f"{diceNum}d{diceType}",
+                        "damMod" : damageMod
+                    },
+                    "damType": damType,
+                    "conditions": conditions,
+                    "statusEffect": statusEffect,
+                    "lingEffect": lingEffect,
+                    "extraEffect": extraEffect,
+                    "lingSave": lingSaves,
+                    "scaling": scaling,
+                    "specialNotes": specialNotes
+                }
+            }
+    #Converts string names to actual spells if they exist in the spell list.
+    spellJSON = monsterData["spellInfo"]
+    if not spellJSON:
+        return {}
+    spellType = spellJSON["type"]
+    spellDC = spellJSON["DC"]
+    spellAttack = spellJSON["attackRoll"]
+    spells = spellJSON["spells"]
+    with open(SPELL_LIST_FILE, "r") as rf:
+        rawSpellData =json.load(rf)
+        for i, spell in enumerate(spells):
+            if spell["name"].lower() in [s["spellname"].lower() for s in rawSpellData]:
+                spellIdx = [s["spellname"].lower() for s in rawSpellData].index(spell["name"].lower())
+                spells[i] = loadSpell(rawSpellData[spellIdx])
+    if "spellSlots" in spellJSON:
+        spellSlots = spellJSON["spellSlots"]
+    else:
+        spellSlots = []
+    spellInfo = {
+        "type": spellType,
+        "DC": spellDC,
+        "attackRoll" : spellAttack,
+        "spells" : spells,
+        "spellSlots" : spellSlots,
+    }
+    return spellInfo
 
 #ENCOUNTER CREATE/SAVE/LOAD METHODS
 def chooseEncounter():
     #prints all encounters saved in encounter_list.json, and returns the index of the chosen encounter
-    with open(ENCOUNTER_LIST_FILE, "r") as f:
-        encounters = json.load(f)
+    try:
+        with open(ENCOUNTER_LIST_FILE, "r") as f:
+            encounters = json.load(f)
+    except JSONDecodeError:
+        return None
+    except FileNotFoundError:
+        return None
     if len(encounters) != 0:
         entries = []
         for encounter in encounters:
@@ -568,11 +886,16 @@ def loadEncounter(encounterIdx):
         activeConditions = monsterJSON["activeCons"]
         activeStatusEffects = monsterJSON["activeStatusEffects"]
         lairAction = bool(monsterJSON["lairAction"])
-        legAction = bool(monsterJSON["legAction"])
+        magicResist = monsterJSON.get("magicResist", False)
+        legActions = monsterJSON.get("legActions", [])
         enemy = bool(monsterJSON["enemy"])
-        encounter.addMonster(Monster(name, cr, cType, stats, hp, maxHP, ac, saveProfs, lResists,
-                                     damResists, damImmunes, damVulns, conImmunes, activeConditions, activeStatusEffects,
-                                     lairAction, legAction, enemy))
+        actions = loadMonsterActions(monsterJSON)
+        spellInfo = loadMonsterSpells(monsterJSON)
+        encounter.addMonster(Monster(name, cr, cType, stats, hp, maxHP,
+                                     ac, saveProfs, lResists,damResists,
+                                     damImmunes, damVulns, conImmunes, activeConditions,
+                                     activeStatusEffects,lairAction, magicResist,
+                                     enemy, actions, spellInfo, legActions))
 
     for resultJSON in encounterData["results"]:
         encounter.addResult(resultJSON)
@@ -618,29 +941,31 @@ def saveEncounter(encounter, filename, autosave=False):
 
     player_list = []
     for i in range(encounter.playerSize()):
+        player = encounter.getPlayer(i)
         stats_dict = {
-            "name": encounter.getPlayer(i).getName(),
-            "level": str(encounter.getPlayer(i).getLevel()),
-            "ac": str(encounter.getPlayer(i).getAC()),
-            "hp" : str(encounter.getPlayer(i).getHP()),
-            "maxHP": str(encounter.getPlayer(i).getMaxHP()),
-            "class": encounter.getPlayer(i).getClass(),
-            "conImmunities": encounter.getPlayer(i).getConImmunities(),
-            "damImmunes": encounter.getPlayer(i).getDamImmunities(),
-            "damResists": encounter.getPlayer(i).getDamResistances(),
-            "damVulns": encounter.getPlayer(i).getDamVulnerabilities(),
-            "activeStatusEffects": encounter.getPlayer(i).getActiveStatusEffects(),
-            "activeConditions": encounter.getPlayer(i).getActiveConditions(),
-            "statArray": [str(encounter.getPlayer(i).getStat(stat)) for stat in ["STR", "DEX", "CON", "INT", "WIS", "CHA"]]
+            "name": player.getName(),
+            "level": str(player.getLevel()),
+            "ac": str(player.getAC()),
+            "hp": str(player.getHP()),
+            "class": player.getClass(),
+            "conImmunities": player.getConImmunities(),
+            "activeStatusEffects": player.getActiveStatusEffects(),
+            "activeConditions": player.getActiveConditions(),
+            "saveProfs": [str(player.getStat(stat)) for stat in ["STR", "DEX", "CON", "INT", "WIS", "CHA"]],
+            "damImmunes": player.getDamImmunities(),
+            "damResists": player.getDamResistances(),
+            "damVulns": player.getDamVulnerabilities(),
+            "statArray": [str(player.getStat(stat)) for stat in ["STR", "DEX", "CON", "INT", "WIS", "CHA"]],
+            "spellSlots": player.getSpellSlots()
         }
 
         spells_list = []
-        for j in range(encounter.getPlayer(i).getSpellLength()):
-            spells_list.append(encounter.getPlayer(i).getSpell(j).toDict())
+        for j in range(player.getSpellLength()):
+            spells_list.append(player.getSpell(j).toDict())
 
         weapons_list = []
-        for j in range(encounter.getPlayer(i).getWeaponLength()):
-            weapons_list.append(encounter.getPlayer(i).getWeapon(j).toDict())
+        for j in range(player.getWeaponLength()):
+            weapons_list.append(player.getWeapon(j).toDict())
 
         player_dict = {
             "stats": stats_dict,
@@ -728,24 +1053,29 @@ def createEncounter():
         if found:
             monChoice += str(numAdded)
             cr = monsters[idx]["cr"]
-            creatureType = monsters[idx]["creatureType"]
+            cType = monsters[idx]["creatureType"]
             stats = monsters[idx]["statArray"]
             hp = monsters[idx]["hit_points"]
             maxHP = hp
             ac = monsters[idx]["AC"]
-            saves = monsters[idx]["saveProfs"]
+            saveProfs = monsters[idx]["saveProfs"]
             lResists = monsters[idx]["lResists"]
             damResists = monsters[idx]["damResists"]
             damImmunes = monsters[idx]["damImmunes"]
             damVulns = monsters[idx]["damVulns"]
             conImmunes = monsters[idx]["conImmunes"]
-            lairActions = False if monsters[idx]["lairAction"] == "False" else True
-            legActions = False if monsters[idx]["legAction"] == "False" else True
+            lairAction = False if monsters[idx]["lairAction"] in [False, "False", "false"] else True
             enemy = True
+            actions = loadMonsterActions(monsters[idx])
+            spellInfo = loadMonsterSpells(monsters[idx])
+            magicResist = monsters[idx].get("magicResist", False)
+            legActions = monsters[idx].get("legActions", [])
 
-            encounter.addMonster(Monster(monChoice, cr, creatureType, stats, hp, maxHP, ac, saves,
-                              lResists, damResists, damImmunes, damVulns,
-                              conImmunes, [], [], lairActions, legActions, enemy))
+            encounter.addMonster(Monster(monChoice, cr, cType, stats, hp, maxHP,
+                                         ac, saveProfs, lResists, damResists,
+                                         damImmunes, damVulns, conImmunes, [],
+                                        [], lairAction, magicResist,
+                                         enemy, actions, spellInfo, legActions))
             print("Monster added to encounter!")
             numAdded += 1
         else:
@@ -781,13 +1111,12 @@ def setInitiative(encounter):
             'currentTurn': False
         })
         if encounter.getMonster(i).hasLairAction():
-            # iValues.append({
-            #     'name': encounter.getMonster(i).getName() + " LAIR",
-            #     'iValue': 20,
-            #     'turnType': 'LairAction',
-            #     'currentTurn': False
-            # })
-            pass #TODO: Temporarily removing for simplified pytest logic.
+            iValues.append({
+                'name': encounter.getMonster(i).getName() + " LAIR",
+                'iValue': 20,
+                'turnType': 'LairAction',
+                'currentTurn': False
+            })
 
     def sort_key(c):
         if c['turnType'] == 'Player':
@@ -806,6 +1135,9 @@ def setInitiative(encounter):
     initiative = sorted(iValues, key=sort_key, reverse=True)
 
     initiative[0]["currentTurn"] = True
+    for c in initiative:
+        c["actionResource"] = 1
+        c["bonusActionResource"] = 1
     encounter.setInitiative(initiative)
 
     return initiative
@@ -1065,7 +1397,6 @@ def removeCondition(condToRemove, creature):
             return creature.removeCondition(condToRemove)
     return False
 def addStatusEffect(effect, creature, resultID):
-    #TODO: Needs significant testing.
     effect = copy.deepcopy(effect)
     if "attribute" in effect["effect"]:
         effect["effect"]["attribute"] = ensureList(effect["effect"]["attribute"])
@@ -1153,7 +1484,14 @@ def enemyCanMutate(newEffect, creature):
             if effect["effect"]["resultID"] == -1:
                 return True
             return False
-def enemyTurn(initiative, encounter):
+def enemyTurnRULESET(initiative, encounter):
+    #TODO: Make a "Ruleset mode" that allows for monster statblocks to be used.
+    # If they choose an action that is not properly loaded, then boot up manual mode.
+    # Give them an option to go straight into manual mode as well.
+    # NOTE: "Manual mode" is what is already coded here. Will eventually rewrite to use user input from the front end.
+
+    pass
+def enemyTurnMANUAL(initiative, encounter):
     printCreatureNames(initiative)
     affectedCreatures = enemySetTargets(initiative, True)
     for creature in affectedCreatures:
@@ -1481,12 +1819,15 @@ def enemySetTargets(initiative, duplicateTargets):
     return affectedCreatures
 
 #GENERAL HELPER METHODS
-def translateBasicAction(player, action):
+def translateBasicAction(creature, action):
+        #Should work for both monsters and players
         actionName = action["spellname"]
-        targeting = action["targeting"]
+        targeting = action["targeting"][0]
         selfTarget = targeting["self"]
         targetNum = targeting["number"]
         damType = targeting["damType"]
+        if len(damType) == 1:
+            damType = damType[0]
         conditions = None
         if len(targeting["conditions"]) != 0:
             conditions = targeting["conditions"]
@@ -1520,15 +1861,15 @@ def translateBasicAction(player, action):
             diceType = int(damageDice[1])
         damageMod = 0
         if "damageMod" in targeting:  # Accounts for schema error
-            if actionRolls["damageMod"] == "spellmod":
-                damageMod = player.getSpellMod()
+            if actionRolls["damageMod"] == "spellmod" and isinstance(creature, Player):
+                damageMod = creature.getSpellMod()
             elif actionRolls["damageMod"] != "":
                 damageMod = int(actionRolls["damageMod"])
 
         return Spell(actionName, -1, selfTarget,
                      targetNum, rollType, saveType, halfSave, damageMod, diceNum, diceType,
                      damType, conditions, statusEffect, lingEffect, extraEffect, lingSaves,
-                     scaling, specialNotes)
+                     scaling, "action",specialNotes)
 def defineBasicActions(actionNames, actionTypes, actionProbs, actionEDams, actionImpacts, definedActions, player, initiative):
     #Load basic actions
     try:
@@ -1804,11 +2145,14 @@ def translateLingEffect(action, lingEffect, spellMod):
     else:
         statusEffect = []
 
+    lingDamType = lingEffect["damType"]
+    if isinstance(lingDamType, list) and len(lingDamType) == 1:
+        lingDamType = lingDamType[0]
     lingSpell = Spell(
         action.getName(), action.getLvl(), action.getSelfTarget(), numTarget,
         lingEffect["rolls"]["rollType"], lingEffect["rolls"]["saveType"], lingEffect["rolls"]["halfSave"],
-        damMod, lingDieNum, lingDieType, lingEffect["damType"],
-        conditions, statusEffect, {}, {}, {}, "", specialNotes
+        damMod, lingDieNum, lingDieType, lingDamType,
+        conditions, statusEffect, {}, {}, {}, "", "",specialNotes
     )
     return lingSpell
 def calcLingeringEffectProbability(player, action, lingEffect, initiative, successProb):
@@ -2198,7 +2542,6 @@ def influenceToHit(player, creatureStats, toHitMod, critChance):
 
     return toHitMod, critChance
 def calcIndividualToHitProbability(player, action, creature):
-    #TODO: Needs testing.
     creatureStats = creature["Statblock"]
     modifier = 0
     if (creature["turnType"] == "Monster"
@@ -3287,7 +3630,6 @@ def resolve_summon_spell(encounter, player, spell, initiative_list):
             console.print(f"{i}. CR ≤ {cap}")
         choice_idx = -1
         while choice_idx < 1 or choice_idx > len(cr_caps):
-            #TODO: Needs input validation to make sure a chosen CR is actually in the list of options.
             try:
                 choice_idx = int(input(f"CR Cap(0-{len(cr_caps)})> ").strip())
             except ValueError:
@@ -3311,7 +3653,7 @@ def resolve_summon_spell(encounter, player, spell, initiative_list):
             if eff.get("type"):
                 allowed_types.add(eff["type"].strip())
 
-    if total_to_summon <= 0: #TODO: Shouldn't be possible.
+    if total_to_summon <= 0:
         console.print("[yellow]No summons required for the chosen CR track.[/yellow]")
         return [], initiative_list, []
 
@@ -3340,7 +3682,6 @@ def resolve_summon_spell(encounter, player, spell, initiative_list):
         return [], initiative_list, []
 
     # 6) Ask for a shared initiative value (all summons share the same)
-    #TODO: Is getting a ValueError every time when looking from EncounterRunnerV2.
     try:
         shared_i = int(input("Initiative value for all summoned creatures: ").strip())
     except ValueError:
@@ -3402,12 +3743,16 @@ def resolve_summon_spell(encounter, player, spell, initiative_list):
         damVulns = chosen["damVulns"]
         conImmunes = chosen["conImmunes"]
         lairActions = False if chosen["lairAction"] == "False" else True
-        legActions = False if chosen["legAction"] == "False" else True
         enemy = False  # summoned to your side
+        actions = loadMonsterActions(chosen)
+        spellInfo = loadMonsterSpells(chosen)
+        magicResist = chosen.get("magicResist", False)
+        legActions = chosen.get("legActions", [])
 
         mon_obj = Monster(unique_name, cr, cType, stats, hp, maxHP, ac, saves,
                           lResists, damResists, damImmunes, damVulns,
-                          conImmunes, [], [], lairActions, legActions, enemy)
+                          conImmunes, [], [], lairActions,
+                          magicResist, enemy, actions, spellInfo, legActions)
 
         # 9) Add SwitchSides status effect with resultID
         switch_effect = {
@@ -4122,7 +4467,6 @@ def playerActionResolution(player, action, actionStats, initiative):
     return actionResult, initiative
 def endSpellEffect(effect, idx, creature, initiative):
     #Ends any long-lasting effect that a creature has from a given spell - and ends concentration if nobody else is under that spell.
-    #TODO: Make sure that this works with conditions to pull effectID, and end conditions.
     if "effect" in effect:
         effectID = effect["effect"]["resultID"][idx]
         if idx == 0:
@@ -4176,15 +4520,17 @@ def endSpellEffect(effect, idx, creature, initiative):
 def preTurnCheck(creature, encounter, initiative):
     def procPreEffect(lingSpell):
         # HP logic
-        if lingSpell["targeting"]["rolls"]["damage"]:
+        if lingSpell["targeting"][0]["rolls"]["damage"]:
             damage = int(input(f"{lingSpell["spellname"]} - How much damage was applied?"))
         else:
             damage = 0
-        if lingSpell["targeting"]["extraEffect"]:
-            if lingSpell["targeting"]["extraEffect"]["rolls"]["damage"]:
+        if lingSpell["targeting"][0]["extraEffect"]:
+            if lingSpell["targeting"][0]["extraEffect"]["rolls"]["damage"]:
                 damage += int(input("EXTRA EFFECT\nHow much damage was applied?"))
-        damType = lingSpell["targeting"]["damType"] if "damType" in lingSpell["targeting"] and \
-                                                       lingSpell["targeting"]["damType"] else ""
+        damType = lingSpell["targeting"][0]["damType"] if "damType" in lingSpell["targeting"][0] and \
+                                                       lingSpell["targeting"][0]["damType"] else ""
+        if isinstance(damType, list) and len(damType) == 1:
+            damType = damType[0]
 
         downed_before = creature.isActiveCondition("Downed")
         stable_before = creature.isActiveCondition("Stabilized")
@@ -4236,7 +4582,6 @@ def preTurnCheck(creature, encounter, initiative):
     creature = creature["Statblock"] if isinstance(creature, dict) else creature
     preEffects = []
     appendTurnCountResID = []
-    #TODO: Test turnCount with multiple attributes.
     for effect in creature.getActiveStatusEffects():
         if effect["name"].lower() in ["lingsave", "lingeffect"]:
             preEffects.append(effect)
@@ -4373,7 +4718,6 @@ def preTurnCheck(creature, encounter, initiative):
             else:
                 raise ValueError("Invalid effect type in preTurnCheck")
             for result in preTurnLogs: #Result log all preTurnEffects.
-                #TODO: Test lingEffect result logging.
                 encounter.addResult(result)
 def playerTurn(player, initiative, encounter):
     if endOfEncounter(initiative):
@@ -4643,7 +4987,7 @@ def runEncounter(encounter):
                    ["downed", "stabilized", "dead", "incapacitated", "paralyzed", "petrified", "stunned", "unconscious"]):
                 pass
             elif initiative[idx]["Statblock"].isActiveCondition("Charmed") or initiative[idx]["Statblock"].isActiveStatusEffect("SwitchSides"):
-                enemyTurn(initiative, encounter)
+                enemyTurnMANUAL(initiative, encounter)
             else:
                 encounter.addResult(playerTurn(initiative[idx]["Statblock"], initiative, encounter))
         elif initiative[idx]["turnType"] == "Monster":
@@ -4652,14 +4996,14 @@ def runEncounter(encounter):
                 print("Please input only Y/N")
                 procTurn = input("Any creatures affected? Y/N").lower()
             if procTurn == "y":
-                enemyTurn(initiative, encounter)
+                enemyTurnMANUAL(initiative, encounter)
         elif initiative[idx]["turnType"] == "LairAction":
             procTurn = input("Any creatures affected? Y/N").lower()
             while procTurn != "y" and procTurn != "n":
                 print("Please input only Y/N")
                 procTurn = input("Any creatures affected? Y/N").lower()
             if procTurn == "y":
-                enemyTurn(initiative, encounter)
+                enemyTurnMANUAL(initiative, encounter)
         else:
             raise ValueError("Turn type is not recognized.")
         printCreatureStats_DEBUG(initiative)
@@ -4671,6 +5015,7 @@ def runEncounter(encounter):
                 idx += 1
             initiative[idx]["currentTurn"] = True
 
+            # TODO: reimplement legendary actions here, but with actual legActions from enemy statblock.
             # if hasLegActions:
             #     executeLegAction = input("Any legendary actions used? Y/N").lower()
             #     while executeLegAction != "y" and executeLegAction != "n":
