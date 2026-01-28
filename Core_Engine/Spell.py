@@ -4,7 +4,7 @@ class Spell(Action):
     def __init__(self, name, lvl, selfTarget,
                  numTarget, rollType, saveType, halfSave, damageMod, diceNum, diceType,
                  damType, conditions, statusEffects, lingEffects, extraEffect, lingSaves,
-                 scaling, specialNotes):
+                 scaling, actionCost, specialNotes):
         super().__init__()
         self.__name = name
         self.__lvl = lvl
@@ -20,8 +20,8 @@ class Spell(Action):
         self.__extraEffect = extraEffect
         self.__lingSaves = lingSaves
         self.__scaling = scaling
+        self.__actionCost = actionCost
         self.__specialNotes = specialNotes
-
         self.setDice(diceNum, diceType, damageMod)
 
     def toDict(self):
@@ -49,6 +49,7 @@ class Spell(Action):
                 "extraEffect": self.__extraEffect,
                 "lingSave" : self.__lingSaves,
                 "scaling" : self.__scaling,
+                "actionCost" : self.__actionCost,
                 "specialNotes" : self.__specialNotes
             }
 
@@ -128,3 +129,6 @@ class Spell(Action):
         return self.__specialNotes
     def setSpecialNotes(self, value):
         self.__specialNotes = value
+
+    def getActionCost(self):
+        return self.__actionCost

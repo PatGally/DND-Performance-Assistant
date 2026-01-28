@@ -2,7 +2,7 @@ import math
 
 
 class Stats:
-    def __init__(self, stats, damImmunes, damResists, damVulns, conImmunes, activeStatusEffects, activeConditions):
+    def __init__(self, stats, saveProfs, damImmunes, damResists, damVulns, conImmunes, activeStatusEffects, activeConditions):
         self.__stats = {
             "STR": stats[0],
             "DEX": stats[1],
@@ -12,6 +12,24 @@ class Stats:
             "CHA": stats[5]
         }
         self.__modifiers = self.calcMods()
+        if saveProfs:
+            self.__saveProfs = {
+                "STR": saveProfs[0],
+                "DEX": saveProfs[1],
+                "CON": saveProfs[2],
+                "INT": saveProfs[3],
+                "WIS": saveProfs[4],
+                "CHA": saveProfs[5]
+            }
+        else:
+            self.__saveProfs = {
+            "STR": self.__modifiers["STR"],
+            "DEX": self.__modifiers["DEX"],
+            "CON": self.__modifiers["CON"],
+            "INT": self.__modifiers["INT"],
+            "WIS": self.__modifiers["WIS"],
+            "CHA": self.__modifiers["CHA"]
+            }
         self.__health = 0
         self.__maxHealth = 0
         self.__damResists = damResists
@@ -50,6 +68,9 @@ class Stats:
 
     def getMod(self, stat):
         return self.__modifiers[stat]
+
+    def getSaveProf(self, stat):
+        return self.__saveProfs[stat]
 
     def getDamImmunities(self):
         return self.__damImmunes
