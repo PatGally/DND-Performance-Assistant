@@ -14,7 +14,11 @@ from rich.tree import Tree
 from rich.console import Console
 from rich.table import Table
 
-from Core_Engine import Weapon, Spell, Monster, Player, Encounter
+from Weapon import Weapon
+from Spell import Spell
+from Monster import Monster
+from Player import Player
+from Encounter import Encounter
 
 from datetime import date, datetime
 import os
@@ -22,7 +26,7 @@ import os
 console = Console()
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(BASE_DIR, "Core_Engine/data")
+DATA_DIR = os.path.join(BASE_DIR, "data")
 
 PLAYER_LIST_FILE = os.path.join(DATA_DIR, "player_list.json")
 MONSTER_LIST_FILE = os.path.join(DATA_DIR, "monster_list.json")
