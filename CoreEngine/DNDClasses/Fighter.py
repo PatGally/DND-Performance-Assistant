@@ -1,4 +1,4 @@
-from Core_Engine.Player import Player
+from CoreEngine.Player import Player
 
 class Fighter(Player):
     def __init__(self, name, stats, ac, hp, class_type, level, conImmunities, damImmunes, damResists, damVulns,

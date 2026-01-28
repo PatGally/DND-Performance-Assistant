@@ -1,4 +1,4 @@
-from Core_Engine.Player import Player
+from CoreEngine.Player import Player
 
 class Ranger(Player):
     def __init__(self, lvl, name, stats, ac, hp, class_type, level, conImmunities, damImmunes, damResists, damVulns,
