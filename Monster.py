@@ -4,22 +4,13 @@ class Monster(Stats):
     def __init__(self, name, cr, cType, stats, hp, maxHP, ac, saveProfs, lResists, damResists, damImmunes, damVulns,
                  conImmunes, activeConditions, activeStatusEffects, lairAction, magicResist,
                  enemy, actions, spellInfo, legActions):
-        super().__init__(stats, damImmunes, damResists, damVulns, conImmunes, activeStatusEffects, activeConditions)
+        super().__init__(stats, saveProfs, damImmunes, damResists, damVulns, conImmunes, activeStatusEffects, activeConditions)
         self.__name = name
         self.__cr = cr
         self.__creatureType = cType
         self.setHP(hp)
         self.setMaxHP(maxHP)
         self.__ac = ac
-        self.__saveProfs = saveProfs
-        self.__saveProfs = {
-            "STR": saveProfs[0],
-            "DEX": saveProfs[1],
-            "CON": saveProfs[2],
-            "INT": saveProfs[3],
-            "WIS": saveProfs[4],
-            "CHA": saveProfs[5]
-        }
         self.__lResists = lResists
         self.__lairAction = lairAction
         self.__magicResist = magicResist #TODO
@@ -49,14 +40,23 @@ class Monster(Stats):
         self.__lResists = lResists
     def getlResists(self):
         return self.__lResists
-    def getSaveProf(self, stat):
-        return self.__saveProfs[stat]
     def hasLairAction(self):
         return self.__lairAction
     def isEnemy(self):
         return self.__enemy
+    def hasLegAction(self):
+        return True if self.__legActions else False
+    def getLegAction(self, name):
+        lIdx = -1
+        lList = [l["name"].lower() for l in self.__legActions]
+        if name in lList:
+            lIdx = lList.index(name)
+        if lIdx != -1:
+            return self.__legActions[lIdx]
+        return {}
 
     def toDict(self):
+        actions = [action.toDict() for action in self.__actions]
         return {
             "name" : self.__name,
             "cr" : self.__cr,
@@ -78,7 +78,7 @@ class Monster(Stats):
             "magicResist" : self.__magicResist,
             "lairAction" : self.__lairAction,
             "enemy": self.__enemy,
-            "actions" : self.__actions,
+            "actions" : actions,
             "legActions" : self.__legActions,
             "spellInfo" : self.__spellInfo
         }

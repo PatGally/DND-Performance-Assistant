@@ -2,7 +2,7 @@ from Action import Action
 
 class MonAction(Action):
     def __init__(self, name, desc, selfTarget, numTarget, actionRange, shape,
-                 rollType, saveType, saveDC, halfSave, damageMod, diceNum, diceType,
+                 rollType, saveType, saveDC, halfSave, damageMod, diceNum, diceType, attackBonus,
                  extraDamage, damType, conditions, statusEffects, lingEffects, extraEffect,
                  lingSaves, actionCost, recharge, specialNotes):
         super().__init__()
@@ -15,6 +15,7 @@ class MonAction(Action):
         self.__rollType = rollType
         self.__saveType = saveType
         self.__saveDC = saveDC
+        self.__attackBonus = attackBonus
         self.__halfSave = halfSave
         self.__extraDamage = extraDamage
         self.__damType = damType
@@ -35,20 +36,28 @@ class MonAction(Action):
             damType = self.__damType
         return {
             "name" : self.__name,
+            "desc" : self.__desc,
             "number" : str(self.__numTarget),
+            "actionRange" : self.__actionRange,
+            "shape" : self.__shape,
             "rolls": {
                 "rollType": self.__rollType,
                 "saveType": self.__saveType,
                 "halfSave": self.__halfSave,
-                "damage": f"{self.getDiceNum()}d{self.getSides()}" if self.getDiceNum() > 1 and self.getSides() > 1 else "",
+                "saveDC": self.__saveDC,
+                "damage": f"{self.getDiceNum()}d{self.getSides()}" if self.getDiceNum() > 0 and self.getSides() in [4, 6, 8, 10, 12, 20, 100] else "",
+                "attackBonus" : str(self.__attackBonus),
                 "damageMod": str(self.getDamMod())
             },
+            "extraDamage" : self.__extraDamage,
             "damType": damType,
             "conditions": self.__conditions,
             "statusEffect": self.__statusEffects,
             "lingEffect": self.__lingEffects,
             "extraEffect": self.__extraEffect,
             "lingSave": self.__lingSaves,
+            "recharge" : self.__recharge,
+            "actionCost" : self.__actionCost,
             "specialNotes": self.__specialNotes
         }
 
@@ -56,11 +65,6 @@ class MonAction(Action):
         return self.__name
     def setName(self, value):
         self.__name = value
-
-    def getLvl(self):
-        return self.__lvl
-    def setLvl(self, value):
-        self.__lvl = value
 
     def getSelfTarget(self):
         return self.__selfTarget
@@ -91,6 +95,11 @@ class MonAction(Action):
         return self.__damType
     def setDamType(self, value):
         self.__damType = value
+    def addDamType(self, dType):
+        if isinstance(self.__damType, list):
+            self.__damType.append(dType)
+        else:
+            pass
 
     def getConditions(self):
         return self.__conditions
@@ -117,12 +126,10 @@ class MonAction(Action):
     def setLingSaves(self, value):
         self.__lingSaves = value
 
-    def getScaling(self):
-        return self.__scaling
-    def setScaling(self, value):
-        self.__scaling = value
-
     def getSpecialNotes(self):
         return self.__specialNotes
     def setSpecialNotes(self, value):
         self.__specialNotes = value
+
+    def getActionCost(self):
+        return self.__actionCost
