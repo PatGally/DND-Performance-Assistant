@@ -147,3 +147,6 @@ class Barbarian(Player):
             return self.__abilities[0:2]
         else:
             return self.__abilities
+
+    def getRageCharges(self):
+        return self.__rageCharges

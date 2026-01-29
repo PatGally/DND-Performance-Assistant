@@ -5,4 +5,4 @@ class Cleric(Player):
                  damVulns, activeStatusEffects, activeConditions):
         super().__init__(name, stats, saveProfs, ac, hp, class_type, level, conImmunities, damImmunes, damResists,
                          damVulns, activeStatusEffects, activeConditions)
-        pass
+

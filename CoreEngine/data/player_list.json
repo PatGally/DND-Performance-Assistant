@@ -5860,12 +5860,8 @@
                             "damageMod": "0"
                         },
                         "damType": [
-                            "poison"
-                        ],
-                        "conditions": null,
-                        "statusEffect": null,
-                        "lingEffect": null,
-                        "extraEffect": null,
+                            "poison",
+                      "extraEffect": null,
                         "lingSave": null,
                         "scaling": "1d8",
                         "specialNotes": null,
@@ -6125,7 +6121,11 @@
             }
         ],
         "weapons": []
-    },
+    }  ],
+                        "conditions": null,
+                        "statusEffect": null,
+                        "lingEffect": null,
+                        ,
     {
         "stats": {
             "name": "Lvl4Man",

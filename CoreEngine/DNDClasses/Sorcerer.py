@@ -1,5 +1,9 @@
-class Sorcerer:
-    def __init__(self, lvl):
+from CoreEngine import Player
+class Sorcerer(Player):
+    def __init__(self, lvl, name, stats, saveProfs, ac, hp, class_type, level, conImmunities, damImmunes, damResists,
+                 damVulns, activeStatusEffects, activeConditions):
+        super().__init__(name, stats, saveProfs, ac, hp, class_type, level, conImmunities, damImmunes, damResists,
+                         damVulns, activeStatusEffects, activeConditions)
         self.__className = "Sorcerer"
         self.__lvl = lvl
         self.__sorceryPoints = 0
