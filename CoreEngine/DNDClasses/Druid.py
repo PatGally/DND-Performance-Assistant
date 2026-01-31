@@ -1,6 +1,8 @@
 import json
-from CoreEngine import Player, Monster
+from CoreEngine import Player, Monster, MonAction
 import os
+from main import loadMonsterActions
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MONSTER_LIST_FILE = os.path.join(BASE_DIR, "..", "data", "monster_list_NEW.json")
 
@@ -9,17 +11,17 @@ class Druid(Player):
                  damVulns, activeStatusEffects, activeConditions):
         super().__init__(name, stats, saveProfs, ac, hp, class_type, level, conImmunities, damImmunes, damResists,
                          damVulns, activeStatusEffects, activeConditions)
-        self.__monster = None
+        self.__monster = {}
+        self.__wildShape = False
 
     def setWildShape(self, name):
         monster = self.loadMonsterStats(name)
 
-        activeConditions = ""
-        activeStatusEffects = ""
+        activeConditions = []
+        activeStatusEffects = []
         magicResist = False
         enemy = False
-        actions = []
-        spellInfo = None
+        spellInfo = {}
 
         name = monster["name"]
         cr = int(monster["cr"])
@@ -36,6 +38,7 @@ class Druid(Player):
         conImmunes = monster["conImmunes"]
         lairAction = monster["lairAction"]
         legActions = monster["legAction"]
+        actions = loadMonsterActions(monster)
 
         self.__monster = Monster(name, cr, cType, stats,hp, maxHP, ac, saveProfs,lResists, damResists,
                                 damImmunes, damVulns, conImmunes,activeConditions, activeStatusEffects,
@@ -46,10 +49,13 @@ class Druid(Player):
             monsters = json.load(f)
 
         for monster in monsters:
-            if monster["name"] == wildShapeName:
+            if monster["name"].lower() == wildShapeName.lower():
                 return monster
 
-        raise ValueError(f"Monster '{wildShapeName}' not found")
+        return {}
 
     def getWildShape(self):
         return self.__monster
+
+    def useWildShape(self):
+        self.__wildShape = True if self.__wildShape == False else False

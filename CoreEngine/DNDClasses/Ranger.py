@@ -50,9 +50,9 @@ class Ranger(Player):
         ]
 
     def getAbilities(self):
-        if self.__lvl < 5:
+        if self.getLevel() < 5:
             return None
-        elif self.__lvl < 14:
+        elif self.getLevel() < 14:
             return self.__abilities[0]
         else:
             return self.__abilities
