@@ -8,24 +8,24 @@ class Rogue(Player):
         self.__abilities = [
             {
                 "name" : "Sneak Attack",
-                "lvl" : 1,
+                "lvl" : "1",
                 "scaling" : "1d6 PER2",
                 "specialNotes" : ["needsAdvantage"]
             },
             {
                 "name" : "Cunning Action",
-                "lvl" : 2,
+                "lvl" : "2",
                 "action" : [
                     {
                         "spellname": "Hide",
                         "targeting": [
                             {
-                                "self": True,
-                                "number": 0,
+                                "self": "true",
+                                "number": "0",
                                 "rolls": {
                                     "rollType": "autoHit",
                                     "saveType": "none",
-                                    "halfSave": True,
+                                    "halfSave": "true",
                                     "damage": "",
                                     "damageMod": ""
                                 },
@@ -51,13 +51,13 @@ class Rogue(Player):
             },
             {
                 "name" : "Slippery Mind",
-                "lvl" : 15,
+                "lvl" : "15",
                 "ability" : "Proficiency",
                 "attribute" : ["WIS save"]
             },
             {
                 "name" : "Elusive",
-                "lvl" : 18,
+                "lvl" : "18",
                 "ability" : "neutrality",
                 "attribute" : ["attack rolls against"],
             }

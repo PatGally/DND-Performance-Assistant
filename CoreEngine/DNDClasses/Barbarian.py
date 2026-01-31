@@ -6,10 +6,11 @@ class Barbarian(Player):
         super().__init__(name, stats, saveProfs, ac, hp, class_type, level, conImmunities, damImmunes, damResists,
                          damVulns, activeStatusEffects, activeConditions)
         self.__rageCharges = self.calcRageCharges()
+        self.__isRaging = False
         self.__abilities = [
             {
                 "name" : "Rage",
-                "lvl" : 1,
+                "lvl" : "1",
                 "action" : {
                     "action": {
                         "name": "Rage",
@@ -118,7 +119,7 @@ class Barbarian(Player):
             {
                 "name": "Extra Attack",
                 "lvl": "5",
-                "total": 2,
+                "total": "2",
             },
 
          ]
@@ -150,3 +151,14 @@ class Barbarian(Player):
 
     def getRageCharges(self):
         return self.__rageCharges
+
+    def toggleRage(self):
+        if not self.__isRaging:
+            if self.__rageCharges> 0:
+                self.__isRaging = True
+                self.__rageCharges -= 1
+            else:
+                return False
+        else:
+            self.__isRaging = False
+            return True

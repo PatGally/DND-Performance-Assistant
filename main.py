@@ -17,6 +17,7 @@ from rich.table import Table
 
 from CoreEngine import Weapon, Spell, Monster, Player, Encounter, MonAction
 from CoreEngine.DNDClasses import Barbarian, Bard, Cleric, Druid, Fighter, Monk, Paladin, Ranger, Rogue, Sorcerer
+# from BackEndAPI import SimulationRequestsAPI
 
 from datetime import date, datetime
 import os
@@ -27,8 +28,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "CoreEngine/data")
 
 PLAYER_LIST_FILE = os.path.join(DATA_DIR, "player_list.json")
-MONSTER_LIST_FILE = os.path.join(DATA_DIR, "monster_list.json")
-ENCOUNTER_LIST_FILE = os.path.join(DATA_DIR, "encounter_list_OLD.json")
+MONSTER_LIST_FILE = os.path.join(DATA_DIR, "monster_list_NEW.json")
+ENCOUNTER_LIST_FILE = os.path.join(DATA_DIR, "encounter_list.json")
 CONDITION_LIST_FILE = os.path.join(DATA_DIR, "condition_list.json")
 SPELL_LIST_FILE = os.path.join(DATA_DIR, "spell_list.json")
 STATUS_EFFECT_LIST_FILE = os.path.join(DATA_DIR, "status_effect_list.json")
@@ -44,6 +45,8 @@ else:
 
 
 #PLAYER/MONSTER/SPELL/WEAPON CREATE/SAVE/LOAD METHODS
+
+#frontend AND backend will use this
 def getPlayerStats(data):
     #Creates a player object based on pulled JSON player data.
     stats = data["stats"]
@@ -72,6 +75,7 @@ def getPlayerStats(data):
                     class_type,playerLvl, conImmunities, damImmunes,
         damResists, damVulns, activeStatusEffects, activeConditions)
     return player
+#frontend AND backend will use this
 def getSavedWeapons(player, data):
     weapons = data["weapons"]
     for weapon in weapons:
@@ -85,6 +89,7 @@ def getSavedWeapons(player, data):
         statType = properties["weaponStat"]
 
         player.addWeapon(weaponName, statType, diceNum, diceType, damageType, damMod)
+#frontend AND backend will use this
 def getSavedSpells(player, data):
     spells = data["spells"]
     for spell in spells:
@@ -164,6 +169,7 @@ def getSavedSpells(player, data):
                         targetNum, rollType, saveType, halfSave, damageMod, diceNum, diceType,
                         damType, conditions, statusEffect, lingEffect, extraEffect, lingSaves,
                         scaling, actionCost, specialNotes)
+#AXE this
 def characterSelectionMenu(partydata):
     print("Select desired character: ")
     i = 0
@@ -171,6 +177,8 @@ def characterSelectionMenu(partydata):
         print(f"{i + 1}. {partydata[i]["stats"]["name"]}")
     print(f"{i + 2}. Create a Character")
     print(f"{i + 3}. Exit")
+
+#Frontend would use this
 def chooseWeapons(player):
     print("Choose weapons that", player.getName(), "uses.")
     print("Type 'Done' to continue.")
@@ -567,17 +575,18 @@ def loadMonsterActions(monsterData):
         #         }
         #         addChosenaction(newaction, player)  # Adds the multiple types of effects as individual actions.
         # else:
-        numTarget = action["numTarget"]
+        numTarget = action.get("numTarget", -10)
+        numTarget = action.get("number", 1) if numTarget == -10 else numTarget
         selfTarget = True if numTarget == 0 else False
         damType = action["damType"]
         if len(damType) == 1:
             damType = damType[0]
         actionCost = "action"
-        recharge = action["recharge"]
+        recharge = action.get("recharge", [])
         actionRange = action["actionRange"] #Unused for now, comes into play in mapping system
         actionDesc = action["desc"]
         actionShape = action["shape"] #Unused for now, comes into play in mapping system
-        extraDamage = action["extraDamage"] #TODO: Ensure extra damage is added in and calculated in expectedDamage calcs later on.
+        extraDamage = action.get("extraDamage", []) #TODO: Ensure extra damage is added in and calculated in expectedDamage calcs later on.
 
         conditions = None
         if len(action["conditions"]) != 0:
@@ -594,8 +603,8 @@ def loadMonsterActions(monsterData):
         lingSaves = None
         if action["lingSave"]:
             lingSaves = action["lingSave"]
-        specialNotes = None
-        if len(action["specialNotes"]) != 0:
+        specialNotes = action.get("specialNotes", [])
+        if specialNotes:
             specialNotes = action["specialNotes"]
 
         actionRolls = action["rolls"]

@@ -4,9 +4,10 @@ class Sorcerer(Player):
                  damVulns, activeStatusEffects, activeConditions):
         super().__init__(name, stats, saveProfs, ac, hp, class_type, level, conImmunities, damImmunes, damResists,
                          damVulns, activeStatusEffects, activeConditions)
+        self.__sorceryPoints = 0
         self.__className = "Sorcerer"
         self.__lvl = lvl
-        self.__sorceryPoints = 0
+        self.setPoints()
         self.__metamagics = [
             {
                 "name" : "Careful Spell",
@@ -19,7 +20,7 @@ class Sorcerer(Player):
                 "name" : "Distant Spell",
                 "cost" : "1",
                 "ability" : "range *2",
-                "numTarget" : 1,
+                "numTarget" : "1",
                 "attribute" : ["attack rolls for"]
             },
             {
@@ -33,49 +34,49 @@ class Sorcerer(Player):
                 "name" : "Heightened Spell",
                 "cost" : "3",
                 "ability" : "disadvantage",
-                "numTarget" : 1,
+                "numTarget" : "1",
                 "attribute" : ["ALL save"]
             },
             {
                 "name" : "Quickened Spell",
                 "cost" : "2",
                 "ability" : "action -> bonus action",
-                "numTarget" : 1,
+                "numTarget" : "1",
                 "attribute" : ["ALL spells"]
             },
             {
                 "name" : "Seeking Spell",
                 "cost" : "2",
                 "ability" : "reroll",
-                "numTarget" : 1,
+                "numTarget" : "1",
                 "attribute" : ["ALL attack rolls"]
             },
             {
                 "name" : "Transmuted Spell",
                 "cost" : "1",
                 "ability" : "damType -> damType",
-                "numTarget" : 1,
+                "numTarget" : "1",
                 "attribute" : ["ALL spells"]
             },
             {
                 "name" : "Twinned Spell",
                 "cost" : "spellLvl",
                 "ability" : "numTarget *2",
-                "numTarget" : 1,
+                "numTarget" : "1",
                 "attribute" : ["ALL spells"],
                 "specialNotes" : ["numTarget=1 required"]
             }
         ]
         self.__chosenMetamagics = []
 
-    def __setPoints(self):
+    def setPoints(self):
         if self.__lvl > 1:
             self.__sorceryPoints = self.__lvl
         else:
             self.__sorceryPoints = 0
-    def __regainPoints(self, amt):
+    def regainPoints(self, amt):
         self.__sorceryPoints += amt
-    def __usePoints(self, amt):
+    def usePoints(self, amt):
         self.__sorceryPoints -= amt
 
     def displayMetamagics(self):

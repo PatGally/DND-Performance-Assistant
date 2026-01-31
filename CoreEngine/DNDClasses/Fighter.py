@@ -5,18 +5,28 @@ class Fighter(Player):
                  activeStatusEffects, activeConditions):
         super().__init__(name, stats, ac, hp, class_type, level, conImmunities, damImmunes, damResists, damVulns,
                          activeStatusEffects, activeConditions)
+        self.__secondWindCharges = 1
+        self.__actionSurgeCharges = 1
+        if self.getLevel() < 5:
+            self.__extraAttackAmt = 0
+        elif self.getLevel() < 11:
+            self.__extraAttackTotal = 2
+        elif self.getLevel() < 20:
+            self.__extraAttackAmt = 3
+        else:
+            self.__extraAttackAmt = 4
         self.__abilities = [
             {
                 "name" : "Second Wind",
-                "lvl" : 1,
+                "lvl" : "1",
                 "charge" : "1",
                 "action" : {
-                    "self": True,
-                    "number": 1,
+                    "self": "true",
+                    "number": "1",
                     "rolls": {
                         "rollType": "autoHit",
                         "saveType": "none",
-                        "halfSave": False,
+                        "halfSave": "false",
                         "damage": "1d4",
                         "damageMod": "spellMod"
                     },
@@ -35,7 +45,7 @@ class Fighter(Player):
             },
             {
                 "name" : "Action Surge",
-                "lvl" : 2,
+                "lvl" : "2",
                 "ability" : "extraAction",
                 "charge" : "1",
                 "recharge" : "shortRest"
@@ -43,21 +53,9 @@ class Fighter(Player):
             {
                 "name": "Extra attack",
                 "lvl": "5",
-                "total": 2,
+                "total": "2",
                 "split": [],
              },
-            {
-                "name": "Extra attack",
-                "lvl": "11",
-                "total": 3,
-                "split": []
-            },
-            {
-                "name": "Extra attack",
-                "lvl": "20",
-                "total": 4,
-                "split": []
-            },
         ]
 
     def getAbilities(self):
@@ -73,3 +71,14 @@ class Fighter(Player):
             return self.__abilities[0:4]
         else:
             return self.__abilities
+
+    def useSecondWind(self):
+        self.__secondWindCharges = 0
+    def resetSecondWind(self):
+        self.__secondWindCharges = 1
+
+    def useActionSurge(self):
+        self.__actionSurgeCharges = 0
+    def resetActionSurge(self):
+        self.__actionSurgeCharges = 1
+

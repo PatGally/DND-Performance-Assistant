@@ -9,7 +9,7 @@ class Ranger(Player):
             {
                 "name": "Extra attack",
                 "lvl" : "5",
-                "total": 2,
+                "total": "2",
                 "split": []
             },
             {
@@ -19,12 +19,12 @@ class Ranger(Player):
                     "spellname": "Hide",
                     "targeting": [
                       {
-                        "self": True,
-                        "number": 0,
+                        "self": "true",
+                        "number": "0",
                         "rolls": {
                           "rollType": "autoHit",
                           "saveType": "none",
-                          "halfSave": False,
+                          "halfSave": "false",
                           "damage": "",
                           "damageMod": ""
                         },
@@ -50,9 +50,9 @@ class Ranger(Player):
         ]
 
     def getAbilities(self):
-        if self.__lvl < 5:
+        if self.getLevel() < 5:
             return None
-        elif self.__lvl < 14:
+        elif self.getLevel() < 14:
             return self.__abilities[0]
         else:
             return self.__abilities
