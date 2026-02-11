@@ -28,7 +28,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "CoreEngine/data")
 
 PLAYER_LIST_FILE = os.path.join(DATA_DIR, "player_list.json")
-MONSTER_LIST_FILE = os.path.join(DATA_DIR, "monster_list_NEW.json")
+MONSTER_LIST_FILE = os.path.join(DATA_DIR, "monster_list.json")
 ENCOUNTER_LIST_FILE = os.path.join(DATA_DIR, "encounter_list.json")
 CONDITION_LIST_FILE = os.path.join(DATA_DIR, "condition_list.json")
 SPELL_LIST_FILE = os.path.join(DATA_DIR, "spell_list.json")

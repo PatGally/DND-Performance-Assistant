@@ -13,12 +13,12 @@ class Monster(Stats):
         self.__ac = ac
         self.__lResists = lResists
         self.__lairAction = lairAction
-        self.__magicResist = magicResist #TODO
+        self.__magicResist = magicResist
         self.__enemy = enemy
-        self.__actions = actions #TODO
-        self.__spellInfo = spellInfo #TODO
+        self.__actions = actions
+        self.__spellInfo = spellInfo
         self.__caster = True if spellInfo else False
-        self.__legActions = legActions #TODO
+        self.__legActions = legActions
 
     def setName(self, name):
         self.__name = name

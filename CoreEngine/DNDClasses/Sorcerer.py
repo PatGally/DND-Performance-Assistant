@@ -1,10 +1,10 @@
 from CoreEngine import Player
 class Sorcerer(Player):
     def __init__(self, lvl, name, stats, saveProfs, ac, hp, class_type, level, conImmunities, damImmunes, damResists,
-                 damVulns, activeStatusEffects, activeConditions):
+                 damVulns, activeStatusEffects, activeConditions, sPoints = -1, chosenMMag = None):
         super().__init__(name, stats, saveProfs, ac, hp, class_type, level, conImmunities, damImmunes, damResists,
                          damVulns, activeStatusEffects, activeConditions)
-        self.__sorceryPoints = 0
+        self.__sorceryPoints = sPoints if sPoints != -1 else self.setPoints()
         self.__className = "Sorcerer"
         self.__lvl = lvl
         self.setPoints()
@@ -67,7 +67,7 @@ class Sorcerer(Player):
                 "specialNotes" : ["numTarget=1 required"]
             }
         ]
-        self.__chosenMetamagics = []
+        self.__chosenMetamagics = chosenMMag if chosenMMag else []
 
     def setPoints(self):
         if self.__lvl > 1:

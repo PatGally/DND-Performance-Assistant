@@ -1,3 +1,6 @@
 scipy
 pymongo
 dotenv
+fastapi
+uvicorn
+pydantic
