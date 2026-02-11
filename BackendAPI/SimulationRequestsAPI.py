@@ -24,6 +24,7 @@ app.add_middleware(
 
 with open("../CoreEngine/data/encounter_list.json", "r") as rf: #TODO: DB pull here
     encounter_list = json.load(rf)
+AnyPlayer = Union[Sorcerer]
 
 # class Encounter(BaseModel):
 #     name : str
@@ -313,19 +314,18 @@ with open("../CoreEngine/data/encounter_list.json", "r") as rf: #TODO: DB pull h
 # def getPlayers():
 #     return AnyCreature
 
-@app.get("/encounter/{e.id}/creature/{c.id}/position")
+@app.get("/encounter/{eid}/creature/{cid}/position")
 def getCreaturePosition(eid : str, cid : str):
     creature = getCreature(eid, cid)
     if creature.get("lvl", ""):
         return creature.get("stats").get("position", [0, 0])
     return creature.get("position", [0, 0])
 
-@app.get("/encounter/{e.id}/creature/{c.id}", response_model=Union[Player, Monster])
-async def getCreature(eid : str, cid : str):
-    print("In getCreature")
+@app.get("/encounter/{eid}/creature/{cid}", response_model=Union[Player, Monster])
+def getCreature(eid : str, cid : str):
     enc = getEncounter(eid)
-    creatures = enc.get("players", []).extend(enc.get("monsters", []))
-    creature = [c for c in creatures if c.get(cid, None)][0]
+    creatures = enc.get("players", []) + enc.get("monsters", [])
+    creature = next(c for c in creatures if c.get("cid") == cid)
     return creature
 
 @app.get("/encounter/{eid}/state/maplink")
@@ -333,12 +333,10 @@ def getMapLink(eid : str):
     enc = getEncounter(eid)
     maplink = enc.get("maplink", None)
     return maplink
-
 @app.get("/encounter/{eid}/state")
 def getEncounter(eid : str):
     for encounter in encounter_list:
         db_eid = encounter.get("eid", None)
-        print(f"Trying {db_eid}")
         if eid == db_eid:
             print(f"{eid} found!")
             return encounter
@@ -349,6 +347,16 @@ def postEncounter(encounter : Encounter):
     encounter_list.append(encounter.model_dump(mode="json", by_alias=True))
     with open("../CoreEngine/data/encounter_list.json", "w") as wf:
         json.dump(encounter_list, wf, indent=4)
+    return dict(verification="true")
+
+@app.post("/dashboard/players")
+def postPlayerToPlayerList(player : AnyPlayer):
+    #TODO: Replace with DB call to add in.
+    with open("../CoreEngine/data/player_list.json", "r") as rpf:
+        player_list = json.load(rpf)
+    player_list.append(player.model_dump(mode="json", by_alias=True))
+    with open("../CoreEngine/data/player_list.json", "w") as wpf:
+        json.dump(player_list, wpf, indent=4)
     return dict(verification="true")
 
 # @app.post("/debug/damage")

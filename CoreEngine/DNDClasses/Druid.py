@@ -1,5 +1,5 @@
 import json
-from CoreEngine import Player, Monster, MonAction
+from CoreEngine import Player, Monster
 import os
 
 from main import loadMonsterActions

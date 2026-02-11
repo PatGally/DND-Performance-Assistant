@@ -12,7 +12,7 @@ from .Spell import Spell
 class PlayerStats(Stats):
     # These fields exist inside stats in player_list.json
     name: str
-    level: int
+    level: int = Field(alias="level")
     ac: int
     hp: int
     class_: str = Field(alias="class")

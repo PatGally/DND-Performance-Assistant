@@ -30,9 +30,6 @@ SORCERER_METAMAGIC_CATALOG: List[MetaMagic] = [ #read only
 class Sorcerer(Player):
     model_config = ConfigDict(populate_by_name=True, extra="allow")
 
-    className: Literal["Sorcerer"] = "Sorcerer"
-    lvl: int
-
     sorceryPoints: int = Field(default=-1)
     chosenMetaMagics: List[MetaMagic] = Field(default_factory=list)
 
@@ -45,5 +42,5 @@ class Sorcerer(Player):
     def fill_defaults(self):
         # Compute sorceryPoints if not provided
         if self.sorceryPoints == -1:
-            self.sorceryPoints = self.lvl if self.lvl > 1 else 0
+            self.sorceryPoints = self.stats.level if self.stats.level > 1 else 0
         return self

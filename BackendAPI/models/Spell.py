@@ -86,7 +86,7 @@ class SpellTargeting(BaseModel):
 
 class Spell(BaseModel):
     spellname: str
-    level: int
+    level: int = Field(alias="level")
     targeting: list[SpellTargeting] = Field(default_factory=list)
 
     model_config = ConfigDict(extra="allow")
