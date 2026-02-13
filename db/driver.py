@@ -35,3 +35,7 @@ class Driver:
     def getDb(self, name):
         client = self.connect()
         return client[name]
+
+db = Driver()
+db.connect()
+print(db.getDb("basic_actions"))

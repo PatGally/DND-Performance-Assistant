@@ -92,6 +92,76 @@
         },
         "spells": [
             {
+            "spellname": "Conjure Animals",
+            "level": 3,
+            "targeting": [
+            {
+                "self": false,
+                "number": 0,
+                "rolls": {
+                    "rollType": "autoHit",
+                    "saveType": "none",
+                    "halfSave": false,
+                    "damage": ""
+                },
+                "damType": [
+                    "none"
+                ],
+                "conditions": [],
+                "statusEffect": [
+                    {
+                        "name": "Summon",
+                        "effect": {
+                            "type": "Beast",
+                            "monsterName": "",
+                            "crCap": "2",
+                            "numSummons": "1"
+                        }
+                    },
+                    {
+                        "name": "Summon",
+                        "effect": {
+                            "type": "Beast",
+                            "monsterName": "",
+                            "crCap": "1",
+                            "numSummons": "2"
+                        }
+                    },
+                    {
+                        "name": "Summon",
+                        "effect": {
+                            "type": "Beast",
+                            "monsterName": "",
+                            "crCap": "1/2",
+                            "numSummons": "4"
+                        }
+                    },
+                    {
+                        "name": "Summon",
+                        "effect": {
+                            "type": "Beast",
+                            "monsterName": "",
+                            "crCap": "1/4",
+                            "numSummons": "8"
+                        }
+                    },
+                    {
+                        "name": "Concentration",
+                        "effect": {
+                            "value": "T/F"
+                        }
+                    }
+                ],
+                "lingEffect": {},
+                "extraEffect": {},
+                "lingSave": {},
+                "scaling": "mult PER2",
+                "specialNotes": [],
+                "actionCost": "action"
+            }
+        ]
+    },
+            {
                 "spellname": "Harm",
                 "level": 6,
                 "targeting": [

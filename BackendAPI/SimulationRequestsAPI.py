@@ -7,8 +7,10 @@ import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from models import Sorcerer, ActionRequest, Monster, Player, Encounter
+from BackendAPI.models import Sorcerer, ActionRequest, Monster, Player, Encounter, Spell, Weapon, MonAction
 from dotenv import load_dotenv
+from main import ensureList, endSpellEffect, setActiveInitiative
+
 load_dotenv()
 
 origins = [os.getenv("ORIGIN1"), os.getenv("ORIGIN2")]
@@ -314,19 +316,60 @@ AnyPlayer = Union[Sorcerer]
 # def getPlayers():
 #     return AnyCreature
 
+def isPlayer(creature):
+    if isinstance(creature, dict):
+        if creature.get("stats", {}):
+            return True
+        else:
+            return False
+    elif isinstance(creature, Monster):
+        return True
+    else:
+        return False
+
 @app.get("/encounter/{eid}/creature/{cid}/position")
 def getCreaturePosition(eid : str, cid : str):
     creature = getCreature(eid, cid)
-    if creature.get("lvl", ""):
+    if isinstance(creature.get("stats", {}), dict):
         return creature.get("stats").get("position", [0, 0])
     return creature.get("position", [0, 0])
+
+@app.get("/encounter/{eid}/creature/{cid}/actions", response_model = List[Union[Weapon, Spell, MonAction]])
+def getCreatureActions(eid : str, cid : str):
+    creature = getCreature(eid, cid)
+    if isPlayer(creature):
+        spells = creature.get("spells", [])
+        weapons = creature.get("weapons", [])
+        return weapons + spells
+    actions = creature.get("actions", [])
+    if creature.get("spellInfo", {}):
+        actions += creature.get("spellInfo").get("spells", [])
+    return actions
 
 @app.get("/encounter/{eid}/creature/{cid}", response_model=Union[Player, Monster])
 def getCreature(eid : str, cid : str):
     enc = getEncounter(eid)
     creatures = enc.get("players", []) + enc.get("monsters", [])
-    creature = next(c for c in creatures if c.get("cid") == cid)
-    return creature
+    cids = []
+    for creature in creatures:
+        if isPlayer(creature):
+            foundcid = creature.get("stats", {}).get("cid", "")
+        else:
+            foundcid = creature.get("cid", "")
+        cids.append(foundcid)
+    creatureIdx = cids.index(cid)
+    return creatures[creatureIdx]
+
+@app.post("/encounter/{eid}/creature")
+def addtoEncounter(eid : str, creature : Union[AnyPlayer, Monster]):
+    encounter = getEncounter(eid)
+    if isPlayer(creature):
+        encounter.get("players", []).append(creature)
+        pass
+    else:
+        encounter.get("monsters", []).append(creature)
+    return {"verification" : "true"}
+
 
 @app.get("/encounter/{eid}/state/maplink")
 def getMapLink(eid : str):
@@ -341,6 +384,60 @@ def getEncounter(eid : str):
             print(f"{eid} found!")
             return encounter
     print(f"{eid} not found!")
+
+@app.get("/encounter/{eid}/initiative/nextturn")
+def getNextTurn(eid : str):
+    encounter = getEncounter(eid)
+    initiative = encounter.get("initiative", [])
+    for i, turn in enumerate(initiative):
+        if turn["currentTurn"]:
+            turn["currentTurn"] = False
+            if i == len(initiative) - 1:
+                initiative[0]["currentTurn"] = True
+            else:
+                initiative[i + 1]["currentTurn"] = True
+    currentCreature = {}
+    for creature in initiative:
+        #Add creature statblock to their associated turn
+        #SHALLOW COPY OF MONSTER/PLAYER OBJECTS - Changes to creature["Statblock"] affect associated object in encounter
+        if creature["turnType"] == "Player":
+            for i in range(encounter.playerSize()):
+                if creature["name"].lower() == encounter.getPlayer(i).getName().lower():
+                    currentCreature = encounter.getPlayer(i)
+                    break
+        elif creature["turnType"] == "Monster":
+            for i in range(encounter.monsterSize()):
+                if creature["name"].lower() == encounter.getMonster(i).getName().lower():
+                    currentCreature = encounter.getMonster(i)
+                    break
+    preEffects = []
+    appendTurnCountResID = []
+    refreshFlag = False
+    for effect in currentCreature.getActiveStatusEffects():
+        if effect["name"].lower() in ["lingsave", "lingeffect"]:
+            preEffects.append(effect)
+
+            # Deals with 1Turn shenanigans
+            resultIDs = effect["effect"]["resultID"]
+            resultIDs = ensureList(resultIDs)
+            for i, resultID in enumerate(resultIDs):
+                if resultID != -1:
+                    result = encounter.getResultByID(resultID)
+                    if "turnCount" in result and "turnCap" in result:
+                        if int(result["turnCount"]) >= int(result["turnCap"]):
+                            endSpellEffect(effect, i, currentCreature, setActiveInitiative(encounter))
+                        else:
+                            result["turnCount"] += 1
+                            appendTurnCountResID.append(resultID)
+                        refreshFlag = True
+
+    preEffects = {"preEffects" : preEffects, "refresh" : refreshFlag}
+    return preEffects
+
+@app.get("/encounter/{eid}/initiative")
+def getInitiative(eid : str):
+    enc = getEncounter(eid)
+    return enc.get("initiative", [])
 
 @app.post("/encounter")
 def postEncounter(encounter : Encounter):

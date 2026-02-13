@@ -4475,7 +4475,8 @@ def playerActionResolution(player, action, actionStats, initiative):
 
     return actionResult, initiative
 def endSpellEffect(effect, idx, creature, initiative):
-    #Ends any long-lasting effect that a creature has from a given spell - and ends concentration if nobody else is under that spell.
+    #Ends any long-lasting effect that a creature has from a given spell
+    # - and ends concentration if nobody else is under that spell.
     if "effect" in effect:
         effectID = effect["effect"]["resultID"][idx]
         if idx == 0:
@@ -4594,6 +4595,7 @@ def preTurnCheck(creature, encounter, initiative):
     for effect in creature.getActiveStatusEffects():
         if effect["name"].lower() in ["lingsave", "lingeffect"]:
             preEffects.append(effect)
+
         #Deals with 1Turn shenanigans
         #NOTE: Potentially have this work with durations?
         # Like mirror image would be a 10Turn specialNotes, and then check it here.
@@ -4951,13 +4953,11 @@ def playerTurn(player, initiative, encounter):
         if contInput == "n":
             continueTurn = False
     return turnResults
-def runEncounter(encounter):
-    if len(encounter.getInitiative()) == 0:
-        setInitiative(encounter)
+def setActiveInitiative(encounter):
     initiative = copy.deepcopy(encounter.getInitiative())
     for creature in initiative:
-        #Add creature statblock to their associated turn
-        #SHALLOW COPY OF MONSTER/PLAYER OBJECTS - Changes to creature["Statblock"] affect associated object in encounter
+        # Add creature statblock to their associated turn
+        # SHALLOW COPY OF MONSTER/PLAYER OBJECTS - Changes to creature["Statblock"] affect associated object in encounter
         if creature["turnType"] == "Player":
             for i in range(encounter.playerSize()):
                 if creature["name"].lower() == encounter.getPlayer(i).getName().lower():
@@ -4968,6 +4968,11 @@ def runEncounter(encounter):
                 if creature["name"].lower() == encounter.getMonster(i).getName().lower():
                     creature["Statblock"] = encounter.getMonster(i)
                     break
+    return initiative
+def runEncounter(encounter):
+    if len(encounter.getInitiative()) == 0:
+        setInitiative(encounter)
+    initiative = setActiveInitiative(encounter)
 
     hasLegActions = False
     # for creature in initiative:
