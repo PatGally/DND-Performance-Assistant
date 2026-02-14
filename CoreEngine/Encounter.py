@@ -1,13 +1,17 @@
 class Encounter:
-    def __init__(self, name, date):
+    def __init__(self, name, date, eid):
         self.__name = name
         self.__date = date
+        self.__eid = eid
         self.__completed = False
         self.__initiative = []
         self.__monsters = []
         self.__players = []
         self.__results = []
         self.__initiative = []
+
+    def getEID(self):
+        return self.__eid
 
     def setComplete(self, complete):
         self.__completed = complete

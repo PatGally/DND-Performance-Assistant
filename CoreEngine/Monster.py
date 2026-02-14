@@ -3,8 +3,10 @@ from .Stats import Stats
 class Monster(Stats):
     def __init__(self, name, cr, cType, stats, hp, maxHP, ac, saveProfs, lResists, damResists, damImmunes, damVulns,
                  conImmunes, activeConditions, activeStatusEffects, lairAction, magicResist,
-                 enemy, actions, spellInfo, legActions):
-        super().__init__(stats, saveProfs, damImmunes, damResists, damVulns, conImmunes, activeStatusEffects, activeConditions)
+                 enemy, actions, spellInfo, legActions, cid, position):
+        super().__init__(stats, saveProfs, damImmunes,
+                         damResists, damVulns, conImmunes,
+                         activeStatusEffects, activeConditions, cid, position)
         self.__name = name
         self.__cr = cr
         self.__creatureType = cType
@@ -61,13 +63,15 @@ class Monster(Stats):
             "name" : self.__name,
             "cr" : self.__cr,
             "creatureType" : self.__creatureType,
-            "stats": [str(self.getStat(stat)) for stat in
-                          ["STR", "DEX", "CON", "INT", "WIS", "CHA"]],
+            "statArray": {stat : str(self.getStat(stat)) for stat in
+                          ["STR", "DEX", "CON", "INT", "WIS", "CHA"]},
             "hp" : str(self.getHP()),
             "maxHP" : str(self.getMaxHP()),
+            "cid" : str(self.getCID()),
+            "position" : self.getPosition(),
             "ac" : str(self.__ac),
-            "saveProfs": [str(self.getSaveProf(stat)) for stat in
-                      ["STR", "DEX", "CON", "INT", "WIS", "CHA"]],
+            "saveProfs": {stat : str(self.getSaveProf(stat)) for stat in
+                      ["STR", "DEX", "CON", "INT", "WIS", "CHA"]},
             "lResists" : self.__lResists,
             "damResists" : self.getDamResistances(),
             "damImmunes" : self.getDamImmunities(),

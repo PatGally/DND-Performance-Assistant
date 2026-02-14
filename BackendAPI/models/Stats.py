@@ -72,8 +72,7 @@ class Stats(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="allow")
 
     # --- ability scores ---
-    stats: Dict[Ability, int]
-    stat_array: Annotated[list[int], Field(min_length=6, max_length=6)] = Field(alias="statArray")
+    stat_array: Dict[Ability, int] = Field(alias="statArray")
 
     # --- saves ---
     save_profs: Optional[Dict[Ability, int]] = Field(default=None, alias="saveProfs")
@@ -97,7 +96,7 @@ class Stats(BaseModel):
     @computed_field
     @property
     def modifiers(self) -> Dict[Ability, int]:
-        return {ability: _mod(score) for ability, score in self.stats.items()}
+        return {ability: _mod(score) for ability, score in self.stat_array.items()}
 
     # ---------- model-wide normalization ----------
     @model_validator(mode="before")
@@ -108,15 +107,15 @@ class Stats(BaseModel):
         d = dict(data)
 
         # Build stats from statArray if needed
-        if "stats" not in d and "statArray" in d:
+        if "stats" not in d and "statArray" in d: #Monsters
             arr = d.get("statArray")
-            if not isinstance(arr, list) or len(arr) != 6:
-                raise ValueError("statArray must be a list of exactly 6 items: [STR, DEX, CON, INT, WIS, CHA]")
-            d["stats"] = {ABILITY_ORDER[i]: int(arr[i]) for i in range(6)}
-
-        # Coerce stats dict keys to Ability
-        if isinstance(d.get("stats"), dict):
-            d["stats"] = {Ability(k): int(v) for k, v in d["stats"].items()}
+        elif "stats" in d and "statArray" in d["stats"]:
+            arr = d["stats"].get("statArray")
+        else:
+            raise ValueError("No statArray!")
+        if not isinstance(arr, dict) or len(arr.keys()) != 6:
+            raise ValueError("statArray must be a list of exactly 6 items: [STR, DEX, CON, INT, WIS, CHA]")
+        d["statArray"] = {ABILITY_ORDER[i]: int(arr[stat]) for i, stat in enumerate(arr.keys())}
 
         # Convert saveProfs list-of-6 to dict
         sp = d.get("saveProfs")

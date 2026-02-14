@@ -1,7 +1,7 @@
 [
     {
         "stats": {
-            "stats": {
+            "statArray": {
                 "STR": 20,
                 "DEX": 18,
                 "CON": 16,
@@ -9,14 +9,6 @@
                 "WIS": 12,
                 "CHA": 10
             },
-            "statArray": [
-                20,
-                18,
-                16,
-                14,
-                12,
-                10
-            ],
             "saveProfs": {
                 "STR": 20,
                 "DEX": 18,
@@ -41,7 +33,7 @@
             "name": "William",
             "level": 18,
             "ac": 15,
-            "class": "cleric",
+            "characterClass": "cleric",
             "spellSlots": [
                 [
                     4,

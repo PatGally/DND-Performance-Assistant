@@ -2,25 +2,12 @@ import math
 
 
 class Stats:
-    def __init__(self, stats, saveProfs, damImmunes, damResists, damVulns, conImmunes, activeStatusEffects, activeConditions):
-        self.__stats = {
-            "STR": stats[0],
-            "DEX": stats[1],
-            "CON": stats[2],
-            "INT": stats[3],
-            "WIS": stats[4],
-            "CHA": stats[5]
-        }
+    def __init__(self, stats, saveProfs, damImmunes, damResists, damVulns, conImmunes,
+                 activeStatusEffects, activeConditions, cid, position):
+        self.__stats = stats
         self.__modifiers = self.calcMods()
         if saveProfs:
-            self.__saveProfs = {
-                "STR": saveProfs[0],
-                "DEX": saveProfs[1],
-                "CON": saveProfs[2],
-                "INT": saveProfs[3],
-                "WIS": saveProfs[4],
-                "CHA": saveProfs[5]
-            }
+            self.__saveProfs = saveProfs
         else:
             self.__saveProfs = {
             "STR": self.__modifiers["STR"],
@@ -38,6 +25,17 @@ class Stats:
         self.__conImmunes = conImmunes
         self.__activeStatusEffects = activeStatusEffects
         self.__activeConditions = activeConditions
+        self.__cid = cid
+        self.__position = position
+
+    def getCID(self):
+        return self.__cid
+
+    def setPosition(self, x, y):
+        self.__position = (x, y)
+
+    def getPosition(self):
+        return self.__position
 
     def setHP(self, hp):
         self.__health = hp

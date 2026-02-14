@@ -23,6 +23,6 @@ class PlayerStats(Stats):
     model_config = ConfigDict(populate_by_name=True)
 
 class Player(BaseModel):
-    stats: PlayerStats
+    stats: PlayerStats = Field(alias="stats")
     spells: List[Spell] = Field(default_factory=list)
     weapons: List[Weapon] = Field(default_factory=list)

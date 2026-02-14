@@ -4,6 +4,7 @@ import json
 
 import math
 import random
+import re
 from json import JSONDecodeError
 
 import openpyxl
@@ -44,11 +45,867 @@ else:
     TEST_MODE = False
 
 
-#PLAYER/MONSTER/SPELL/WEAPON CREATE/SAVE/LOAD METHODS
+#DEAD METHODS (to remove)
+def characterSelectionMenu(partydata):
+    print("Select desired character: ")
+    i = 0
+    for i in range(len(partydata)):
+        print(f"{i + 1}. {partydata[i]["stats"]["name"]}")
+    print(f"{i + 2}. Create a Character")
+    print(f"{i + 3}. Exit")
+def chooseWeapons(player):
+    print("Choose weapons that", player.getName(), "uses.")
+    print("Type 'Done' to continue.")
+    weaponFile = open(WEAPONS_LIST_FILE)
+    weaponData = json.load(weaponFile)
+    for data in weaponData:
+        print(data['name'])
+    wChoice = input()
+    while wChoice != "Done":
+        found = False
+        i = 0
+        while not found and i < len(weaponData):
+            if wChoice == weaponData[i]["name"]:
+                found = True
+            else:
+                i += 1
+        if found is False:
+            wChoice = input("Invalid choice. Please select another weapon, or type 'Done' to continue: ")
+        else:
+            weaponName = weaponData[i]["name"]
+            properties = weaponData[i]["properties"]
+            damageDice = properties["damage"]
+            diceNum = 0
+            diceType = 0
+            if len(damageDice) > 1:
+                print("Versatile weapon: Choose between", damageDice[0], "and", damageDice[1])
+                dChoice = input().split("d")
+                diceNum = int(dChoice[0])
+                diceType = int(dChoice[1])
+            else:
+                damageDice = damageDice[0].split("d")
+                diceNum = int(damageDice[0])
+                diceType = int(damageDice[1])
+            damageType = properties["damageType"]
+            weaponStat = properties["weaponStat"]
+            if len(weaponStat) > 1:
+                if player.getStat("STR") > player.getStat("DEX"):
+                    weaponStat = weaponStat[0]
+                    damMod = player.getMod(weaponStat)
+                else:
+                    weaponStat = weaponStat[1]
+                    damMod = player.getMod(weaponStat)
+            else:
+                weaponStat = weaponStat[0]
+                damMod = player.getMod(weaponStat)
 
-#frontend AND backend will use this
+            player.addWeapon(weaponName, weaponStat, diceNum, diceType, damageType, damMod)
+            print("Choose weapons that", player.getName(), "uses.")
+            print("Type 'Done' to continue.")
+            wChoice = input()
+    weaponFile.close()
+def printSpells(spells):
+    index = 0
+    print("Cantrips: ")
+    for lvl in range(0, 10):
+        done = False
+        while not done and index < len(spells):
+            if spells[index]["level"] == lvl:
+                print(spells[index]["spellname"])
+                index += 1
+            else:
+                done = True
+        if lvl != 9:
+            print(f"\nLvl {lvl + 1} Spells: ")
+def chooseSpells(player):
+    spellFile = open(SPELL_LIST_FILE)
+    spellData = json.load(spellFile)
+    relevantSpellData = []
+    playerCap = -1
+    if player.getClass() == "cleric" or player.getClass() == "sorcerer" or player.getClass() == "wizard" or player.getClass() == "bard" or player.getClass() == "druid" or player.getClass() == "warlock":
+        playerCap = math.ceil(player.getLevel() / 2) #Full casters
+    elif (player.getClass() == "artificer" or player.getClass() == "paladin"
+          or player.getClass() == "ranger" or player.getClass() == "fighter" or player.getClass() == "rogue"):
+        playerCap = math.ceil(player.getLevel() / 3) #Half casters
+    for spell in spellData:
+        if spell["level"] <= playerCap:
+            found = False
+            i = 0
+            while not found and i < len(spell["classes"]):
+                if player.getClass().lower() == spell["classes"][i].lower():
+                    relevantSpellData.append(spell)
+                    found = True
+                else:
+                    i += 1
+
+    printSpells(relevantSpellData)
+    print("Type the name of the spell to add to your character")
+    print("Type 'Spell Scroll' to choose a spell from other classes")
+    print("Type 'Done' to continue.")
+    sChoice = input()
+    while sChoice != "Done":
+        if sChoice == "Spell Scroll":
+            printSpells(spellData)
+            print("Type the name of the spell to add to your character")
+            print("Type 'Done' to continue.")
+            sChoice = input()
+            while sChoice != "Done":
+                chooseSpellsExecuteMenu(sChoice, spellData, player)
+
+                print("Type 'Done' to continue.")
+                sChoice = input()
+        else:
+            chooseSpellsExecuteMenu(sChoice, relevantSpellData, player)
+
+            print("Type 'Spell Scroll' to choose a spell from other classes")
+            print("Type 'Done' to continue.")
+            sChoice = input()
+    spellFile.close()
+def choosePlayerStats():
+    print("Enter Name: ")
+    name = input()
+    print("Enter Class: ")
+    className = input()
+    print("Enter level: ")
+    level = int(input())
+    print("Enter stat Array: ")
+    stats = input("STR DEX CON INT WIS CHA")
+    stats = stats.split()
+    for i in range(len(stats)):
+        stats[i] = int(stats[i])
+    ac = int(input("What is the player's AC?"))
+    hp = -1 #Schema: sets HP to max in Player object
+    conImmunities = []
+    activeStatusEffects = []
+    activeConditions = []
+    damImmunes = ""
+    damResists = ""
+    damVulns = ""
+
+    player = Player(name, stats, {}, ac, hp, className, level, conImmunities,
+                    damImmunes, damResists, damVulns, activeStatusEffects, activeConditions)
+    return player
+def chooseCharacter(partydata, filename):
+    characterSelectionMenu(partydata)
+    menuInput = int(input())
+    while menuInput < 1 or menuInput > (len(partydata) + 2):
+        print("Incorrect value! Please try again from the numbered list.")
+        characterSelectionMenu(partydata)
+        menuInput = int(input())
+    repeat = True
+    while repeat:
+        found = False
+        j = 0
+        while not found and j < len(partydata):
+            if (menuInput == (len(partydata) + 1) or menuInput == (len(partydata) + 2)
+                    or partydata[(menuInput - 1)]["stats"]["name"] == partydata[j]["stats"]["name"]):
+                found = True
+            else:
+                j += 1
+        if found:
+            repeat = False
+
+    if menuInput == (len(partydata) + 1):  # Create a Character
+        player = createCharacter()
+        savePlayer(player, filename)
+        return player
+    elif menuInput != (len(partydata) + 2): #Not Exit
+        player = getPlayerStats(partydata[menuInput - 1])
+        getSavedWeapons(player, partydata[menuInput - 1])
+        getSavedSpells(player, partydata[menuInput - 1])
+        print(f"Chosen {partydata[menuInput - 1]["stats"]["name"]}!")
+        return player
+    else: #Chosen exit
+        return None
+def chooseEncounter():
+    #prints all encounters saved in encounter_list.json, and returns the index of the chosen encounter
+    try:
+        with open(ENCOUNTER_LIST_FILE, "r") as f:
+            encounters = json.load(f)
+    except JSONDecodeError:
+        return None
+    except FileNotFoundError:
+        return None
+    if len(encounters) != 0:
+        entries = []
+        for encounter in encounters:
+            if not encounter["completed"]:
+                entries.append(f"{encounter['name']} - Date: {encounter['date']}")
+
+        col_width = 32  # total width for each column, adjust as needed
+
+        for i in range(0, len(entries), 4):
+            chunk = entries[i:i + 4]
+            # left-align each chunk inside the fixed width
+            print("".join(f"{entry:<{col_width}}" for entry in chunk))
+
+        encName = input("Please select the name of the encounter you'd like to load: ")
+        found = False
+        encIdx = 0
+        while not found:
+            idx = 0
+            while not found and idx < len(encounters):
+                if encName.lower() == encounters[idx]["name"].lower():
+                    found = True
+                    encIdx = idx
+                else:
+                    idx += 1
+            if not found:
+                print("Name not in encounters!")
+                encName = input("Please select the name of the encounter you'd like to load: ")
+
+        return encIdx
+    else:
+        return -1
+def createEncounter():
+    #Creates an encounter object based on user choices and saves it to encounter_list.json
+    name = (input("\nPlease name the Encounter: "))
+    encDate = (date.today().strftime("%Y-%m-%d"))
+    encounter = Encounter(name, encDate)
+
+    partySet = False
+    playerFile = open(PLAYER_LIST_FILE)
+    try:
+        partydata = json.load(playerFile)
+    except json.JSONDecodeError:
+        partydata = []
+    while not partySet and encounter.playerSize() < 4:
+        if len(partydata) == 0:
+            player = createCharacter()
+            savePlayer(player, PLAYER_LIST_FILE)
+        else:
+            player = chooseCharacter(partydata, PLAYER_LIST_FILE)
+        if player is not None:
+            encounter.addPlayer(player)
+        elif player is not None and encounter.playerSize() == 4:
+            print("Ending player selection : Max party size is 4.")
+            partySet = True
+        else:
+            partySet = True
+    playerFile.close()
+
+    printMonsterChoices()
+    monChoice = input("Choose any monsters from this list to add to encounter: \nType 'Exit' to exit.")
+    with open(MONSTER_LIST_FILE, "r") as f:
+        monsters = json.load(f)
+    numAdded = 0
+    while monChoice != "Exit" or numAdded == 0:
+        low = 0
+        idx = 0
+        high = len(monsters) - 1
+        found = False
+
+        while low <= high and not found: #quick binary search for monster at given index
+            idx = (low + high) // 2
+            if monsters[idx]["name"] == monChoice:
+                found = True  # Target found, return its index
+            elif monsters[idx]["name"] < monChoice:
+                low = idx + 1  # Search in the right half
+            else:
+                high = idx - 1  # Search in the left half
+
+        if found:
+            monChoice += str(numAdded)
+            cr = monsters[idx]["cr"]
+            cType = monsters[idx]["creatureType"]
+            stats = monsters[idx]["statArray"]
+            hp = monsters[idx]["hit_points"]
+            maxHP = hp
+            ac = monsters[idx]["AC"]
+            saveProfs = monsters[idx]["saveProfs"]
+            lResists = monsters[idx]["lResists"]
+            damResists = monsters[idx]["damResists"]
+            damImmunes = monsters[idx]["damImmunes"]
+            damVulns = monsters[idx]["damVulns"]
+            conImmunes = monsters[idx]["conImmunes"]
+            lairAction = False if monsters[idx]["lairAction"] in [False, "False", "false"] else True
+            enemy = True
+            actions = loadMonsterActions(monsters[idx])
+            spellInfo = loadMonsterSpells(monsters[idx])
+            magicResist = monsters[idx].get("magicResist", False)
+            legActions = monsters[idx].get("legActions", [])
+
+            encounter.addMonster(Monster(monChoice, cr, cType, stats, hp, maxHP,
+                                         ac, saveProfs, lResists, damResists,
+                                         damImmunes, damVulns, conImmunes, [],
+                                        [], lairAction, magicResist,
+                                         enemy, actions, spellInfo, legActions))
+            print("Monster added to encounter!")
+            numAdded += 1
+        else:
+            print("Unknown Monster! Please try again.")
+        monChoice = input("Choose any monsters from this list to add to encounter: \nType 'Exit' to exit.")
+        while monChoice == "Exit" and numAdded == 0:
+            print("Must add atleast one monster to encounter! Please try again.")
+            monChoice = input("Choose any monsters from this list to add to encounter: \nType 'Exit' to exit.")
+
+    setInitiative(encounter)
+    print("Encounter created!")
+    f.close()
+    return encounter
+def setInitiative(encounter):
+    iValues = []
+
+    for i in range(encounter.playerSize()):
+        print(encounter.getPlayer(i).getName())
+        iValue = int(input("Initiative value: "))
+        iValues.append({
+            'name': encounter.getPlayer(i).getName(),
+            'iValue': iValue,
+            'turnType': 'Player',
+            'currentTurn': False
+        })
+    for i in range(encounter.monsterSize()):
+        print(encounter.getMonster(i).getName())
+        iValue = int(input("Initiative value: "))
+        iValues.append({
+            'name': encounter.getMonster(i).getName(),
+            'iValue': iValue,
+            'turnType': 'Monster',
+            'currentTurn': False
+        })
+        if encounter.getMonster(i).hasLairAction():
+            iValues.append({
+                'name': encounter.getMonster(i).getName() + " LAIR",
+                'iValue': 20,
+                'turnType': 'LairAction',
+                'currentTurn': False
+            })
+
+    def sort_key(c):
+        if c['turnType'] == 'Player':
+            # Find the player object with this name
+            for i in range(encounter.playerSize()):
+                if encounter.getPlayer(i).getName() == c['name']:
+                    return c['iValue'], encounter.getPlayer(i).getStat("DEX")
+        else:
+            # Find the monster object with this name
+            for i in range(encounter.monsterSize()):
+                if encounter.getMonster(i).getName() == c['name']:
+                    return c['iValue'], encounter.getMonster(i).getStat("DEX")
+        # Fallback in case no match (shouldn’t happen)
+        return c['iValue'], 0 #Deals with initiative ties.
+
+    initiative = sorted(iValues, key=sort_key, reverse=True)
+
+    initiative[0]["currentTurn"] = True
+    for c in initiative:
+        c["actionResource"] = 1
+        c["bonusActionResource"] = 1
+    encounter.setInitiative(initiative)
+
+    return initiative
+def applyScaling(action, upcastLevel):
+    #All possible values include:
+    # XdY, XdY PER2, X, extraTarget, extraTarget2 for probability stuff
+    #mult PER2, 1CR, 1CR PER2 for summons
+        #NOTE: Any PER2 scales should be concluded before calling this method, not after.
+
+    baseLevel = action.getLvl()
+    scaling = action.getScaling()
+    scaled_action = copy.deepcopy(action)  # safe copy
+
+    if "d" in scaling: #XdY
+        parts = scaling.split()
+        base = parts[0]  # e.g. "1d6"
+        num, die = map(int, base.lower().split("d"))
+        delta_levels = upcastLevel - baseLevel
+
+        extraDice = delta_levels * num
+        scaled_action.setDice(action.getDiceNum() + extraDice, action.getSides(), action.getDamMod())
+    elif scaling.isdigit(): #X
+        scaled_action.setDamMod(action.getDamMod() + scaling)
+    elif "extraTarget" in scaling:
+        if scaling[-1] == "2":
+            scaled_action.setNumTarget(action.getNumTarget() + 2)
+        else:
+            scaled_action.setNumTarget(action.getNumTarget() + 1)
+    elif "1CR" in scaling:
+        statusEffects = action.getStatusEffects()
+        for i in range(len(statusEffects)):
+            if statusEffects[i]["name"] == "Summon":
+                statusEffects[i]["effect"]["crCap"] += 1
+            else:
+                pass
+        action.setStatusEffects(statusEffects)
+    elif "mult" in scaling:
+        statusEffects = action.getStatusEffects()
+        for i in range(len(statusEffects)):
+            if statusEffects[i]["name"] == "Summon":
+                statusEffects[i]["effect"]["numSummons"] *= 2
+            else:
+                pass
+        action.setStatusEffects(statusEffects)
+    elif "extraSummon" in scaling:
+        amt = int(scaling[-1]) if scaling[-1].isdigit() else 1
+        statusEffects = action.getStatusEffects()
+        for i in range(len(statusEffects)):
+            if statusEffects[i]["name"] == "Summon":
+                statusEffects[i]["effect"]["numSummons"] += amt
+            else:
+                pass
+        action.setStatusEffects(statusEffects)
+    scaled_action.setLingEffects([])
+    scaled_action.setExtraEffect({})
+    scaled_action.setLingSaves({})
+    scaled_action.setScaling("")
+    return scaled_action
+def getRollResults(action, selectedTargets):
+    rollResult = []
+    if isinstance(action, Spell):
+        onlyType = ""
+        immType = ""
+        cap = 0
+        if action.getSpecialNotes():
+            specialNotes = action.getSpecialNotes()
+            if any("hpcap" in note.lower() for note in specialNotes):
+                for note in specialNotes:
+                    if "hpcap" in note.lower():
+                        try:
+                            cap = int(note.split("hpCap")[1])
+                        except:
+                            cap = 0
+                        rollResults = []
+                        for target in selectedTargets:
+                            if target["Statblock"].getHP() < cap:
+                                if action.getRollType().lower() != 'save':
+                                    rollResults.append('y')
+                                else:
+                                    rollResults.append('n')
+                            else:
+                                if action.getRollType().lower() != 'save':
+                                    rollResults.append('n')
+                                else:
+                                    rollResults.append('y')
+                        return rollResults
+            if any("only" in note.lower() for note in specialNotes):
+                for note in specialNotes:
+                    if "only" in note.lower():
+                        try:
+                            onlyType = note.lower().split("only")[0]
+                        except:
+                            onlyType = ""
+            if any("immune" in note.lower() for note in specialNotes):
+                for note in specialNotes:
+                    if "immune" in note.lower():
+                        try:
+                            immType = note.lower().split("immune")[0]
+                        except:
+                            immType = ""
+
+        # NOTE: Basic actions are counted as spells here.
+        if len(selectedTargets) > 1:
+            if action.getRollType().lower() in ["tohit", "onhit"]:
+                for i, target in enumerate(selectedTargets):
+                    target = target["Statblock"] if isinstance(target, dict) else target
+                    if isinstance(target, Player) and immType == "humanoid" or (onlyType and onlyType != "humanoid"):
+                        print(f"{target.getName()} is not applicable to {action.getName()}!")
+                        roll = 'n'
+                    elif isinstance(target, Monster) and target.getCreatureType() == immType or (onlyType and target.getCreatureType != onlyType):
+                        print(f"{target.getName()} is not applicable to {action.getName()}!")
+                        roll = 'n'
+                    else:
+                        print(f"TARGET {i + 1} OF {len(selectedTargets)}")
+                        roll = input(f"{target.getName()} - Did the spell hit? (y/n/crit): ").lower()
+                        while roll not in ["y", "n", "crit"]:
+                            print("BAD INPUT")
+                            roll = input(f"{target.getName()} - Did the spell hit? (y/n/crit): ").lower()
+                    rollResult.append(roll)
+            elif action.getRollType().lower() in ["save"]:
+                for i, target in enumerate(selectedTargets):
+                    target = target["Statblock"] if isinstance(target, dict) else target
+                    if isinstance(target, Player) and immType == "humanoid" or (onlyType and onlyType != "humanoid"):
+                        print(f"{target.getName()} is not applicable to {action.getName()}!")
+                        roll = 'y'
+                    elif isinstance(target, Monster) and target.getCreatureType() == immType or (onlyType and target.getCreatureType != onlyType):
+                        print(f"{target.getName()} is not applicable to {action.getName()}!")
+                        roll = 'y'
+                    else:
+                        print(f"TARGET {i + 1} OF {len(selectedTargets)}")
+                        roll = input(f"{target.getName()} - Did the creature save? (y/n): ").lower()
+                        while roll not in ["y", "n"]:
+                            print("BAD INPUT")
+                            roll = input(f"{target.getName()} - Did the creature save? (y/n): ").lower()
+                    rollResult.append(roll)
+            else:  # Autohit
+                for i, target in enumerate(selectedTargets):
+                    target = target["Statblock"] if isinstance(target, dict) else target
+                    if isinstance(target, Player) and immType == "humanoid" or (onlyType and onlyType != "humanoid"):
+                        print(f"{target.getName()} is not applicable to {action.getName()}!")
+                        roll = 'n'
+                    elif isinstance(target, Monster) and  target.getCreatureType() == immType or (onlyType and target.getCreatureType != onlyType):
+                        print(f"{target.getName()} is not applicable to {action.getName()}!")
+                        roll = 'n'
+                    else:
+                        roll = 'y'
+                    rollResult.append(roll)
+        else:
+            try:
+                target = selectedTargets[0]
+            except:
+                print("DEBUG")
+            target = target["Statblock"] if isinstance(target, dict) else target
+            if isinstance(target, Player) and immType == "humanoid" or (onlyType and onlyType != "humanoid"):
+                print(f"{target.getName()} is not applicable to {action.getName()}!")
+                roll = 'n' if action.getRollType().lower() != "save" else "y"
+            elif isinstance(target, Monster) and target.getCreatureType() == immType or (onlyType and target.getCreatureType != onlyType):
+                print(f"{target.getName()} is not applicable to {action.getName()}!")
+                roll = 'n' if action.getRollType().lower() != "save" else "y"
+            else:
+                if action.getRollType().lower() in ["tohit", "onhit"]:
+                    roll = input(f"{target.getName()} - Did the spell hit? (y/n/crit): ").lower()
+                    while roll not in ["y", "n", "crit"]:
+                        print("BAD INPUT")
+                        roll = input(f"{target.getName()} - Did the spell hit? (y/n/crit): ").lower()
+                elif action.getRollType().lower() in ["save"]:
+                    roll = input(f"{target.getName()} - Did the creature save? (y/n): ").lower()
+                    while roll not in ["y", "n"]:
+                        print("BAD INPUT")
+                        roll = input(f"{target.getName()} - Did the creature save? (y/n): ").lower()
+                else: #Autohit
+                    roll = 'y'
+            rollResult.append(roll)
+    else:  # Assuming weapon
+        try:
+            debug_target = selectedTargets[0]
+        except:
+            print("DEBUG")
+        roll = input(f"{selectedTargets[0]["Statblock"].getName()} - Did the attack hit? (y/n/crit): ").lower()
+        while roll not in ["y", "n", "crit"]:
+            print("BAD INPUT")
+            roll = input(f"{selectedTargets[0]["Statblock"].getName()} - Did the attack hit? (y/n/crit): ").lower()
+        rollResult.append(roll)
+    return rollResult
+def getDiceResults(action, selectedTargets, rollResults):
+    """
+    Returns a list of damage values matching each selected target.
+    Uses user-entered actual damage values, applying halving logic only if needed.
+
+    rollResults: list of 'y'/'n' indicating success/failure per target
+    """
+
+    # No damage at all? Return 0 for each target.
+    if action.getMean() == 0:
+        return [0] * len(selectedTargets)
+
+
+    rollType = action.getRollType().lower() if isinstance(action, Spell) else "tohit"
+    isSaveSpell = (rollType == 'save')
+    isAutoHit = (rollType == 'autohit')
+    hasHalfOnSave = (isSaveSpell and action.getHalfSave())
+
+    damages = []
+
+    if isinstance(action.getDamType(), list) and action.getDamType() not in [0, 1]:
+        #NOTE: Only spells with multi-damType are save spells.
+        if action.getDamType()[-1] == "AND":
+            if action.getNumTarget() in [-1, 1]:
+                dams = [int(input(f"Input actual {action.getDamType()[i]} damage dealt")) for i in
+                        range(len(action.getDamType()) - 1)]
+                multiTarget = False
+            else:
+                multiTarget = True
+            for i, target in enumerate(selectedTargets):
+                target = target["Statblock"]
+                if multiTarget: #Dams is not set - so set dams
+                    dams = [int(input(f"Input actual {action.getDamType()[i]} damage dealt")) for i in
+                        range(len(action.getDamType()) - 1)]
+                for j in range(len(action.getDamType())):
+                    if target.isImmune(action.getDamType()[j]):
+                        dams[j] = 0
+                    elif target.isVulnerable(action.getDamType()[j]):
+                        if not target.isResistant(action.getDamType()[j]):
+                            dams[j] *= 2
+                    elif target.isResistant(action.getDamType()[j]):
+                        dams[j] = math.floor(dams[j] / 2)
+                dam = sum(dams)
+                if hasHalfOnSave and rollResults[i] == 'y':
+                    dam /= 2
+                damages.append(dam)
+        else:
+            [print(action.getDamType()[i]) for i in range(len(action.getDamType()) - 1)]
+            damType = input("Select Damage Type: ").lower()
+            while damType not in action.getDamType():
+                damType = input("Bad input! Please select from listed damage types: ").lower()
+            if action.getNumTarget() in [-1, 1]:
+                dams = int(input(f"Input actual {damType} damage dealt"))
+                multiTarget = False
+            else:
+                multiTarget = True
+            for i, target in enumerate(selectedTargets):
+                if isinstance(target, dict):
+                    target = target["Statblock"]
+                if multiTarget:
+                    dams = int(input(f"Input actual {damType} damage dealt"))
+                if target.isImmune(damType):
+                    dams = 0
+                elif target.isVulnerable(damType):
+                    if not target.isResistant(damType):
+                        dams *= 2
+                elif target.isResistant(damType):
+                    dams = math.floor(dams / 2)
+                if hasHalfOnSave and rollResults[i] == 'y':
+                    dams /= 2
+                damages.append(dams)
+        return damages
+
+
+    # ---- CASE 1: Spell applies the same roll to all targets (AutoHit or HalfSave AOE) ----
+    if isAutoHit or hasHalfOnSave:
+        # One damage roll, then adjust per target
+        if action.getNumTarget() > 1: #Autohit multitargets
+            for i in range(len(rollResults)):
+                damages.append(int(input("Input actual damage value dealt: ")))
+        else: #Autohit single/AOE, halfSaves
+            baseDamage = int(input("Input actual damage value dealt: "))
+
+            for result in rollResults:
+                if isSaveSpell:
+                    # 'y' means target succeeded save → gets half
+                    dam = baseDamage / 2 if result.lower() == 'y' else baseDamage
+                else:
+                    # AutoHit: success always hits full damage unless explicitly failed (rare)
+                    dam = baseDamage
+                damages.append(int(dam))
+
+        return damages
+
+    # ---- CASE 2: Save spells WITHOUT half damage ----
+    if isSaveSpell and not hasHalfOnSave:
+        dam = int(input("Input actual damage value dealt: "))
+        for result in rollResults:
+            if result.lower() == 'y':
+                damages.append(0)
+            else:
+                damages.append(dam)
+        return damages
+
+    # ---- CASE 3: Everything else (To-Hit spells, weapon attacks, etc.) ----
+    # Each target may have different hit/miss result
+    for i, result in enumerate(rollResults):
+        if rollType.lower() in ['tohit', 'onhit'] and rollResults[i] == 'crit':
+            dam = int(input("Input actual damage value dealt: "))
+            damages.append(dam * 2)
+        elif result.lower() == 'n':
+            damages.append(0)
+        else:
+            dam = int(input("Input actual damage value dealt: "))
+            damages.append(dam)
+
+    return damages
+#PRINT METHODS (dead but may use to debug)
+def printEncounterState(initiative):
+    """
+    Prints a Rich table snapshot of the current encounter initiative order.
+    Includes players and monsters, with HP, AC, and conditions.
+    """
+    table = Table(title="Initiative Order", show_lines=True)
+
+    table.add_column("Current Turn", no_wrap=True)
+    table.add_column("Name", no_wrap=True)
+    table.add_column("Type", no_wrap=True)
+    table.add_column("HP")
+    table.add_column("AC")
+    table.add_column("Enemy")
+
+    # initiative list: should contain players/monsters in turn order
+    for iValue, creature in enumerate(initiative, start=1):
+        if 'Statblock' in creature:
+            # Get name / hp / ac
+            name = creature['name']
+            hp_str = f"{creature["Statblock"].getHP()}/{creature["Statblock"].getMaxHP()}"
+            ac_str = str(creature["Statblock"].getAC())
+
+            if creature["turnType"] == "Player":
+                enemy_str = False
+            elif any("switchsides" in se["name"].lower() for se in creature["Statblock"].getActiveStatusEffects()):
+                enemy_str = False
+            else:
+                enemy_str = True
+
+            if creature["currentTurn"]:
+                table.add_row("True", name, creature["turnType"], hp_str, ac_str, str(enemy_str), style="bold")
+            else:
+                table.add_row("False", name, creature["turnType"], hp_str, ac_str, str(enemy_str))
+        else:
+            if creature["currentTurn"]:
+                table.add_row("True", creature['name'], creature["turnType"], "", "", "True", style="bold")
+            else:
+                table.add_row("False", creature['name'], creature["turnType"], "", "", "True")
+    console.print(table)
+def printCreatureNames(initiative, againstPlayers=True):
+    creatureTable = Table(title="Creatures in Initiative", show_lines=True, min_width=20)
+    creatureTable.add_column("Name", justify="center")
+    if againstPlayers:
+        for creature in initiative:
+            if (not "LAIR" in creature['name']
+                    and (creature["turnType"] == "Player" or
+                    (creature["turnType"] == "Monster" and creature["Statblock"].isActiveStatusEffect("SwitchSides"))
+                and not creature["Statblock"].isActiveCondition("Dead")
+                and not creature["Statblock"].isActiveCondition("Out of Combat"))):
+                creatureTable.add_row(creature['name'])
+    else:
+        for creature in initiative:
+            if not "LAIR" in creature['name'] \
+                and not creature["Statblock"].isActiveCondition("Dead") \
+                and not creature["Statblock"].isActiveCondition("Out of Combat"):
+                creatureTable.add_row(creature['name'])
+    console.print(creatureTable)
+def printCreatureStats(affectedCreatures):
+    creatureStatsTable = Table(title="Creature Stats", show_lines=True, min_width=20)
+    creatureStatsTable.add_column("Name")
+    creatureStatsTable.add_column("HP")
+    creatureStatsTable.add_column("Conditions", no_wrap=True)
+    creatureStatsTable.add_column("Status Effects", no_wrap=True)
+
+    for creature in affectedCreatures:
+        hp_str = f"{creature['Statblock'].getHP()}/{creature['Statblock'].getMaxHP()}"
+
+        conds = creature["Statblock"].getActiveConditions()
+        condsTOSTR = []
+        for ci, c in enumerate(conds):
+            if isinstance(c, dict):
+                if -1 in c["resultID"]:
+                    condsTOSTR.append(c["cond"].lower())
+                else:
+                    condsTOSTR.append(f"{c["cond"].lower()} - PLAYERMADE")
+            else:
+                condsTOSTR.append(c.lower())
+
+        conds_str = "\n".join(condsTOSTR)
+
+        if not creature["Statblock"].getActiveStatusEffects():
+            statEffects = ""
+        else:
+            printableEffects = all("attribute" in effect and effect["attribute"] for effect in creature["Statblock"].getActiveStatusEffects())
+            statEffects = Tree("Status Effects") if printableEffects else Tree("")
+            for statEffect in creature["Statblock"].getActiveStatusEffects():
+                effect = statEffect["effect"]
+                if "attribute" in effect and effect["attribute"]:
+                    node = statEffects.add(f"[green]{statEffect['name']}[/green]")
+                    attrs = effect["attribute"]
+                    if isinstance(attrs, list):
+                        attr_text = ", ".join(attrs)
+                    else:
+                        attr_text = str(attrs)
+                    node.add(f"[white]{attr_text}[/white]")
+                    if -1 not in effect["resultID"]:
+                        node.add(f"PLAYERMADE")
+
+        creatureStatsTable.add_row(str(creature["name"]), hp_str, conds_str, statEffects)
+
+    console.print(creatureStatsTable)
+def printCreatureStats_DEBUG(affectedCreatures):
+    creatureStatsTable = Table(title="Creature Stats", show_lines=True, min_width=20)
+    creatureStatsTable.add_column("Name", max_width=10)
+    creatureStatsTable.add_column("HP", min_width=5)
+    creatureStatsTable.add_column("Conditions", no_wrap=True)
+    creatureStatsTable.add_column("Status Effects", no_wrap=True, max_width=30)
+
+    for creature in affectedCreatures:
+        hp_str = f"{creature['Statblock'].getHP()}/{creature['Statblock'].getMaxHP()}"
+
+        conds = creature["Statblock"].getActiveConditions()
+        conds = [f"{c["cond"].lower()}\n - {[cID for cID in c["resultID"]]}" if isinstance(c, dict) else c.lower() for c in conds]
+        conds_str = "\n".join(conds)
+
+        if not creature["Statblock"].getActiveStatusEffects():
+            statEffects = ""
+        else:
+            statEffects = Tree("Status Effects")
+            for statEffect in creature["Statblock"].getActiveStatusEffects():
+                node = statEffects.add(f"[green]{statEffect['name']}[/green]")
+                effect = statEffect["effect"]
+
+                if "attribute" in effect and effect["attribute"]:
+                    attrs = effect["attribute"]
+                    if isinstance(attrs, list):
+                        attr_text = ", ".join(attrs)
+                    else:
+                        attr_text = str(attrs)
+                    node.add(f"[white]{attr_text}[/white]")
+                elif "spell" in effect and effect["spell"]:
+                    spells = [spell["spellname"] for spell in effect["spell"]]
+                    node.add(f"[white]{spells}[/white]")
+                if "resultID" in effect and effect["resultID"]:
+                    ids = effect["resultID"]
+                    if isinstance(ids, list):
+                        id_text = ", ".join([str(id) for id in ids])
+                    else:
+                        id_text = str(ids)
+                    node.add(f"[white]{id_text}[/white]")
+
+
+        creatureStatsTable.add_row(str(creature["name"]), hp_str, conds_str, statEffects)
+
+    console.print(creatureStatsTable)
+def printConditions():
+    with open(CONDITION_LIST_FILE, "r") as f:
+        condData = json.load(f)
+
+    conds = Tree("[bold]All Conditions[/bold]")
+
+    for condition in condData:
+        cond_node = conds.add(f"[yellow]{condition['name']}[/yellow]")
+
+        if condition["statusEffects"]:
+            for status in condition["statusEffects"]:
+                effect_node = cond_node.add(f"[green]{status['name']}[/green]")
+                effect = status["effect"]
+
+                if "attribute" in effect:
+                    attributes = effect["attribute"]
+
+                    if isinstance(attributes, list):
+                        attr_text = ", ".join(attributes)
+                    else:
+                        attr_text = str(attributes)
+
+
+                    effect_node.add(f"[white]{attr_text}[/white]")
+
+        if condition["conditionEffects"]:
+            cond_effects = cond_node.add("[magenta]Condition Effects[/magenta]")
+            for effect in condition["conditionEffects"]:
+                cond_effects.add(f"{effect}")
+
+    console.print(conds)
+    f.close()
+def printStatusEffects():
+    with open(STATUS_EFFECT_LIST_FILE, "r") as f:
+        statusData = json.load(f)
+
+    # Root of the tree
+    statuses = Tree("[bold]All Status Effects[/bold]")
+
+    for effectData in statusData:
+        # Create the individual status node
+        status_node = Tree(f"[green]{effectData['name']}[/green]")
+
+        effect = effectData["effect"]
+
+        # Only display attribute line if it exists and is not empty
+        if "attribute" in effect and effect["attribute"]:
+            attrs = effect["attribute"]
+
+            if isinstance(attrs, list):
+                attr_text = ", ".join(attrs)
+            else:
+                attr_text = str(attrs)
+
+            status_node.add(f"[white]{attr_text}[/white]")
+
+        # Add the effect node to the main tree with padding
+        statuses.add(status_node)  # top/bottom spacing
+
+    console.print(statuses)
+
+
+
+#PLAYER/MONSTER/SPELL/WEAPON CREATE/SAVE/LOAD METHODS
 def getPlayerStats(data):
     #Creates a player object based on pulled JSON player data.
+    #TODO: Add new player attributes to this method.
     stats = data["stats"]
     saveProfs = stats["saveProfs"]
     playerName = stats["name"]
@@ -58,10 +915,9 @@ def getPlayerStats(data):
         playerHP = int(stats["hp"])
     else:
         playerHP = -1
-    class_type = stats["class"]
-    playerArray = stats["statArray"]
-    for i in range(len(playerArray)):
-        playerArray[i] = int(playerArray[i])
+    class_type = stats["characterClass"]
+    playerStats = stats["statArray"]
+    playerStats = {a : int(i) for a, i in playerStats.items()}
 
     conImmunities = stats["conImmunities"]
     activeStatusEffects = stats["activeStatusEffects"]
@@ -71,11 +927,14 @@ def getPlayerStats(data):
     damResists = stats["damResists"]
     damVulns = stats["damVulns"]
 
-    player = Player(playerName, playerArray,  saveProfs,playerAC, playerHP,
+    cid = stats["cid"]
+    position = stats["position"]
+
+    player = Player(playerName, playerStats,  saveProfs,playerAC, playerHP,
                     class_type,playerLvl, conImmunities, damImmunes,
-        damResists, damVulns, activeStatusEffects, activeConditions)
+        damResists, damVulns, activeStatusEffects,
+                    activeConditions, cid, position)
     return player
-#frontend AND backend will use this
 def getSavedWeapons(player, data):
     weapons = data["weapons"]
     for weapon in weapons:
@@ -89,7 +948,6 @@ def getSavedWeapons(player, data):
         statType = properties["weaponStat"]
 
         player.addWeapon(weaponName, statType, diceNum, diceType, damageType, damMod)
-#frontend AND backend will use this
 def getSavedSpells(player, data):
     spells = data["spells"]
     for spell in spells:
@@ -169,80 +1027,6 @@ def getSavedSpells(player, data):
                         targetNum, rollType, saveType, halfSave, damageMod, diceNum, diceType,
                         damType, conditions, statusEffect, lingEffect, extraEffect, lingSaves,
                         scaling, actionCost, specialNotes)
-#AXE this
-def characterSelectionMenu(partydata):
-    print("Select desired character: ")
-    i = 0
-    for i in range(len(partydata)):
-        print(f"{i + 1}. {partydata[i]["stats"]["name"]}")
-    print(f"{i + 2}. Create a Character")
-    print(f"{i + 3}. Exit")
-
-#Frontend would use this
-def chooseWeapons(player):
-    print("Choose weapons that", player.getName(), "uses.")
-    print("Type 'Done' to continue.")
-    weaponFile = open(WEAPONS_LIST_FILE)
-    weaponData = json.load(weaponFile)
-    for data in weaponData:
-        print(data['name'])
-    wChoice = input()
-    while wChoice != "Done":
-        found = False
-        i = 0
-        while not found and i < len(weaponData):
-            if wChoice == weaponData[i]["name"]:
-                found = True
-            else:
-                i += 1
-        if found is False:
-            wChoice = input("Invalid choice. Please select another weapon, or type 'Done' to continue: ")
-        else:
-            weaponName = weaponData[i]["name"]
-            properties = weaponData[i]["properties"]
-            damageDice = properties["damage"]
-            diceNum = 0
-            diceType = 0
-            if len(damageDice) > 1:
-                print("Versatile weapon: Choose between", damageDice[0], "and", damageDice[1])
-                dChoice = input().split("d")
-                diceNum = int(dChoice[0])
-                diceType = int(dChoice[1])
-            else:
-                damageDice = damageDice[0].split("d")
-                diceNum = int(damageDice[0])
-                diceType = int(damageDice[1])
-            damageType = properties["damageType"]
-            weaponStat = properties["weaponStat"]
-            if len(weaponStat) > 1:
-                if player.getStat("STR") > player.getStat("DEX"):
-                    weaponStat = weaponStat[0]
-                    damMod = player.getMod(weaponStat)
-                else:
-                    weaponStat = weaponStat[1]
-                    damMod = player.getMod(weaponStat)
-            else:
-                weaponStat = weaponStat[0]
-                damMod = player.getMod(weaponStat)
-
-            player.addWeapon(weaponName, weaponStat, diceNum, diceType, damageType, damMod)
-            print("Choose weapons that", player.getName(), "uses.")
-            print("Type 'Done' to continue.")
-            wChoice = input()
-    weaponFile.close()
-def printSpells(spells):
-    index = 0
-    print("Cantrips: ")
-    for lvl in range(0, 10):
-        done = False
-        while not done and index < len(spells):
-            if spells[index]["level"] == lvl:
-                print(spells[index]["spellname"])
-                index += 1
-            else:
-                done = True
-        if lvl != 9:
-            print(f"\nLvl {lvl + 1} Spells: ")
 def addChosenSpell(spell, player):
         spellName = spell["spellname"]
         spellLvl = spell["level"]
@@ -337,50 +1121,6 @@ def chooseSpellsExecuteMenu(sChoice, data, player):
         print("Type the name of the spell to add to your character")
     else:
         print("Invalid spell. Please type the name of the spell within the list to add to your character.")
-def chooseSpells(player):
-    spellFile = open(SPELL_LIST_FILE)
-    spellData = json.load(spellFile)
-    relevantSpellData = []
-    playerCap = -1
-    if player.getClass() == "cleric" or player.getClass() == "sorcerer" or player.getClass() == "wizard" or player.getClass() == "bard" or player.getClass() == "druid" or player.getClass() == "warlock":
-        playerCap = math.ceil(player.getLevel() / 2) #Full casters
-    elif (player.getClass() == "artificer" or player.getClass() == "paladin"
-          or player.getClass() == "ranger" or player.getClass() == "fighter" or player.getClass() == "rogue"):
-        playerCap = math.ceil(player.getLevel() / 3) #Half casters
-    for spell in spellData:
-        if spell["level"] <= playerCap:
-            found = False
-            i = 0
-            while not found and i < len(spell["classes"]):
-                if player.getClass().lower() == spell["classes"][i].lower():
-                    relevantSpellData.append(spell)
-                    found = True
-                else:
-                    i += 1
-
-    printSpells(relevantSpellData)
-    print("Type the name of the spell to add to your character")
-    print("Type 'Spell Scroll' to choose a spell from other classes")
-    print("Type 'Done' to continue.")
-    sChoice = input()
-    while sChoice != "Done":
-        if sChoice == "Spell Scroll":
-            printSpells(spellData)
-            print("Type the name of the spell to add to your character")
-            print("Type 'Done' to continue.")
-            sChoice = input()
-            while sChoice != "Done":
-                chooseSpellsExecuteMenu(sChoice, spellData, player)
-
-                print("Type 'Done' to continue.")
-                sChoice = input()
-        else:
-            chooseSpellsExecuteMenu(sChoice, relevantSpellData, player)
-
-            print("Type 'Spell Scroll' to choose a spell from other classes")
-            print("Type 'Done' to continue.")
-            sChoice = input()
-    spellFile.close()
 def findSpell(spellName, spellData):
     found = False
     i = 0
@@ -393,30 +1133,6 @@ def findSpell(spellName, spellData):
         return i
     else:
         return -1
-def choosePlayerStats():
-    print("Enter Name: ")
-    name = input()
-    print("Enter Class: ")
-    className = input()
-    print("Enter level: ")
-    level = int(input())
-    print("Enter stat Array: ")
-    stats = input("STR DEX CON INT WIS CHA")
-    stats = stats.split()
-    for i in range(len(stats)):
-        stats[i] = int(stats[i])
-    ac = int(input("What is the player's AC?"))
-    hp = -1 #Schema: sets HP to max in Player object
-    conImmunities = []
-    activeStatusEffects = []
-    activeConditions = []
-    damImmunes = ""
-    damResists = ""
-    damVulns = ""
-
-    player = Player(name, stats, {}, ac, hp, className, level, conImmunities,
-                    damImmunes, damResists, damVulns, activeStatusEffects, activeConditions)
-    return player
 def savePlayer(player, filename):
     #Adds a serialized player to an existing player_list JSON file.
     try:
@@ -476,38 +1192,6 @@ def createCharacter():
         chooseSpells(player)
 
     return player
-def chooseCharacter(partydata, filename):
-    characterSelectionMenu(partydata)
-    menuInput = int(input())
-    while menuInput < 1 or menuInput > (len(partydata) + 2):
-        print("Incorrect value! Please try again from the numbered list.")
-        characterSelectionMenu(partydata)
-        menuInput = int(input())
-    repeat = True
-    while repeat:
-        found = False
-        j = 0
-        while not found and j < len(partydata):
-            if (menuInput == (len(partydata) + 1) or menuInput == (len(partydata) + 2)
-                    or partydata[(menuInput - 1)]["stats"]["name"] == partydata[j]["stats"]["name"]):
-                found = True
-            else:
-                j += 1
-        if found:
-            repeat = False
-
-    if menuInput == (len(partydata) + 1):  # Create a Character
-        player = createCharacter()
-        savePlayer(player, filename)
-        return player
-    elif menuInput != (len(partydata) + 2): #Not Exit
-        player = getPlayerStats(partydata[menuInput - 1])
-        getSavedWeapons(player, partydata[menuInput - 1])
-        getSavedSpells(player, partydata[menuInput - 1])
-        print(f"Chosen {partydata[menuInput - 1]["stats"]["name"]}!")
-        return player
-    else: #Chosen exit
-        return None
 def printMonsterChoices():
     with open(MONSTER_LIST_FILE, "r") as f:
         monsters = json.load(f)
@@ -586,10 +1270,11 @@ def loadMonsterActions(monsterData):
         actionRange = action["actionRange"] #Unused for now, comes into play in mapping system
         actionDesc = action["desc"]
         actionShape = action["shape"] #Unused for now, comes into play in mapping system
-        extraDamage = action.get("extraDamage", []) #TODO: Ensure extra damage is added in and calculated in expectedDamage calcs later on.
+        extraDamage = action.get("extraDamage", [])
+        #TODO: Ensure extra damage is added in and calculated in expectedDamage calcs later on.
 
         conditions = None
-        if len(action["conditions"]) != 0:
+        if action["conditions"] is not None and len(action["conditions"]) != 0:
             conditions = action["conditions"]
         statusEffect = None
         if action["statusEffect"]:
@@ -821,72 +1506,34 @@ def loadMonsterSpells(monsterData):
     return spellInfo
 
 #ENCOUNTER CREATE/SAVE/LOAD METHODS
-def chooseEncounter():
-    #prints all encounters saved in encounter_list.json, and returns the index of the chosen encounter
-    try:
-        with open(ENCOUNTER_LIST_FILE, "r") as f:
-            encounters = json.load(f)
-    except JSONDecodeError:
-        return None
-    except FileNotFoundError:
-        return None
-    if len(encounters) != 0:
-        entries = []
-        for encounter in encounters:
-            if not encounter["completed"]:
-                entries.append(f"{encounter['name']} - Date: {encounter['date']}")
-
-        col_width = 32  # total width for each column, adjust as needed
-
-        for i in range(0, len(entries), 4):
-            chunk = entries[i:i + 4]
-            # left-align each chunk inside the fixed width
-            print("".join(f"{entry:<{col_width}}" for entry in chunk))
-
-        encName = input("Please select the name of the encounter you'd like to load: ")
-        found = False
-        encIdx = 0
-        while not found:
-            idx = 0
-            while not found and idx < len(encounters):
-                if encName.lower() == encounters[idx]["name"].lower():
-                    found = True
-                    encIdx = idx
-                else:
-                    idx += 1
-            if not found:
-                print("Name not in encounters!")
-                encName = input("Please select the name of the encounter you'd like to load: ")
-
-        return encIdx
-    else:
-        return -1
-def loadEncounter(encounterIdx):
-    #Loads in the encounter object based on user choice in chooseEncounter
-    with open(ENCOUNTER_LIST_FILE, "r") as f:
-        encounterData = json.load(f)[encounterIdx]
+def loadEncounter(encounterData):
+    #REFACTORING NOTES:
+    #Uses encounterData from parameter instead of pulling it here.
     if encounterData["completed"]:
         print("FATAL ERROR: cannot load a completed encounter!")
         return None
-    encounter = Encounter(encounterData["name"], encounterData["date"])
+    encounter = Encounter(encounterData["name"], encounterData["date"], encounterData["eid"])
 
     for playerJSON in encounterData["players"]:
+        #TODO: refactor getPlayerStats
         playerObj = getPlayerStats(playerJSON)
         getSavedWeapons(playerObj, playerJSON)
         getSavedSpells(playerObj, playerJSON)
         encounter.addPlayer(playerObj)
 
     for monsterJSON in encounterData["monsters"]:
+        #TODO: Add monster actions to this method.
         #name, cr, cType, stats, hp, maxHP, ac, saveProfs, lResists, damResists,
         #damImmunes, damVulns, conImmunes, lairAction, legAction
         name = monsterJSON["name"]
         cr = monsterJSON["cr"]
         cType = monsterJSON["creatureType"]
-        stats = [int(stat) for stat in monsterJSON["stats"]]
+        stats = monsterJSON["statArray"]
+        stats = {a: int(i) for a, i in stats.items()}
         hp = int(monsterJSON["hp"])
         maxHP = int(monsterJSON["maxHP"])
         ac = int(monsterJSON["ac"])
-        saveProfs = [int(stat) for stat in monsterJSON["saveProfs"]]
+        saveProfs = {a : int(i) for a, i in monsterJSON["saveProfs"].items()}
         lResists = int(monsterJSON["lResists"])
         damResists = monsterJSON["damResists"]
         damImmunes = monsterJSON["damImmunes"]
@@ -900,22 +1547,24 @@ def loadEncounter(encounterIdx):
         enemy = bool(monsterJSON["enemy"])
         actions = loadMonsterActions(monsterJSON)
         spellInfo = loadMonsterSpells(monsterJSON)
+        cid = monsterJSON.get("cid", "")
+        position = monsterJSON.get("position", [0, 0])
         encounter.addMonster(Monster(name, cr, cType, stats, hp, maxHP,
                                      ac, saveProfs, lResists,damResists,
                                      damImmunes, damVulns, conImmunes, activeConditions,
                                      activeStatusEffects,lairAction, magicResist,
-                                     enemy, actions, spellInfo, legActions))
+                                     enemy, actions, spellInfo, legActions, cid, position))
 
     for resultJSON in encounterData["results"]:
         encounter.addResult(resultJSON)
 
     encounter.setInitiative(encounterData["initiative"])
-    f.close()
     return encounter
-def saveEncounter(encounter, filename, autosave=False):
+def saveEncounter(encounter):
     # Adds a serialized encounter to an existing encounter_list JSON file.
+    #REFACTOR CHANGES: Removed inputs so that encounter always overwrites.
     try:
-        with open(filename, "r") as f:
+        with open(ENCOUNTER_LIST_FILE, "r") as f:
             encounterFile = json.load(f)
     except FileNotFoundError:
         encounterFile = []
@@ -929,19 +1578,8 @@ def saveEncounter(encounter, filename, autosave=False):
     while not duplicate and idx < len(encounterFile):
         if encounter.getName() == encounterFile[idx]["name"]:
             duplicate = True
-            if not autosave:
-                print("Encounter name already exists!")
-                overwriteChoice = input("Would you like to override the save? Y/N").lower()
-                while overwriteChoice != "y" and overwriteChoice != "n":
-                    print("Please input only Y/N")
-                    overwriteChoice = input("Would you like to overwrite the save? Y/N")
-                if overwriteChoice == "y":
-                    encounterFile.remove(encounterFile[idx])
-                    overwrite = True
-            else:
-                print("Autosaving...")
-                encounterFile.remove(encounterFile[idx])
-                overwrite = True
+            overwrite = True
+            encounterFile.remove(encounterFile[idx])
         idx += 1
 
     monster_list = []
@@ -956,15 +1594,18 @@ def saveEncounter(encounter, filename, autosave=False):
             "level": str(player.getLevel()),
             "ac": str(player.getAC()),
             "hp": str(player.getHP()),
-            "class": player.getClass(),
+            "maxhp" : str(player.getMaxHP()),
+            "cid" : str(player.getCID()),
+            "position" : player.getPosition(),
+            "characterClass": player.getClass(),
             "conImmunities": player.getConImmunities(),
             "activeStatusEffects": player.getActiveStatusEffects(),
             "activeConditions": player.getActiveConditions(),
-            "saveProfs": [str(player.getStat(stat)) for stat in ["STR", "DEX", "CON", "INT", "WIS", "CHA"]],
+            "saveProfs": {stat : str(player.getSaveProf(stat)) for stat in ["STR", "DEX", "CON", "INT", "WIS", "CHA"]},
             "damImmunes": player.getDamImmunities(),
             "damResists": player.getDamResistances(),
             "damVulns": player.getDamVulnerabilities(),
-            "statArray": [str(player.getStat(stat)) for stat in ["STR", "DEX", "CON", "INT", "WIS", "CHA"]],
+            "statArray": {stat : str(player.getStat(stat)) for stat in ["STR", "DEX", "CON", "INT", "WIS", "CHA"]},
             "spellSlots": player.getSpellSlots()
         }
 
@@ -998,6 +1639,7 @@ def saveEncounter(encounter, filename, autosave=False):
     encounter_dict = {
         "name": name,
         "date": encounter.getDate(),
+        "eid" : encounter.getEID(),
         "completed" : encounter.isComplete(),
         "monsters": monster_list,
         "players" : player_list,
@@ -1007,356 +1649,11 @@ def saveEncounter(encounter, filename, autosave=False):
 
     encounterFile.append(encounter_dict)
     try:
-        with open(filename, "w") as f:
+        with open(ENCOUNTER_LIST_FILE, "w") as f:
             json.dump(encounterFile, f, indent=4)
     except TypeError as e:
         print(e)
         console.print(encounterFile)
-def createEncounter():
-    #Creates an encounter object based on user choices and saves it to encounter_list.json
-    name = (input("\nPlease name the Encounter: "))
-    encDate = (date.today().strftime("%Y-%m-%d"))
-    encounter = Encounter(name, encDate)
-
-    partySet = False
-    playerFile = open(PLAYER_LIST_FILE)
-    try:
-        partydata = json.load(playerFile)
-    except json.JSONDecodeError:
-        partydata = []
-    while not partySet and encounter.playerSize() < 4:
-        if len(partydata) == 0:
-            player = createCharacter()
-            savePlayer(player, PLAYER_LIST_FILE)
-        else:
-            player = chooseCharacter(partydata, PLAYER_LIST_FILE)
-        if player is not None:
-            encounter.addPlayer(player)
-        elif player is not None and encounter.playerSize() == 4:
-            print("Ending player selection : Max party size is 4.")
-            partySet = True
-        else:
-            partySet = True
-    playerFile.close()
-
-    printMonsterChoices()
-    monChoice = input("Choose any monsters from this list to add to encounter: \nType 'Exit' to exit.")
-    with open(MONSTER_LIST_FILE, "r") as f:
-        monsters = json.load(f)
-    numAdded = 0
-    while monChoice != "Exit" or numAdded == 0:
-        low = 0
-        idx = 0
-        high = len(monsters) - 1
-        found = False
-
-        while low <= high and not found: #quick binary search for monster at given index
-            idx = (low + high) // 2
-            if monsters[idx]["name"] == monChoice:
-                found = True  # Target found, return its index
-            elif monsters[idx]["name"] < monChoice:
-                low = idx + 1  # Search in the right half
-            else:
-                high = idx - 1  # Search in the left half
-
-        if found:
-            monChoice += str(numAdded)
-            cr = monsters[idx]["cr"]
-            cType = monsters[idx]["creatureType"]
-            stats = monsters[idx]["statArray"]
-            hp = monsters[idx]["hit_points"]
-            maxHP = hp
-            ac = monsters[idx]["AC"]
-            saveProfs = monsters[idx]["saveProfs"]
-            lResists = monsters[idx]["lResists"]
-            damResists = monsters[idx]["damResists"]
-            damImmunes = monsters[idx]["damImmunes"]
-            damVulns = monsters[idx]["damVulns"]
-            conImmunes = monsters[idx]["conImmunes"]
-            lairAction = False if monsters[idx]["lairAction"] in [False, "False", "false"] else True
-            enemy = True
-            actions = loadMonsterActions(monsters[idx])
-            spellInfo = loadMonsterSpells(monsters[idx])
-            magicResist = monsters[idx].get("magicResist", False)
-            legActions = monsters[idx].get("legActions", [])
-
-            encounter.addMonster(Monster(monChoice, cr, cType, stats, hp, maxHP,
-                                         ac, saveProfs, lResists, damResists,
-                                         damImmunes, damVulns, conImmunes, [],
-                                        [], lairAction, magicResist,
-                                         enemy, actions, spellInfo, legActions))
-            print("Monster added to encounter!")
-            numAdded += 1
-        else:
-            print("Unknown Monster! Please try again.")
-        monChoice = input("Choose any monsters from this list to add to encounter: \nType 'Exit' to exit.")
-        while monChoice == "Exit" and numAdded == 0:
-            print("Must add atleast one monster to encounter! Please try again.")
-            monChoice = input("Choose any monsters from this list to add to encounter: \nType 'Exit' to exit.")
-
-    setInitiative(encounter)
-    print("Encounter created!")
-    f.close()
-    return encounter
-def setInitiative(encounter):
-    iValues = []
-
-    for i in range(encounter.playerSize()):
-        print(encounter.getPlayer(i).getName())
-        iValue = int(input("Initiative value: "))
-        iValues.append({
-            'name': encounter.getPlayer(i).getName(),
-            'iValue': iValue,
-            'turnType': 'Player',
-            'currentTurn': False
-        })
-    for i in range(encounter.monsterSize()):
-        print(encounter.getMonster(i).getName())
-        iValue = int(input("Initiative value: "))
-        iValues.append({
-            'name': encounter.getMonster(i).getName(),
-            'iValue': iValue,
-            'turnType': 'Monster',
-            'currentTurn': False
-        })
-        if encounter.getMonster(i).hasLairAction():
-            iValues.append({
-                'name': encounter.getMonster(i).getName() + " LAIR",
-                'iValue': 20,
-                'turnType': 'LairAction',
-                'currentTurn': False
-            })
-
-    def sort_key(c):
-        if c['turnType'] == 'Player':
-            # Find the player object with this name
-            for i in range(encounter.playerSize()):
-                if encounter.getPlayer(i).getName() == c['name']:
-                    return c['iValue'], encounter.getPlayer(i).getStat("DEX")
-        else:
-            # Find the monster object with this name
-            for i in range(encounter.monsterSize()):
-                if encounter.getMonster(i).getName() == c['name']:
-                    return c['iValue'], encounter.getMonster(i).getStat("DEX")
-        # Fallback in case no match (shouldn’t happen)
-        return c['iValue'], 0 #Deals with initiative ties.
-
-    initiative = sorted(iValues, key=sort_key, reverse=True)
-
-    initiative[0]["currentTurn"] = True
-    for c in initiative:
-        c["actionResource"] = 1
-        c["bonusActionResource"] = 1
-    encounter.setInitiative(initiative)
-
-    return initiative
-
-#PRINT METHODS
-def printEncounterState(initiative):
-    """
-    Prints a Rich table snapshot of the current encounter initiative order.
-    Includes players and monsters, with HP, AC, and conditions.
-    """
-    table = Table(title="Initiative Order", show_lines=True)
-
-    table.add_column("Current Turn", no_wrap=True)
-    table.add_column("Name", no_wrap=True)
-    table.add_column("Type", no_wrap=True)
-    table.add_column("HP")
-    table.add_column("AC")
-    table.add_column("Enemy")
-
-    # initiative list: should contain players/monsters in turn order
-    for iValue, creature in enumerate(initiative, start=1):
-        if 'Statblock' in creature:
-            # Get name / hp / ac
-            name = creature['name']
-            hp_str = f"{creature["Statblock"].getHP()}/{creature["Statblock"].getMaxHP()}"
-            ac_str = str(creature["Statblock"].getAC())
-
-            if creature["turnType"] == "Player":
-                enemy_str = False
-            elif any("switchsides" in se["name"].lower() for se in creature["Statblock"].getActiveStatusEffects()):
-                enemy_str = False
-            else:
-                enemy_str = True
-
-            if creature["currentTurn"]:
-                table.add_row("True", name, creature["turnType"], hp_str, ac_str, str(enemy_str), style="bold")
-            else:
-                table.add_row("False", name, creature["turnType"], hp_str, ac_str, str(enemy_str))
-        else:
-            if creature["currentTurn"]:
-                table.add_row("True", creature['name'], creature["turnType"], "", "", "True", style="bold")
-            else:
-                table.add_row("False", creature['name'], creature["turnType"], "", "", "True")
-    console.print(table)
-def printCreatureNames(initiative, againstPlayers=True):
-    creatureTable = Table(title="Creatures in Initiative", show_lines=True, min_width=20)
-    creatureTable.add_column("Name", justify="center")
-    if againstPlayers:
-        for creature in initiative:
-            if (not "LAIR" in creature['name']
-                    and (creature["turnType"] == "Player" or
-                    (creature["turnType"] == "Monster" and creature["Statblock"].isActiveStatusEffect("SwitchSides"))
-                and not creature["Statblock"].isActiveCondition("Dead")
-                and not creature["Statblock"].isActiveCondition("Out of Combat"))):
-                creatureTable.add_row(creature['name'])
-    else:
-        for creature in initiative:
-            if not "LAIR" in creature['name'] \
-                and not creature["Statblock"].isActiveCondition("Dead") \
-                and not creature["Statblock"].isActiveCondition("Out of Combat"):
-                creatureTable.add_row(creature['name'])
-    console.print(creatureTable)
-def printCreatureStats(affectedCreatures):
-    creatureStatsTable = Table(title="Creature Stats", show_lines=True, min_width=20)
-    creatureStatsTable.add_column("Name")
-    creatureStatsTable.add_column("HP")
-    creatureStatsTable.add_column("Conditions", no_wrap=True)
-    creatureStatsTable.add_column("Status Effects", no_wrap=True)
-
-    for creature in affectedCreatures:
-        hp_str = f"{creature['Statblock'].getHP()}/{creature['Statblock'].getMaxHP()}"
-
-        conds = creature["Statblock"].getActiveConditions()
-        condsTOSTR = []
-        for ci, c in enumerate(conds):
-            if isinstance(c, dict):
-                if -1 in c["resultID"]:
-                    condsTOSTR.append(c["cond"].lower())
-                else:
-                    condsTOSTR.append(f"{c["cond"].lower()} - PLAYERMADE")
-            else:
-                condsTOSTR.append(c.lower())
-
-        conds_str = "\n".join(condsTOSTR)
-
-        if not creature["Statblock"].getActiveStatusEffects():
-            statEffects = ""
-        else:
-            printableEffects = all("attribute" in effect and effect["attribute"] for effect in creature["Statblock"].getActiveStatusEffects())
-            statEffects = Tree("Status Effects") if printableEffects else Tree("")
-            for statEffect in creature["Statblock"].getActiveStatusEffects():
-                effect = statEffect["effect"]
-                if "attribute" in effect and effect["attribute"]:
-                    node = statEffects.add(f"[green]{statEffect['name']}[/green]")
-                    attrs = effect["attribute"]
-                    if isinstance(attrs, list):
-                        attr_text = ", ".join(attrs)
-                    else:
-                        attr_text = str(attrs)
-                    node.add(f"[white]{attr_text}[/white]")
-                    if -1 not in effect["resultID"]:
-                        node.add(f"PLAYERMADE")
-
-        creatureStatsTable.add_row(str(creature["name"]), hp_str, conds_str, statEffects)
-
-    console.print(creatureStatsTable)
-def printCreatureStats_DEBUG(affectedCreatures):
-    creatureStatsTable = Table(title="Creature Stats", show_lines=True, min_width=20)
-    creatureStatsTable.add_column("Name", max_width=10)
-    creatureStatsTable.add_column("HP", min_width=5)
-    creatureStatsTable.add_column("Conditions", no_wrap=True)
-    creatureStatsTable.add_column("Status Effects", no_wrap=True, max_width=30)
-
-    for creature in affectedCreatures:
-        hp_str = f"{creature['Statblock'].getHP()}/{creature['Statblock'].getMaxHP()}"
-
-        conds = creature["Statblock"].getActiveConditions()
-        conds = [f"{c["cond"].lower()}\n - {[cID for cID in c["resultID"]]}" if isinstance(c, dict) else c.lower() for c in conds]
-        conds_str = "\n".join(conds)
-
-        if not creature["Statblock"].getActiveStatusEffects():
-            statEffects = ""
-        else:
-            statEffects = Tree("Status Effects")
-            for statEffect in creature["Statblock"].getActiveStatusEffects():
-                node = statEffects.add(f"[green]{statEffect['name']}[/green]")
-                effect = statEffect["effect"]
-
-                if "attribute" in effect and effect["attribute"]:
-                    attrs = effect["attribute"]
-                    if isinstance(attrs, list):
-                        attr_text = ", ".join(attrs)
-                    else:
-                        attr_text = str(attrs)
-                    node.add(f"[white]{attr_text}[/white]")
-                elif "spell" in effect and effect["spell"]:
-                    spells = [spell["spellname"] for spell in effect["spell"]]
-                    node.add(f"[white]{spells}[/white]")
-                if "resultID" in effect and effect["resultID"]:
-                    ids = effect["resultID"]
-                    if isinstance(ids, list):
-                        id_text = ", ".join([str(id) for id in ids])
-                    else:
-                        id_text = str(ids)
-                    node.add(f"[white]{id_text}[/white]")
-
-
-        creatureStatsTable.add_row(str(creature["name"]), hp_str, conds_str, statEffects)
-
-    console.print(creatureStatsTable)
-def printConditions():
-    with open(CONDITION_LIST_FILE, "r") as f:
-        condData = json.load(f)
-
-    conds = Tree("[bold]All Conditions[/bold]")
-
-    for condition in condData:
-        cond_node = conds.add(f"[yellow]{condition['name']}[/yellow]")
-
-        if condition["statusEffects"]:
-            for status in condition["statusEffects"]:
-                effect_node = cond_node.add(f"[green]{status['name']}[/green]")
-                effect = status["effect"]
-
-                if "attribute" in effect:
-                    attributes = effect["attribute"]
-
-                    if isinstance(attributes, list):
-                        attr_text = ", ".join(attributes)
-                    else:
-                        attr_text = str(attributes)
-
-
-                    effect_node.add(f"[white]{attr_text}[/white]")
-
-        if condition["conditionEffects"]:
-            cond_effects = cond_node.add("[magenta]Condition Effects[/magenta]")
-            for effect in condition["conditionEffects"]:
-                cond_effects.add(f"{effect}")
-
-    console.print(conds)
-    f.close()
-def printStatusEffects():
-    with open(STATUS_EFFECT_LIST_FILE, "r") as f:
-        statusData = json.load(f)
-
-    # Root of the tree
-    statuses = Tree("[bold]All Status Effects[/bold]")
-
-    for effectData in statusData:
-        # Create the individual status node
-        status_node = Tree(f"[green]{effectData['name']}[/green]")
-
-        effect = effectData["effect"]
-
-        # Only display attribute line if it exists and is not empty
-        if "attribute" in effect and effect["attribute"]:
-            attrs = effect["attribute"]
-
-            if isinstance(attrs, list):
-                attr_text = ", ".join(attrs)
-            else:
-                attr_text = str(attrs)
-
-            status_node.add(f"[white]{attr_text}[/white]")
-
-        # Add the effect node to the main tree with padding
-        statuses.add(status_node)  # top/bottom spacing
-
-    console.print(statuses)
 
 #ENEMY TURN METHODS
 def addCondition(condToAdd, creature, resultID):
@@ -1879,7 +2176,7 @@ def translateBasicAction(creature, action):
                      targetNum, rollType, saveType, halfSave, damageMod, diceNum, diceType,
                      damType, conditions, statusEffect, lingEffect, extraEffect, lingSaves,
                      scaling, "action",specialNotes)
-def defineBasicActions(actionNames, actionTypes, actionProbs, actionEDams, actionImpacts, definedActions, player, initiative):
+def defineBasicActions(actionNames, actionTypes, actionProbs, actionEDams, actionImpacts, player, initiative):
     #Load basic actions
     try:
         with open(BASIC_ACTION_LIST_FILE, "r") as f: #Basic actions are hardcoded into basic_actions file.
@@ -1914,82 +2211,26 @@ def defineBasicActions(actionNames, actionTypes, actionProbs, actionEDams, actio
     shoveImpact = calcImpact(player, shove, shoveProb, 0, initiative)
     dodgeImpact = calcImpact(player, dodge, dodgeProb, 0, initiative)
 
-    if not definedActions:
-        actionNames.append(grapple.getName())
-        actionNames.append(shove.getName())
-        actionNames.append(dodge.getName())
-        actionTypes.append("Basic")
-        actionTypes.append("Basic")
-        actionTypes.append("Basic")
-        actionProbs.append(grappleProb)
-        actionProbs.append(shoveProb)
-        # dodgeProb is autoProc
-        actionProbs.append(dodgeProb)
-        # grapple, shove, dodgeProb has no expected damage.
-        actionEDams.append(0)
-        actionEDams.append(0)
-        actionEDams.append(0)
-        # actionImpacts.append(0)
-        # actionImpacts.append(0)
-        # actionImpacts.append(0)
-        actionImpacts.append(grappleImpact)
-        actionImpacts.append(shoveImpact)
-        actionImpacts.append(dodgeImpact)
-def applyScaling(action, upcastLevel):
-    #All possible values include:
-    # XdY, XdY PER2, X, extraTarget, extraTarget2 for probability stuff
-    #mult PER2, 1CR, 1CR PER2 for summons
-        #NOTE: Any PER2 scales should be concluded before calling this method, not after.
-
-    baseLevel = action.getLvl()
-    scaling = action.getScaling()
-    scaled_action = copy.deepcopy(action)  # safe copy
-
-    if "d" in scaling: #XdY
-        parts = scaling.split()
-        base = parts[0]  # e.g. "1d6"
-        num, die = map(int, base.lower().split("d"))
-        delta_levels = upcastLevel - baseLevel
-
-        extraDice = delta_levels * num
-        scaled_action.setDice(action.getDiceNum() + extraDice, action.getSides(), action.getDamMod())
-    elif scaling.isdigit(): #X
-        scaled_action.setDamMod(action.getDamMod() + scaling)
-    elif "extraTarget" in scaling:
-        if scaling[-1] == "2":
-            scaled_action.setNumTarget(action.getNumTarget() + 2)
-        else:
-            scaled_action.setNumTarget(action.getNumTarget() + 1)
-    elif "1CR" in scaling:
-        statusEffects = action.getStatusEffects()
-        for i in range(len(statusEffects)):
-            if statusEffects[i]["name"] == "Summon":
-                statusEffects[i]["effect"]["crCap"] += 1
-            else:
-                pass
-        action.setStatusEffects(statusEffects)
-    elif "mult" in scaling:
-        statusEffects = action.getStatusEffects()
-        for i in range(len(statusEffects)):
-            if statusEffects[i]["name"] == "Summon":
-                statusEffects[i]["effect"]["numSummons"] *= 2
-            else:
-                pass
-        action.setStatusEffects(statusEffects)
-    elif "extraSummon" in scaling:
-        amt = int(scaling[-1]) if scaling[-1].isdigit() else 1
-        statusEffects = action.getStatusEffects()
-        for i in range(len(statusEffects)):
-            if statusEffects[i]["name"] == "Summon":
-                statusEffects[i]["effect"]["numSummons"] += amt
-            else:
-                pass
-        action.setStatusEffects(statusEffects)
-    scaled_action.setLingEffects([])
-    scaled_action.setExtraEffect({})
-    scaled_action.setLingSaves({})
-    scaled_action.setScaling("")
-    return scaled_action
+    actionNames.append(grapple.getName())
+    actionNames.append(shove.getName())
+    actionNames.append(dodge.getName())
+    actionTypes.append("Basic")
+    actionTypes.append("Basic")
+    actionTypes.append("Basic")
+    actionProbs.append(grappleProb)
+    actionProbs.append(shoveProb)
+    # dodgeProb is autoProc
+    actionProbs.append(dodgeProb)
+    # grapple, shove, dodgeProb has no expected damage.
+    actionEDams.append(0)
+    actionEDams.append(0)
+    actionEDams.append(0)
+    # actionImpacts.append(0)
+    # actionImpacts.append(0)
+    # actionImpacts.append(0)
+    actionImpacts.append(grappleImpact)
+    actionImpacts.append(shoveImpact)
+    actionImpacts.append(dodgeImpact)
 def scaledProbabilities(player, action, initiative):
     if action.getScaling():
         scaling_values = []
@@ -3014,7 +3255,6 @@ def calcTotalAutoHitProbability(player, action, initiative):
             "probExtraEffect": extraEffectProb,
             "probLingSaves": lingSavesProb
     }
-
 
 #IMPACT METHODS
 def computePerTargetConditionImpact(action, probSuccess, creature, useProbSuccess=True):
@@ -4116,249 +4356,6 @@ def executePlayerAction(player, action, selectedTargets, actionResult, initiativ
                 actionResult["turnCount"] = 0
                 actionResult["turnCap"] = int(note.lower().split("turn")[0])
                 break
-def getRollResults(action, selectedTargets):
-    rollResult = []
-    if isinstance(action, Spell):
-        onlyType = ""
-        immType = ""
-        cap = 0
-        if action.getSpecialNotes():
-            specialNotes = action.getSpecialNotes()
-            if any("hpcap" in note.lower() for note in specialNotes):
-                for note in specialNotes:
-                    if "hpcap" in note.lower():
-                        try:
-                            cap = int(note.split("hpCap")[1])
-                        except:
-                            cap = 0
-                        rollResults = []
-                        for target in selectedTargets:
-                            if target["Statblock"].getHP() < cap:
-                                if action.getRollType().lower() != 'save':
-                                    rollResults.append('y')
-                                else:
-                                    rollResults.append('n')
-                            else:
-                                if action.getRollType().lower() != 'save':
-                                    rollResults.append('n')
-                                else:
-                                    rollResults.append('y')
-                        return rollResults
-            if any("only" in note.lower() for note in specialNotes):
-                for note in specialNotes:
-                    if "only" in note.lower():
-                        try:
-                            onlyType = note.lower().split("only")[0]
-                        except:
-                            onlyType = ""
-            if any("immune" in note.lower() for note in specialNotes):
-                for note in specialNotes:
-                    if "immune" in note.lower():
-                        try:
-                            immType = note.lower().split("immune")[0]
-                        except:
-                            immType = ""
-
-        # NOTE: Basic actions are counted as spells here.
-        if len(selectedTargets) > 1:
-            if action.getRollType().lower() in ["tohit", "onhit"]:
-                for i, target in enumerate(selectedTargets):
-                    target = target["Statblock"] if isinstance(target, dict) else target
-                    if isinstance(target, Player) and immType == "humanoid" or (onlyType and onlyType != "humanoid"):
-                        print(f"{target.getName()} is not applicable to {action.getName()}!")
-                        roll = 'n'
-                    elif isinstance(target, Monster) and target.getCreatureType() == immType or (onlyType and target.getCreatureType != onlyType):
-                        print(f"{target.getName()} is not applicable to {action.getName()}!")
-                        roll = 'n'
-                    else:
-                        print(f"TARGET {i + 1} OF {len(selectedTargets)}")
-                        roll = input(f"{target.getName()} - Did the spell hit? (y/n/crit): ").lower()
-                        while roll not in ["y", "n", "crit"]:
-                            print("BAD INPUT")
-                            roll = input(f"{target.getName()} - Did the spell hit? (y/n/crit): ").lower()
-                    rollResult.append(roll)
-            elif action.getRollType().lower() in ["save"]:
-                for i, target in enumerate(selectedTargets):
-                    target = target["Statblock"] if isinstance(target, dict) else target
-                    if isinstance(target, Player) and immType == "humanoid" or (onlyType and onlyType != "humanoid"):
-                        print(f"{target.getName()} is not applicable to {action.getName()}!")
-                        roll = 'y'
-                    elif isinstance(target, Monster) and target.getCreatureType() == immType or (onlyType and target.getCreatureType != onlyType):
-                        print(f"{target.getName()} is not applicable to {action.getName()}!")
-                        roll = 'y'
-                    else:
-                        print(f"TARGET {i + 1} OF {len(selectedTargets)}")
-                        roll = input(f"{target.getName()} - Did the creature save? (y/n): ").lower()
-                        while roll not in ["y", "n"]:
-                            print("BAD INPUT")
-                            roll = input(f"{target.getName()} - Did the creature save? (y/n): ").lower()
-                    rollResult.append(roll)
-            else:  # Autohit
-                for i, target in enumerate(selectedTargets):
-                    target = target["Statblock"] if isinstance(target, dict) else target
-                    if isinstance(target, Player) and immType == "humanoid" or (onlyType and onlyType != "humanoid"):
-                        print(f"{target.getName()} is not applicable to {action.getName()}!")
-                        roll = 'n'
-                    elif isinstance(target, Monster) and  target.getCreatureType() == immType or (onlyType and target.getCreatureType != onlyType):
-                        print(f"{target.getName()} is not applicable to {action.getName()}!")
-                        roll = 'n'
-                    else:
-                        roll = 'y'
-                    rollResult.append(roll)
-        else:
-            try:
-                target = selectedTargets[0]
-            except:
-                print("DEBUG")
-            target = target["Statblock"] if isinstance(target, dict) else target
-            if isinstance(target, Player) and immType == "humanoid" or (onlyType and onlyType != "humanoid"):
-                print(f"{target.getName()} is not applicable to {action.getName()}!")
-                roll = 'n' if action.getRollType().lower() != "save" else "y"
-            elif isinstance(target, Monster) and target.getCreatureType() == immType or (onlyType and target.getCreatureType != onlyType):
-                print(f"{target.getName()} is not applicable to {action.getName()}!")
-                roll = 'n' if action.getRollType().lower() != "save" else "y"
-            else:
-                if action.getRollType().lower() in ["tohit", "onhit"]:
-                    roll = input(f"{target.getName()} - Did the spell hit? (y/n/crit): ").lower()
-                    while roll not in ["y", "n", "crit"]:
-                        print("BAD INPUT")
-                        roll = input(f"{target.getName()} - Did the spell hit? (y/n/crit): ").lower()
-                elif action.getRollType().lower() in ["save"]:
-                    roll = input(f"{target.getName()} - Did the creature save? (y/n): ").lower()
-                    while roll not in ["y", "n"]:
-                        print("BAD INPUT")
-                        roll = input(f"{target.getName()} - Did the creature save? (y/n): ").lower()
-                else: #Autohit
-                    roll = 'y'
-            rollResult.append(roll)
-    else:  # Assuming weapon
-        try:
-            debug_target = selectedTargets[0]
-        except:
-            print("DEBUG")
-        roll = input(f"{selectedTargets[0]["Statblock"].getName()} - Did the attack hit? (y/n/crit): ").lower()
-        while roll not in ["y", "n", "crit"]:
-            print("BAD INPUT")
-            roll = input(f"{selectedTargets[0]["Statblock"].getName()} - Did the attack hit? (y/n/crit): ").lower()
-        rollResult.append(roll)
-    return rollResult
-def getDiceResults(action, selectedTargets, rollResults):
-    """
-    Returns a list of damage values matching each selected target.
-    Uses user-entered actual damage values, applying halving logic only if needed.
-
-    rollResults: list of 'y'/'n' indicating success/failure per target
-    """
-
-    # No damage at all? Return 0 for each target.
-    if action.getMean() == 0:
-        return [0] * len(selectedTargets)
-
-
-    rollType = action.getRollType().lower() if isinstance(action, Spell) else "tohit"
-    isSaveSpell = (rollType == 'save')
-    isAutoHit = (rollType == 'autohit')
-    hasHalfOnSave = (isSaveSpell and action.getHalfSave())
-
-    damages = []
-
-    if isinstance(action.getDamType(), list) and action.getDamType() not in [0, 1]:
-        #NOTE: Only spells with multi-damType are save spells.
-        if action.getDamType()[-1] == "AND":
-            if action.getNumTarget() in [-1, 1]:
-                dams = [int(input(f"Input actual {action.getDamType()[i]} damage dealt")) for i in
-                        range(len(action.getDamType()) - 1)]
-                multiTarget = False
-            else:
-                multiTarget = True
-            for i, target in enumerate(selectedTargets):
-                target = target["Statblock"]
-                if multiTarget: #Dams is not set - so set dams
-                    dams = [int(input(f"Input actual {action.getDamType()[i]} damage dealt")) for i in
-                        range(len(action.getDamType()) - 1)]
-                for j in range(len(action.getDamType())):
-                    if target.isImmune(action.getDamType()[j]):
-                        dams[j] = 0
-                    elif target.isVulnerable(action.getDamType()[j]):
-                        if not target.isResistant(action.getDamType()[j]):
-                            dams[j] *= 2
-                    elif target.isResistant(action.getDamType()[j]):
-                        dams[j] = math.floor(dams[j] / 2)
-                dam = sum(dams)
-                if hasHalfOnSave and rollResults[i] == 'y':
-                    dam /= 2
-                damages.append(dam)
-        else:
-            [print(action.getDamType()[i]) for i in range(len(action.getDamType()) - 1)]
-            damType = input("Select Damage Type: ").lower()
-            while damType not in action.getDamType():
-                damType = input("Bad input! Please select from listed damage types: ").lower()
-            if action.getNumTarget() in [-1, 1]:
-                dams = int(input(f"Input actual {damType} damage dealt"))
-                multiTarget = False
-            else:
-                multiTarget = True
-            for i, target in enumerate(selectedTargets):
-                if isinstance(target, dict):
-                    target = target["Statblock"]
-                if multiTarget:
-                    dams = int(input(f"Input actual {damType} damage dealt"))
-                if target.isImmune(damType):
-                    dams = 0
-                elif target.isVulnerable(damType):
-                    if not target.isResistant(damType):
-                        dams *= 2
-                elif target.isResistant(damType):
-                    dams = math.floor(dams / 2)
-                if hasHalfOnSave and rollResults[i] == 'y':
-                    dams /= 2
-                damages.append(dams)
-        return damages
-
-
-    # ---- CASE 1: Spell applies the same roll to all targets (AutoHit or HalfSave AOE) ----
-    if isAutoHit or hasHalfOnSave:
-        # One damage roll, then adjust per target
-        if action.getNumTarget() > 1: #Autohit multitargets
-            for i in range(len(rollResults)):
-                damages.append(int(input("Input actual damage value dealt: ")))
-        else: #Autohit single/AOE, halfSaves
-            baseDamage = int(input("Input actual damage value dealt: "))
-
-            for result in rollResults:
-                if isSaveSpell:
-                    # 'y' means target succeeded save → gets half
-                    dam = baseDamage / 2 if result.lower() == 'y' else baseDamage
-                else:
-                    # AutoHit: success always hits full damage unless explicitly failed (rare)
-                    dam = baseDamage
-                damages.append(int(dam))
-
-        return damages
-
-    # ---- CASE 2: Save spells WITHOUT half damage ----
-    if isSaveSpell and not hasHalfOnSave:
-        dam = int(input("Input actual damage value dealt: "))
-        for result in rollResults:
-            if result.lower() == 'y':
-                damages.append(0)
-            else:
-                damages.append(dam)
-        return damages
-
-    # ---- CASE 3: Everything else (To-Hit spells, weapon attacks, etc.) ----
-    # Each target may have different hit/miss result
-    for i, result in enumerate(rollResults):
-        if rollType.lower() in ['tohit', 'onhit'] and rollResults[i] == 'crit':
-            dam = int(input("Input actual damage value dealt: "))
-            damages.append(dam * 2)
-        elif result.lower() == 'n':
-            damages.append(0)
-        else:
-            dam = int(input("Input actual damage value dealt: "))
-            damages.append(dam)
-
-    return damages
 def playerActionResolution(player, action, actionStats, initiative):
     def selectTargets():
         indices = []
@@ -4730,229 +4727,333 @@ def preTurnCheck(creature, encounter, initiative):
                 raise ValueError("Invalid effect type in preTurnCheck")
             for result in preTurnLogs: #Result log all preTurnEffects.
                 encounter.addResult(result)
-def playerTurn(player, initiative, encounter):
+def playerTurn(player, initiative):
     if endOfEncounter(initiative):
         return {}
-    turnResults = []
-    continueTurn = True
-    definedActions = False
-
     actionNames = []
     actionTypes = []
     actionProbs = []
     actionEDams = []
     actionImpacts = []
 
-    weaponIDX = 0
-    spellIDX = 0
-    while continueTurn:
-        actionTable = Table(title="Player Actions", show_lines=True)
-        actionTable.add_column("Name")
-        actionTable.add_column("Type")
-        actionTable.add_column("Probability of Success")
-        actionTable.add_column("Expected Damage")
-        actionTable.add_column("Impact Rating")
-
-        if definedActions:
-            actionNames, actionTypes, actionProbs, actionEDams, actionImpacts = [], [], [], [], []
-            definedActions = False
-
-        defineBasicActions(actionNames, actionTypes, actionProbs, actionEDams, actionImpacts, definedActions, player, initiative)
-        weaponIDX = 3
-        if player.getWeaponLength() > 0: #Weapon logic finished till impact is calculated
-            for i in range(player.getWeaponLength()):
+    defineBasicActions(actionNames, actionTypes, actionProbs,
+                       actionEDams, actionImpacts,  player,initiative)
+    if player.getWeaponLength() > 0:
+        for i in range(player.getWeaponLength()):
+            try:
+                weaponProb = calcTotalToHitProbability(player, player.getWeapon(i), initiative)["probSuccess"]
+            except:
                 try:
-                    weaponProb = calcTotalToHitProbability(player, player.getWeapon(i), initiative)["probSuccess"]
+                    weaponProb = int(calcTotalToHitProbability(player, player.getWeapon(i), initiative))
                 except:
-                    try:
-                        weaponProb = int(calcTotalToHitProbability(player, player.getWeapon(i), initiative))
-                    except:
-                        weaponProb = 0
-                weaponEDam = calcTotalExpectedDamage(player, player.getWeapon(i), initiative)
-                weaponImpact = calcImpact(player, player.getWeapon(i), weaponProb, weaponEDam, initiative)
-                if not definedActions:
-                    actionNames.append(player.getWeapon(i).getName())
-                    actionTypes.append("Weapon")
-                    actionProbs.append(weaponProb)
-                    actionEDams.append(f"{player.getWeapon(i).getMean()} - {weaponEDam}W")
-                    actionImpacts.append(weaponImpact)
-                    weaponIDX += 1
-        if weaponIDX == 3:
-            weaponIDX = -1
+                    weaponProb = 0
+            weaponEDam = calcTotalExpectedDamage(player, player.getWeapon(i), initiative)
+            weaponImpact = calcImpact(player, player.getWeapon(i), weaponProb, weaponEDam, initiative)
+            actionNames.append(player.getWeapon(i).getName())
+            actionTypes.append("Weapon")
+            actionProbs.append(weaponProb)
+            actionEDams.append(weaponEDam)
+            actionImpacts.append(weaponImpact)
+    if player.getSpellLength() > 0:
+        def merge_sort_spells(spell_list):
+            if len(spell_list) <= 1:
+                return spell_list
 
-        spellIDX = weaponIDX if weaponIDX != -1 else 3
-        if player.getSpellLength() > 0:
-            def merge_sort_spells(spell_list):
-                if len(spell_list) <= 1:
-                    return spell_list
+            mid = len(spell_list) // 2
+            left_half = merge_sort_spells(spell_list[:mid])
+            right_half = merge_sort_spells(spell_list[mid:])
 
-                mid = len(spell_list) // 2
-                left_half = merge_sort_spells(spell_list[:mid])
-                right_half = merge_sort_spells(spell_list[mid:])
+            return merge_spells(left_half, right_half)
+        def merge_spells(left, right):
+            result = []
+            i = j = 0
 
-                return merge_spells(left_half, right_half)
-            def merge_spells(left, right):
-                result = []
-                i = j = 0
+            while i < len(left) and j < len(right):
+                left_spell = left[i]
+                right_spell = right[j]
 
-                while i < len(left) and j < len(right):
-                    left_spell = left[i]
-                    right_spell = right[j]
-
-                    # Primary key: spell level
-                    if left_spell.getLvl() < right_spell.getLvl():
+                # Primary key: spell level
+                if left_spell.getLvl() < right_spell.getLvl():
+                    result.append(left_spell)
+                    i += 1
+                elif left_spell.getLvl() > right_spell.getLvl():
+                    result.append(right_spell)
+                    j += 1
+                else:
+                    # Secondary key: alphabetical by name (case-insensitive)
+                    if left_spell.getName().lower() <= right_spell.getName().lower():
                         result.append(left_spell)
                         i += 1
-                    elif left_spell.getLvl() > right_spell.getLvl():
+                    else:
                         result.append(right_spell)
                         j += 1
-                    else:
-                        # Secondary key: alphabetical by name (case-insensitive)
-                        if left_spell.getName().lower() <= right_spell.getName().lower():
-                            result.append(left_spell)
-                            i += 1
-                        else:
-                            result.append(right_spell)
-                            j += 1
 
-                while i < len(left):
-                    result.append(left[i])
-                    i += 1
+            while i < len(left):
+                result.append(left[i])
+                i += 1
 
-                while j < len(right):
-                    result.append(right[j])
-                    j += 1
+            while j < len(right):
+                result.append(right[j])
+                j += 1
 
-                return result
+            return result
 
-            spellList = [player.getSpell(i) for i in range(player.getSpellLength())]
-            spellList = merge_sort_spells(spellList)
+        spellList = [player.getSpell(i) for i in range(player.getSpellLength())]
+        spellList = merge_sort_spells(spellList)
 
-            for i in range(len(spellList)):
-                spellName = spellList[i].getName()
-                spellProb = 0
-                spellEDam = -1
-                spellImpact = -1
-                if spellList[i].getSelfTarget():
-                    spellProb = 1.0
-                    spellEDam = 0
-                else:
-                    if spellList[i].getRollType().lower() == "tohit":
-                        spellProb = calcTotalToHitProbability(player, spellList[i], initiative)
-                    elif spellList[i].getRollType().lower() == "save":
-                        spellProb = calcTotalSaveProbability(player, spellList[i], initiative)
-                    elif spellList[i].getRollType().lower() == "autohit":
-                        if spellList[i].getDiceNum() == 0 and not spellList[i].getLingSaves() \
+        for i in range(len(spellList)):
+            spellName = spellList[i].getName()
+            spellProb = 0
+            spellEDam = -1
+            spellImpact = -1
+            if spellList[i].getSelfTarget():
+                spellProb = 1.0
+                spellEDam = 0
+            else:
+                if spellList[i].getRollType().lower() == "tohit":
+                    spellProb = calcTotalToHitProbability(player, spellList[i], initiative)
+                elif spellList[i].getRollType().lower() == "save":
+                    spellProb = calcTotalSaveProbability(player, spellList[i], initiative)
+                elif spellList[i].getRollType().lower() == "autohit":
+                    if spellList[i].getDiceNum() == 0 and not spellList[i].getLingSaves() \
                             and not spellList[i].getLingEffects() and not spellList[i].getExtraEffect() \
                             and not (spellList[i].getSpecialNotes() and "HPCap" in spellList[i].getSpecialNotes()):
+                        spellProb = 1.0
+                        spellEDam = 0
+                    else:
+                        if spellList[i].getStatusEffects() and any(
+                                [se["name"] == "Summon" for se in spellList[i].getStatusEffects()]):
                             spellProb = 1.0
                             spellEDam = 0
                         else:
-                            if spellList[i].getStatusEffects() and any([se["name"] == "Summon" for se in spellList[i].getStatusEffects()]):
-                                spellProb = 1.0
-                                spellEDam = 0
-                            else:
-                                spellProb = calcTotalAutoHitProbability(player, spellList[i], initiative)
-                    elif spellList[i].getRollType().lower() == "onhit":
-                        spellProb = calcOnHitProbability(spellList[i],
-                                            [player.getWeapon(i) for i in range(player.getWeaponLength())], player, initiative)
-                    if isinstance(spellProb, dict):
-                        probToStr = f"{spellProb["probSuccess"]}" if spellProb["probSuccess"] else f"0.0"
-                        probToStr += f" - {spellProb["probLingEffect"]}LE" if spellProb["probLingEffect"] else ""
-                        probToStr += f" - {spellProb['probExtraEffect']}EE" if spellProb["probExtraEffect"] else ""
-                        probToStr += f" - {spellProb['probLingSaves']}LS" if spellProb["probLingSaves"] else ""
-                    else:
-                        probToStr = spellProb
-                    spellProb = probToStr
+                            spellProb = calcTotalAutoHitProbability(player, spellList[i], initiative)
+                elif spellList[i].getRollType().lower() == "onhit":
+                    spellProb = calcOnHitProbability(spellList[i],
+                                                     [player.getWeapon(i) for i in range(player.getWeaponLength())],
+                                                     player, initiative)
+                if isinstance(spellProb, dict):
+                    probToStr = f"{spellProb["probSuccess"]}" if spellProb["probSuccess"] else f"0.0"
+                    probToStr += f" - {spellProb["probLingEffect"]}LE" if spellProb["probLingEffect"] else ""
+                    probToStr += f" - {spellProb['probExtraEffect']}EE" if spellProb["probExtraEffect"] else ""
+                    probToStr += f" - {spellProb['probLingSaves']}LS" if spellProb["probLingSaves"] else ""
+                else:
+                    probToStr = spellProb
+                spellProb = probToStr
 
-                    spellEDam = calcTotalExpectedDamage(player, spellList[i], initiative) if spellEDam == -1 else spellEDam
-                    spellEDam = f"{spellList[i].getMean()} - {spellEDam}W"
+                spellEDam = calcTotalExpectedDamage(player, spellList[i], initiative) if spellEDam == -1 else spellEDam
 
-                spellImpact = calcImpact(player, spellList[i], spellProb, spellEDam, initiative)
+            spellImpact = calcImpact(player, spellList[i], spellProb, spellEDam, initiative)
 
-                if not definedActions:
-                    actionNames.append(spellName)
-                    actionTypes.append(f"Lvl {spellList[i].getLvl()} Spell" if spellList[i].getLvl() > 0 else "Cantrip")
-                    actionProbs.append(spellProb)
-                    actionEDams.append(spellEDam)
-                    actionImpacts.append(spellImpact)
-                    spellIDX += 1
-        if spellIDX == weaponIDX or spellIDX == 3:
-            spellIDX = -1
+            actionNames.append(spellName)
+            actionTypes.append(f"Lvl {spellList[i].getLvl()} Spell" if spellList[i].getLvl() > 0 else "Cantrip")
+            actionProbs.append(spellProb)
+            actionEDams.append(spellEDam)
+            actionImpacts.append(spellImpact)
 
-        for i in range(len(actionNames)):
-            actionTable.add_row(str(actionTypes[i]), actionNames[i], str(actionProbs[i]), str(actionEDams[i]), str(actionImpacts[i]))
-        console.print(actionTable)
-        definedActions = True
+    actions = [{"name" : actionNames[i], "prob" : actionProbs[i], "eDam" : actionEDams[i], "impact" : actionImpacts[i]} for i in range(len(actionNames))]
+    # def probSort(a):
+    #     return a["prob"]
+    # probRankings = copy.deepcopy(actions)
+    # probRankings.sort(reverse=True, key=probSort)
+    # def eDamSort(a):
+    #     return a["eDam"]
+    # eDamRankings = copy.deepcopy(actions)
+    # eDamRankings.sort(reverse=True, key=eDamSort)
+    # def impactSort(a):
+    #     return a["impact"]
+    # impactRankings = copy.deepcopy(actions)
+    # impactRankings.sort(reverse=True, key=impactSort)
+    # for j in range(len(actions)):
+    #     probRankings[j]["rank"] = j + 1
+    #     eDamRankings[j]["rank"] = j + 1
+    #     impactRankings[j]["rank"] = j + 1
+    console.print(actions)
+    KEYS = ("prob", "eDam", "impact")
 
-        chosenAction = input("Choose Action to execute: ").lower()
-        validActionChoice = False
-        while not validActionChoice:
-            try:
-                actionIndex = [action.lower() for action in actionNames].index(chosenAction)
-                validActionChoice = True
-            except:
-                print("Not a valid action choice!")
-                chosenAction = input("Choose Action to execute: ").lower()
-                chosenAction = input("Choose Action to execute: ").lower()
+    SEG_RE = re.compile(
+        r"^\s*(?P<a>\d*\.?\d+)\s*(?:-\s*(?P<b>\d*\.?\d+))?\s*(?P<tag>LS|LE|EE)?\s*$",
+        re.IGNORECASE
+    )
 
-        chosenAction = actionNames[actionIndex].lower()
-        if chosenAction in ['grapple', 'shove', 'dodge']:
-            try:
-                with open(BASIC_ACTION_LIST_FILE, "r") as f:  # Basic actions are hardcoded into basic_actions file.
-                    actions = json.load(f)
-            except FileNotFoundError:
-                actions = []
-            except json.JSONDecodeError:
-                actions = []
+    def _mid(a, b):
+        return (a + b) / 2.0 if b is not None else a
+    def parse_prob_segments(prob_str_or_num):
+        """
+        Returns:
+          initial: float
+          parts: dict tag -> float  (tags in {"LS","LE","EE"})
+        Accepts:
+          - numeric: 0.75
+          - "0.40 - 0.60LS - 0.20LE - 0.10EE"
+          - "0.75 - 0.30LE"
+        """
+        if isinstance(prob_str_or_num, (int, float)):
+            return float(prob_str_or_num), {}
 
-            if chosenAction == 'grapple':
-                grapple = actions[0]
-                action = translateBasicAction(player, grapple)
-            elif chosenAction == 'shove':
-                shove = actions[1]
-                action = translateBasicAction(player, shove)
+        if not isinstance(prob_str_or_num, str):
+            raise TypeError(f"Unsupported prob type: {type(prob_str_or_num)}")
+
+        s = prob_str_or_num.strip()
+        chunks = [c.strip() for c in s.split(" - ")]
+
+        if not chunks:
+            raise ValueError(f"Empty prob string: {prob_str_or_num!r}")
+
+        # First chunk: initial (no tag)
+        m0 = SEG_RE.match(chunks[0])
+        if not m0:
+            raise ValueError(f"Could not parse initial prob chunk: {chunks[0]!r}")
+
+        a0 = float(m0.group("a"))
+        b0 = float(m0.group("b")) if m0.group("b") is not None else None
+        initial = _mid(a0, b0)
+
+        parts = {}
+        for chunk in chunks[1:]:
+            m = SEG_RE.match(chunk)
+            if not m:
+                raise ValueError(f"Could not parse prob chunk: {chunk!r} from {prob_str_or_num!r}")
+
+            a = float(m.group("a"))
+            b = float(m.group("b")) if m.group("b") is not None else None
+            tag = (m.group("tag") or "").upper()
+
+            if tag not in {"LS", "LE", "EE"}:
+                # In your normalization, extras always have tags; if not, skip or raise.
+                raise ValueError(f"Missing/invalid tag in chunk: {chunk!r}")
+
+            parts[tag] = _mid(a, b)
+
+        return initial, parts
+    def prob_score_weighted(initial, parts, weights=None):
+        """
+        Weighted average score (recommended starter).
+        """
+        if weights is None:
+            weights = {"INIT": 0.70, "LS": 0.10, "LE": 0.10, "EE": 0.10}
+
+        score = weights["INIT"] * initial
+        for tag in ("LS", "LE", "EE"):
+            if tag in parts:
+                score += weights.get(tag, 0.0) * parts[tag]
+        return score
+    def prob_score_multiplicative(initial, parts):
+        """
+        Strict 'all must land' score (more punishing).
+        """
+        score = initial
+        for tag in ("LS", "LE", "EE"):
+            if tag in parts:
+                score *= parts[tag]
+        return score
+    def prepare_actions_for_ranking(actions, score_mode="weighted"):
+        out = []
+        for a in actions:
+            x = dict(a)
+            x["probDisplay"] = a["prob"]
+
+            init, parts = parse_prob_segments(a["prob"])
+            x["probInit"] = init
+            x["probParts"] = parts  # dict like {"LE": 0.25, "EE": 0.10}
+
+            if score_mode == "weighted":
+                x["prob"] = prob_score_weighted(init, parts)
             else:
-                dodge = actions[2]
-                action = translateBasicAction(player, dodge)
-        else:
-            #Use weaponIDX and spellIDX to look through all weapon and spell choices.
-            if weaponIDX != -1 and actionIndex < weaponIDX:
-                #chosenAction is a weapon
-                action = player.getWeapon(player.findWeapon(chosenAction))
-            elif spellIDX != -1 and actionIndex < spellIDX:
-                #chosenAction is a spell
-                action = player.getSpell(player.findSpell(chosenAction))
-            else:
-                raise ValueError("Error: Impossible selection according to prior input validation")
-        actionStats = [actionNames[actionIndex], str(actionProbs[actionIndex]), str(actionEDams[actionIndex]), str(actionImpacts[actionIndex])]
+                x["prob"] = prob_score_multiplicative(init, parts)
 
-        if isinstance(action, Spell) and action.getStatusEffects() and \
-                "summon" in [se["name"].lower() for se in action.getStatusEffects()]:
-            # result, initiative, summons = resolve_summon_spell(encounter, player, action, initiative)
-            # initiative_TOSAVE = copy.deepcopy(initiative)
-            # for creature in initiative_TOSAVE:
-            #     del creature["Statblock"]
-            # console.print(initiative_TOSAVE)
-            # encounter.setInitiative(initiative_TOSAVE)
-            result={}
-            pass
-        else:
-            result, initiative = playerActionResolution(player, action, actionStats, initiative)
-            if encounter.monsterSize() != len(initiative):
-                summonCleanUp(encounter, initiative)
-        #results will include the calculated data for the action, and the user input of actual results.
-        if result:
-            turnResults.append(result)
+            x["eDam"] = float(x["eDam"])
+            x["impact"] = float(x["impact"])
+            out.append(x)
 
-        printCreatureStats_DEBUG(initiative)
-        contInput = input("Continue turn? Y/N").lower()
-        while contInput not in ["y", "n"]:
-            print("Bad input! Please only input Y/N")
-            contInput = input("Continue turn? Y/N").lower()
-        if contInput == "n":
-            continueTurn = False
-    return turnResults
+        return out
+
+    def pareto_front_set(actions, keys=KEYS):
+        """
+        Returns a set of ids() for non-dominated actions.
+        a dominates b if it is >= on all keys and > on at least one key.
+        """
+        front_ids = set()
+        for a in actions:
+            dominated = False
+            for b in actions:
+                if a is b:
+                    continue
+                ge_all = all(b[k] >= a[k] for k in keys)
+                gt_any = any(b[k] > a[k] for k in keys)
+                if ge_all and gt_any:
+                    dominated = True
+                    break
+            if not dominated:
+                front_ids.add(id(a))
+        return front_ids
+    def topsis_scores_minmax(actions, keys=KEYS, weights=None, eps=1e-12):
+        """
+        TOPSIS scores for all actions using min-max normalization per metric.
+        All metrics assumed 'higher is better'.
+        Returns dict: id(action) -> score in [0, 1] (higher better).
+        """
+        if not actions:
+            return {}
+
+        if weights is None:
+            weights = {k: 1.0 for k in keys}
+
+        mins = {k: min(a[k] for a in actions) for k in keys}
+        maxs = {k: max(a[k] for a in actions) for k in keys}
+
+        # Normalize to [0,1], apply weights
+        norm_rows = []
+        for a in actions:
+            row = {}
+            for k in keys:
+                rng = (maxs[k] - mins[k])
+                if abs(rng) < eps:
+                    v = 0.0  # all same -> doesn't matter
+                else:
+                    v = (a[k] - mins[k]) / (rng + eps)
+                row[k] = v * weights[k]
+            norm_rows.append((a, row))
+
+        ideal_best = {k: max(r[k] for _, r in norm_rows) for k in keys}  # usually == weights[k]
+        ideal_worst = {k: min(r[k] for _, r in norm_rows) for k in keys}  # usually == 0
+
+        scores = {}
+        for a, r in norm_rows:
+            d_pos = math.sqrt(sum((r[k] - ideal_best[k]) ** 2 for k in keys))
+            d_neg = math.sqrt(sum((r[k] - ideal_worst[k]) ** 2 for k in keys))
+            score = d_neg / (d_pos + d_neg + eps)
+            scores[id(a)] = score
+
+        return scores
+    def rank_all_actions(actions, weights=None):
+        """
+        Returns a full ranked list (best -> worst) of *every* action dict,
+        adding:
+          - pareto: bool
+          - topsis: float
+          - overallRank: int
+        Sorting: pareto actions first, then TOPSIS score desc.
+        """
+        front_ids = pareto_front_set(actions)
+        scores = topsis_scores_minmax(actions, weights=weights)
+
+        enriched = []
+        for a in actions:
+            x = dict(a)  # don't mutate originals
+            x["pareto"] = (id(a) in front_ids)
+            x["topsis"] = scores.get(id(a), 0.0)
+            enriched.append(x)
+
+        enriched.sort(key=lambda x: (x["pareto"], x["topsis"]), reverse=True)
+
+        for i, x in enumerate(enriched, start=1):
+            x["overallRank"] = i
+
+        return enriched
+    #TODO: Double check accuracy of ranking logic
+    overallRankings = prepare_actions_for_ranking(actions)
+    overallRankings = rank_all_actions(overallRankings, weights={"prob": 1.0, "eDam": 1.0, "impact": 1.25})
+    return overallRankings
 def setActiveInitiative(encounter):
     initiative = copy.deepcopy(encounter.getInitiative())
     for creature in initiative:
@@ -5053,7 +5154,7 @@ def runEncounter(encounter):
                 for turn in encounter.getInitiative():
                     turn["currentTurn"] = initiative[inIdx]["currentTurn"]
                     inIdx += 1
-                saveEncounter(encounter, ENCOUNTER_LIST_FILE, True)
+                saveEncounter(encounter)
         else:
             encounter.setComplete(True)
             continueEncounter = False
@@ -5063,7 +5164,7 @@ def runEncounter(encounter):
     for turn in encounter.getInitiative():
         turn["currentTurn"] = initiative[inIdx]["currentTurn"]
         inIdx += 1
-    saveEncounter(encounter, ENCOUNTER_LIST_FILE)
+    saveEncounter(encounter)
 def main():
     try:
         print("Welcome to Encounter Simulator!")
@@ -5084,7 +5185,7 @@ def main():
             encounter = loadEncounter(encIdx)
         else:
             encounter = createEncounter()
-            saveEncounter(encounter, ENCOUNTER_LIST_FILE)
+            saveEncounter(encounter)
         runEncounter(encounter)
     finally:
         # --- Clean shutdown for pytest and normal runs ---

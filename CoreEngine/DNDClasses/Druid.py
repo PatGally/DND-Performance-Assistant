@@ -2,7 +2,7 @@ import json
 from CoreEngine import Player, Monster
 import os
 
-from main import loadMonsterActions
+import main
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MONSTER_LIST_FILE = os.path.join(BASE_DIR, "..", "data", "monster_list_NEW.json")
@@ -40,7 +40,7 @@ class Druid(Player):
         conImmunes = monster["conImmunes"]
         lairAction = monster["lairAction"]
         legActions = monster["legAction"]
-        actions = loadMonsterActions(monster)
+        actions = main.loadMonsterActions(monster)
 
         self.__monster = Monster(name, cr, cType, stats,hp, maxHP, ac, saveProfs,lResists, damResists,
                                 damImmunes, damVulns, conImmunes,activeConditions, activeStatusEffects,
