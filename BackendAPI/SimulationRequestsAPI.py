@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import sys
 from typing import Dict, Union, List
@@ -6,11 +7,14 @@ from typing import Dict, Union, List
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-
+from logs.loggingConfig import setupLogging
 from BackendAPI.models import Sorcerer, ActionRequest, Monster, Player, Encounter, Spell, Weapon, MonAction
 from dotenv import load_dotenv
 import main
-
+from fastapi import FastAPI, Request
+import time
+setupLogging()
+logger = logging.getLogger("backend")
 load_dotenv()
 
 origins = [os.getenv("ORIGIN1"), os.getenv("ORIGIN2")]
@@ -24,6 +28,17 @@ app.add_middleware(
     allow_headers=["*"], #Specific requests from specific sources.
 )
 
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    logger.info("Incoming request: %s %s", request.method, request.url.path)
+    response = await call_next(request)
+    duration = time.time() - start_time
+    logger.info(
+        "Completed request: %s %s Status=%s Duration=%.4fs",request.method,request.url.path,response.status_code,duration)
+
+    return response
+
 ENCOUNTER_LIST = []
 def refresh():
     with open("CoreEngine/data/ENCOUNTER_LIST.json", "r") as rf: #TODO: DB pull here
@@ -32,293 +47,6 @@ def refresh():
 refresh()
 AnyPlayer = Union[Sorcerer]
 
-# class Encounter(BaseModel):
-#     name : str
-#     hp : int
-#
-# class DamageRequest(BaseModel):
-#     amount: int
-
-# CREATURES: List[Union[Sorcerer, Monster]] = [#TEMP: Theoretical list of players based on encounter
-#     Sorcerer.model_validate({
-#         "className": "Sorcerer",
-#         "cid" : "p1",
-#         "lvl": 8,
-#         "sorceryPoints": 5,
-#         "chosenMetaMagics": [],
-#         "stats": {
-#             "name": "Test Sorcerer",
-#             "level": 5,
-#             "ac": 13,
-#             "class": "sorcerer",
-#             "statArray": [10, 14, 12, 18, 12, 16],
-#             "hp": "66",
-#             "maxHP": "30",
-#             "activeConditions": [],
-#             "activeStatusEffects": []
-#         },
-#         "weapons": [{
-#                 "name": "pike",
-#                 "properties": {
-#                     "damage": "1d10",
-#                     "damageType": "piercing",
-#                     "weaponStat": "STR"
-#                 }
-#             }],
-#         "spells": []
-#     }),
-#     Sorcerer.model_validate({
-#         "className": "Sorcerer",
-#         "cid" : "p2",
-#         "lvl": 5,
-#         "sorceryPoints": 5,
-#         "chosenMetaMagics": [],
-#         "stats": {
-#             "name": "Test Sorcerer",
-#             "level": 5,
-#             "ac": 13,
-#             "class": "sorcerer",
-#             "statArray": [10, 14, 12, 18, 12, 16],
-#             "hp": "70",
-#             "maxHP": "30",
-#             "activeConditions": [],
-#             "activeStatusEffects": []
-#         },
-#         "weapons": [],
-#         "spells": [{
-#                 "spellname": "Cloud of Daggers",
-#                 "level": "2",
-#                 "targeting": [
-#                     {
-#                         "self": "false",
-#                         "number": "-1",
-#                         "rolls": {
-#                             "rollType": "autoHit",
-#                             "saveType": "none",
-#                             "halfSave": "false",
-#                             "damage": "4d4",
-#                             "damageMod": "0"
-#                         },
-#                         "damType": [
-#                             "slashing"
-#                         ],
-#                         "conditions": [],
-#                         "statusEffect": [
-#                             {
-#                                 "name": "Concentration",
-#                                 "effect": {}
-#                             }
-#                         ],
-#                         "lingEffect": {
-#                             "repeat": "true"
-#                         },
-#                         "extraEffect": {},
-#                         "lingSave": {},
-#                         "scaling": "2d4",
-#                         "specialNotes": [],
-#                         "actionCost": "action"
-#                     }
-#                 ]
-#             }]
-#     }),
-#     Sorcerer.model_validate({
-#         "className": "Sorcerer",
-#         "cid" : "p3",
-#         "lvl": 13,
-#         "sorceryPoints": 5,
-#         "chosenMetaMagics": [],
-#         "stats": {
-#             "name": "Test Sorcerer",
-#             "level": 13,
-#             "ac": 18,
-#             "class": "sorcerer",
-#             "statArray": [10, 14, 12, 18, 12, 16],
-#             "hp": "100",
-#             "maxHP": "30",
-#             "activeConditions": [],
-#             "activeStatusEffects": []
-#         },
-#         "weapons": [],
-#         "spells": []
-#     }),
-#     Monster.model_validate({
-#         "name": "Aboleth",
-#         "cid" : "m4",
-#         "cr": "10",
-#         "creatureType": "Aberration",
-#         "statArray": [
-#             21,
-#             9,
-#             15,
-#             18,
-#             15,
-#             18
-#         ],
-#         "hit_points": 135,
-#         "AC": 17,
-#         "saveProfs": [
-#             5,
-#             -1,
-#             2,
-#             4,
-#             2,
-#             4
-#         ],
-#         "lResists": "0",
-#         "damResists": "",
-#         "damImmunes": "",
-#         "damVulns": "",
-#         "conImmunes": "",
-#         "magicResist": "false",
-#         "lairAction": "false",
-#         "actions": [
-#             {
-#                 "name": "Tail",
-#                 "desc": "Melee Weapon Attack: +9 to hit, reach 10 ft., one target. Hit: 15 (3d6 + 5) bludgeoning damage.",
-#                 "actionRange": "10",
-#                 "numTarget": 1,
-#                 "shape": "",
-#                 "rolls": {
-#                     "rollType": "toHit",
-#                     "saveType": "",
-#                     "halfSave": "false",
-#                     "saveDC": "",
-#                     "damage": "3d6",
-#                     "attackBonus": 9,
-#                     "damMod": 5
-#                 },
-#                 "damType": [
-#                     "bludgeoning"
-#                 ],
-#                 "conditions": [
-#                     ""
-#                 ],
-#                 "statusEffect": [],
-#                 "lingEffect": {},
-#                 "extraEffect": {},
-#                 "lingSave": {},
-#                 "actionCost": "action",
-#                 "recharge": "",
-#                 "specialNotes": [],
-#                 "extraDamage": []
-#             },
-#             {
-#                 "name": "Enslave (3/day)",
-#                 "desc": "The aboleth targets one creature it can see within 30 ft. of it. The target must succeed on a DC 14 Wisdom saving throw or be magically charmed by the aboleth until the aboleth dies or until it is on a different plane of existence from the target. The charmed target is under the aboleth's control and can't take reactions, and the aboleth and the target can communicate telepathically with each other over any distance.\nWhenever the charmed target takes damage, the target can repeat the saving throw. On a success, the effect ends. No more than once every 24 hours, the target can also repeat the saving throw when it is at least 1 mile away from the aboleth.",
-#                 "actionRange": "",
-#                 "numTarget": 1,
-#                 "shape": "",
-#                 "rolls": {
-#                     "rollType": "save",
-#                     "saveType": "wisdom",
-#                     "halfSave": "false",
-#                     "saveDC": "14",
-#                     "damage": "",
-#                     "attackBonus": 0,
-#                     "damMod": ""
-#                 },
-#                 "damType": [
-#                     ""
-#                 ],
-#                 "conditions": [
-#                     ""
-#                 ],
-#                 "statusEffect": [],
-#                 "lingEffect": {},
-#                 "extraEffect": {},
-#                 "lingSave": {
-#                     "saveType": "wisdom",
-#                     "saveDC": "14",
-#                     "timing": ""
-#                 },
-#                 "actionCost": "action",
-#                 "recharge": "",
-#                 "specialNotes": [],
-#                 "extraDamage": []
-#             }
-#         ],
-#         "legActions": [
-#             {
-#                 "name": "Detect",
-#                 "desc": "The aboleth makes a Wisdom (Perception) check.",
-#                 "cost": 1
-#             },
-#             {
-#                 "name": "Tail Swipe",
-#                 "desc": "The aboleth makes one tail attack.",
-#                 "action": {
-#                     "name": "Tail",
-#                     "desc": "Melee Weapon Attack: +9 to hit, reach 10 ft., one target. Hit: 15 (3d6 + 5) bludgeoning damage.",
-#                     "actionRange": "10",
-#                     "numTarget": 1,
-#                     "shape": "",
-#                     "rolls": {
-#                         "rollType": "toHit",
-#                         "saveType": "",
-#                         "halfSave": "false",
-#                         "saveDC": "",
-#                         "damage": "3d6",
-#                         "attackBonus": 9,
-#                         "damMod": 5
-#                     },
-#                     "damType": [
-#                         "bludgeoning"
-#                     ],
-#                     "conditions": [
-#                         ""
-#                     ],
-#                     "statusEffect": [],
-#                     "lingEffect": {},
-#                     "extraEffect": {},
-#                     "lingSave": {},
-#                     "actionCost": "action",
-#                     "recharge": "",
-#                     "specialNotes": [],
-#                     "extraDamage": []
-#                 },
-#                 "cost": 1
-#             },
-#             {
-#                 "name": "Psychic Drain (Costs 2 Actions)",
-#                 "desc": "One creature charmed by the aboleth takes 10 (3d6) psychic damage, and the aboleth regains hit points equal to the damage the creature takes.",
-#                 "cost": 2
-#             }
-#         ],
-#         "spellInfo": {},
-#         "multiattack": {
-#             "name": "Multiattack",
-#             "total": 3,
-#             "split": []
-#         }
-#     })
-# ]
-# AnyCreature = Union[Sorcerer, Monster]
-
-# temp_data = {"name" : "Hello, World", "hp" : 30}
-
-#OLD ROUTES
-# @app.get("/encounter", response_model=Encounter)
-# async def getEncounter():
-#     return Encounter(name=temp_data["name"], hp=temp_data["hp"])
-#
-# @app.post("/encounter/damage")
-# def postDamage(n : DamageRequest):
-#     print("HIT /encounter/damage", n.amount, "hp was", temp_data["hp"])
-#     temp_data.update({"hp" : temp_data.get("hp") - n.amount})
-#     return Encounter(name=temp_data["name"], hp=temp_data["hp"])
-
-
-#SORCERER ROUTES
-# @app.get("/creatures/{cid}", response_model=AnyCreature)
-# def getSorcerer(cid : str):
-#     creature = [c for c in CREATURES if c.get(cid, None)]
-#     if creature is None:
-#         raise HTTPException(404, f"Unknown cid: {cid}")
-#     return creature
-#
-# @app.get("/creatures", response_model=Dict[str, AnyCreature])
-# def getPlayers():
-#     return AnyCreature
 def isPlayer(creature):
     if isinstance(creature, dict):
         if creature.get("stats", {}):
@@ -359,6 +87,7 @@ def getCreature(eid : str, cid : str):
             foundcid = creature.get("cid", "")
         cids.append(foundcid)
     creatureIdx = cids.index(cid)
+
     return creatures[creatureIdx]
 @app.post("/encounter/{eid}/creature")
 def addtoEncounter(eid : str, creature : Union[AnyPlayer, Monster]):
@@ -381,9 +110,9 @@ def getEncounter(eid : str):
     for encounter in ENCOUNTER_LIST:
         db_eid = encounter.get("eid", None)
         if eid == db_eid:
-            print(f"{eid} found!")
+            logger.info(f"{eid} found!")
             return encounter
-    print(f"{eid} not found!")
+    logger.info(f"{eid} not found!")
 
 @app.get("/encounter/{eid}/recommendation/{cid}")
 def actionRecommendation(eid : str, cid : str):
@@ -402,6 +131,7 @@ def actionRecommendation(eid : str, cid : str):
         if cid.lower() in monstercids:
             monster = monsters[monstercids.index(cid.lower())]
             rankings = main.monsterTurn(monster, initiative)
+            logger.info("Rankings for %s: %s", eid, rankings)
             return rankings
 
 
@@ -413,14 +143,14 @@ def getNextTurn(eid : str):
     initiative = encounter.getInitiative()
     for i, turn in enumerate(initiative):
         if turn["currentTurn"]:
-            print("currentTurn creature: " + turn["name"])
+            logger.info("currentTurn creature: " + turn["name"])
             turn["currentTurn"] = False
             if i == len(initiative) - 1:
                 initiative[0]["currentTurn"] = True
-                print("New currentTurnCreature: " + initiative[0]["name"])
+                logger.info("New currentTurnCreature: " + initiative[0]["name"])
             else:
                 initiative[i + 1]["currentTurn"] = True
-                print("New currentTurnCreature: " + initiative[i + 1]["name"])
+                logger.info("New currentTurnCreature: " + initiative[i + 1]["name"])
             break
     currentCreature = {}
     for creature in initiative:
@@ -460,6 +190,7 @@ def getNextTurn(eid : str):
     main.saveEncounter(encounter)
     refresh()
     preEffects = {"preEffects" : preEffects, "refresh" : refreshFlag}
+    logger.info(f"preEffects: {preEffects}")
     return preEffects
 
 @app.get("/encounter/{eid}/initiative/currentturn")
@@ -486,7 +217,7 @@ def postEncounter(encounter : Encounter):
 def getPlayerPacket(eid : str):
     encounter = getEncounter(eid)
     players = encounter.get("players", [])
-    print(players)
+    logger.info(players)
     packet = [{"name" : player.get("stats").get("name"), "level" : player.get("stats").get("level"),
                "characterClass" : player.get("stats").get("characterClass")} for player in players]
     return packet
@@ -495,7 +226,7 @@ def getMonsterPacket(eid : str):
     #TODO: size
     encounter = getEncounter(eid)
     monsters = encounter.get("monsters", [])
-    print(monsters)
+    logger.info(monsters)
     packet = [{"name" : monster.get("name"), "cr" : monster.get("cr")} for monster in monsters]
     return packet
 @app.get("/dashboard/players")
@@ -530,6 +261,7 @@ def getSpells(classid : str, level : int):
                     found = True
                 else:
                     i += 1
+    logger.info("Spell data from get spells: %s", relevantSpellData)
     return relevantSpellData
 @app.get("/dashboard/encounters")
 def getEncounterPacket():
@@ -543,51 +275,6 @@ def postPlayerToPlayerList(player : AnyPlayer):
     with open("../CoreEngine/data/player_list.json", "w") as wpf:
         json.dump(player_list, wpf, indent=4)
     return dict(verification="true")
-
-
-
-# @app.post("/debug/damage")
-# def resolve_outcome(p: ActionRequest):
-#     targetedCreatures = []
-#     cids = [c.get("cid", None) for c in CREATURES]
-#     for cid in p.targets:
-#         if cid in cids:
-#             targetedCreatures.append([c for c in CREATURES if c.get(cid, None)][0])
-#     if not targetedCreatures:
-#         raise HTTPException(404, f"Unknown cids: {p.targets}")
-#
-#     damages = p.outcome["diceResults"]
-#     if p.actionType.lower() == "tohit":
-#         for i, roll in enumerate(p.outcome["rollResults"]):
-#             if roll.lower() == "n":
-#                 damages[i] = 0
-#             elif roll.lower() == "crit":
-#                 damages[i] = int(p.outcome["diceResults"][i]) * 2
-#             else:
-#                 damages[i] = int(p.outcome["diceResults"][i])
-#     elif p.actionType.lower() == "save":
-#         for i, roll in enumerate(p.outcome["rollResults"]):
-#             if roll.lower() == "y":
-#                 damages[i] = int(p.outcome["diceResults"][i]) / 2
-#             else:
-#                 damages[i] = int(p.outcome["diceResults"][i])
-#     else:
-#         for i, roll in enumerate(p.outcome["rollResults"]):
-#             damages[i] = int(p.outcome["diceResults"][i])
-#
-#
-#     for i, creature in enumerate(targetedCreatures):
-#         if isinstance(creature, Monster):
-#             print(f"HP CHANGED FROM {creature.hp}")
-#             print(f"BY {damages[i]}")
-#             creature.hp = str(int(creature.hp) - damages[i])
-#             print(f"TO {creature.hp}")
-#         else:
-#             print(f"HP CHANGED FROM {creature.stats.hp}")
-#             print(f"BY {damages[i]}")
-#             creature.stats.hp = str(int(creature.stats.hp) - damages[i])
-#             print(f"TO {creature.stats.hp}")
-#     return dict(verification="true")
 
 #DEBUG ROUTE
 @app.get("/__whoami")
