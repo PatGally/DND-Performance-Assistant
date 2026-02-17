@@ -31,7 +31,7 @@ class Encounter(BaseModel):
     date: str  # keep as str; you can switch to datetime/date later if you want
 
     eid: str
-    maplink: str = ""
+    maplink: str = Field(alias="maplink")
     completed: bool = False
 
     monsters: List[Monster] = Field(default_factory=list)
