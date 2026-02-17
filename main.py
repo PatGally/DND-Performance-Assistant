@@ -693,6 +693,318 @@ def getDiceResults(action, selectedTargets, rollResults):
             damages.append(dam)
 
     return damages
+def enemySetTargets(initiative, duplicateTargets):
+    affectedCreatures = []
+    if not TEST_MODE:
+        affInput = input("Which creatures were affected? Please input one at a time. ('Exit' to exit)").lower()
+    else:
+        validTargets = []
+        for creature in initiative:
+            if (creature["turnType"] == "Player" or
+                    (creature["turnType"] == "Monster" and creature["Statblock"].isActiveStatusEffect("SwitchSides"))
+                    and not creature["Statblock"].isActiveCondition("Dead")
+                    and not creature["Statblock"].isActiveCondition("Out of Combat")):
+                validTargets.append(creature)
+        affInput = input(f"Which creatures were affected? ({0}) ({[f"{target["name"]}" for target in validTargets]})").lower()
+    tgtctr = 0
+    while affInput != "exit":
+        found = False
+        idx = 0
+        while not found and idx < len(initiative):  # find creature
+            if initiative[idx]["name"].lower() == affInput.lower():
+                if not duplicateTargets:
+                    if affInput in affectedCreatures:
+                        print("Invalid selection: Creature is already targeted!")
+                        break
+                if initiative[idx]["Statblock"].isActiveCondition("Dead") or initiative[idx]["Statblock"].isActiveCondition("Out Of Combat"):
+                    print("Invalid selection: Creature cannot be targeted!")
+                    break
+                else:
+                    creature = initiative[idx]
+                    if (creature["turnType"] == "Player"
+                            or (creature["turnType"] == "Monster" and creature["Statblock"].isActiveStatusEffect(
+                                "SwitchSides"))
+                            and not creature["Statblock"].isActiveCondition("Dead")
+                            and not creature["Statblock"].isActiveCondition("Out of Combat")):
+                        validTarget = True
+                    else:
+                        validTarget = False
+                    if not validTarget:
+                        print("Invalid selection: Creature cannot be targeted!")
+                        break
+                    else:
+                        affectedCreatures.append(initiative[idx])
+                        tgtctr += 1
+                        found = True
+            idx += 1
+        if not found and idx == len(initiative):
+            print("Creature not found!")
+        if not TEST_MODE:
+            affInput = input("Which creatures were affected? Please input one at a time. ('Exit' to exit)").lower()
+        else:
+            validTargets = []
+            for creature in initiative:
+                if (creature["turnType"] == "Player" or
+                        (creature["turnType"] == "Monster" and creature["Statblock"].isActiveStatusEffect(
+                            "SwitchSides"))
+                        and not creature["Statblock"].isActiveCondition("Dead")
+                        and not creature["Statblock"].isActiveCondition("Out of Combat")):
+                    validTargets.append(creature)
+            affInput = input(
+                f"Which creatures were affected? ({tgtctr}) ({[f"{target["name"]}" for target in validTargets]})").lower()
+    return affectedCreatures
+def enemyTurnMANUAL(initiative, encounter):
+    printCreatureNames(initiative)
+    affectedCreatures = enemySetTargets(initiative, True)
+    for creature in affectedCreatures:
+        if not creature["Statblock"].isActiveCondition("Dead") \
+            and not creature["Statblock"].isActiveCondition("Out of Combat"):
+            printCreatureStats(affectedCreatures)
+            nextCreature = False
+            print(f"{creature['name']} SELECTION: ")
+            while not nextCreature:
+                print("1. Change HP")
+                print("2. Change Conditions")
+                print("3. Change Status Effects")
+                print("4. Exit")
+                damChoice = int(input("Choose enemy outcome"))
+                while damChoice < 1 or damChoice > 4:
+                    print("Incorrect input.")
+                    damChoice=int(input())
+                if damChoice == 1: #Change HP
+                    damage = int(input("How much damage?"))
+                    if damage > 0:
+                        creature["Statblock"].setHP(creature["Statblock"].getHP() - damage)
+                        if damage != 0 and any("concentration" in se["name"].lower() for se in creature["Statblock"].getActiveStatusEffects()):
+                            print("Active concentration detected!")
+                            removeConc = input("Did the creature lose concentration? (y/n)")
+                            while removeConc not in ["y", "n"]:
+                                print("BAD INPUT")
+                                removeConc = input(f"Did the {creature['name']} lose concentration (y/n)")
+                            if removeConc == "y":
+                                concentration = {}
+                                for se in creature["Statblock"].getActiveStatusEffects():
+                                    if se["name"].lower() == "concentration":
+                                        concentration = se
+                                        break
+                                endConcentration(creature, concentration, initiative)
+                                if encounter.monsterSize() != len(initiative):
+                                    summonCleanUp(encounter, initiative)
+                        if creature["Statblock"].isActiveCondition("downed") and damage > 0:
+                            removeCondition("downed", creature)
+                            addCondition("dead", creature, -1)
+                        elif creature["Statblock"].getHP() <= 0:
+                            creature["Statblock"].setHP(0)
+                            if creature["turnType"].lower() == "player":
+                                addCondition("downed", creature, -1)
+                            else:
+                                addCondition("dead", creature, -1)
+                    else:
+                        print("Invalid: Cannot have negative damage!")
+                elif damChoice == 2: #Change Conditions
+                    endConditionChange = False
+                    while not endConditionChange:
+                        print("1. Add Condition")
+                        print("2. Remove Condition")
+                        print("3. Exit")
+                        condChoice = int(input())
+                        while condChoice < 1 or condChoice > 3:
+                            print("Incorrect input.")
+                            condChoice=int(input())
+                        if condChoice == 1: #Add Condition
+                            printConditions()
+                            conditionToAdd = input("Which condition has been added?").lower()
+                            validCondition = False
+                            while not validCondition:
+                                if enemyCanMutate(conditionToAdd, creature):
+                                    if addCondition(conditionToAdd, creature, -1):
+                                        validCondition = True
+                                    else:
+                                        if conditionToAdd == "exit":
+                                            validCondition = True
+                                if not validCondition:
+                                    print("INVALID CHOICE")
+                                    conditionToAdd = input("Which condition has been added? 'Exit' to exit").lower()
+                        elif condChoice == 2: #Remove Condition
+                            if len(creature["Statblock"].getActiveConditions()) != 0:
+                                for condition in creature["Statblock"].getActiveConditions():
+                                    if isinstance(condition, dict):
+                                        if -1 in condition["resultID"]:
+                                            print(condition["cond"])
+                                    else:
+                                        print(condition)
+                                conditionToRemove = input("Which condition has been removed? 'Exit' to exit").lower()
+                                validCondition = False
+                                while not validCondition:
+                                    if enemyCanMutate(conditionToRemove, creature):
+                                        if removeCondition(conditionToRemove, creature):
+                                            validCondition = True
+                                        else:
+                                            if conditionToRemove == "exit":
+                                                validCondition = True
+                                    if not validCondition:
+                                        print("Creature does not have that condition!")
+                                        conditionToRemove = input("Which condition has been removed? 'Exit' to exit").lower()
+                            else:
+                                print("Invalid input! No conditions exist.")
+                        else:
+                            endConditionChange = True
+                elif damChoice == 3:
+                    IGNORED = {"time stop", "transform", "summon"}
+
+                    # Your allowed attributes by effect, per your schema
+                    ATTRS_BY_EFFECT = {
+                        # attack roll / save modifiers
+                        "advantage": ["attack rolls for", "attack rolls against", "STR save", "DEX save", "CON save",
+                                      "INT save", "WIS save", "CHA save", "ALL save"],
+                        "disadvantage": ["attack rolls for", "attack rolls against", "STR save", "DEX save",
+                                         "CON save", "INT save", "WIS save", "CHA save", "ALL save"],
+                        "buff": ["attack rolls for", "attack rolls against", "STR save", "DEX save", "CON save",
+                                 "INT save", "WIS save", "CHA save", "AC", "ALL save"],
+                        "debuff": ["attack rolls for", "attack rolls against", "AC", "STR save", "DEX save",
+                                   "CON save", "INT save", "WIS save", "CHA save", "ALL save"],
+                        "autocrit": ["attack rolls against"],
+                        "autofail": ["STR save", "DEX save", "CON save", "INT save", "WIS save", "CHA save", "ALL save"],
+
+                        # score-based defenses
+                        "resistance": ["fire", "psychic", "force", "cold", "poison", "acid", "thunder", "lightning", "radiant", "necrotic", "bludgeoning", "piercing", "slashing"],
+                        "immunity": ["fire", "psychic", "force", "cold", "poison", "acid", "thunder", "lightning", "radiant", "necrotic", "bludgeoning", "piercing", "slashing"],
+                        "vulnerability": ["fire", "psychic", "force", "cold", "poison", "acid", "thunder", "lightning", "radiant", "necrotic", "bludgeoning", "piercing", "slashing"],
+
+                        # others typically have no attribute (but we’ll keep template behavior)
+                        "concentration": [],
+                        "switchsides": []
+                    }
+
+                    def _prompt_choice(title, options):
+                        print(title)
+                        for i, opt in enumerate(options, 1):
+                            print(f"{i}. {opt}")
+                        while True:
+                            try:
+                                n = int(input("> ").strip())
+                                if 1 <= n <= len(options):
+                                    return options[n - 1]
+                            except ValueError:
+                                pass
+                            print("Enter a number from the list.")
+                    def _build_status_effect(se_name, status_defs):
+                        # find template
+                        match = next((s for s in status_defs if s["name"].lower() == se_name.lower()), None)
+                        if not match:
+                            print("Unknown status effect.")
+                            return None
+                        if match["name"].lower() in IGNORED:
+                            print("That effect is handled elsewhere.")
+                            return None
+
+                        effect = copy.deepcopy(match["effect"])
+
+                        if "rolls" in effect:
+                            default_roll = effect["rolls"]
+                            if match["name"].lower() in ("buff", "debuff"):
+                                user_roll = input(f"Enter roll for {match['name']} (default {default_roll}): ").strip()
+                                if user_roll:
+                                    effect["rolls"] = user_roll
+                            elif default_roll in ("", None):
+                                user_roll = input(f"Enter roll for {match['name']}: ").strip()
+                                effect["rolls"] = user_roll or default_roll
+
+                        if "damage" in effect and (effect["damage"] in ("", None)):
+                            user_damage = input(f"Enter damage modifier for {match['name']} (e.g., /2, *2): ").strip()
+                            if user_damage:
+                                effect["damage"] = user_damage
+
+                        if "value" in effect and effect["value"] == "T/F":
+                            user_value = input(f"{match['name']} active? (True/False): ").strip()
+                            effect["value"] = user_value
+
+                        allowed_attrs = ATTRS_BY_EFFECT.get(match["name"].lower())
+                        if allowed_attrs:
+                            chosen_attrs = []
+                            while True:
+                                remaining = [a for a in allowed_attrs if a not in chosen_attrs]
+                                if not remaining:
+                                    print("All valid attributes already chosen.")
+                                    break
+                                chosen = _prompt_choice(
+                                    f"Choose an attribute for {match['name']} (or type 0 to finish):",
+                                    remaining + ["Finish selection"]
+                                )
+                                if chosen == "Finish selection":
+                                    break
+                                chosen_attrs.append(chosen)
+
+                                again = input("Add another attribute? Y/N: ").strip().lower()
+                                if again != "y":
+                                    break
+
+                            effect["attribute"] = chosen_attrs or []
+
+                        else:
+                            if "attribute" in effect and effect["attribute"]:
+                                if isinstance(effect["attribute"], str):
+                                    effect["attribute"] = [effect["attribute"]]
+
+                        return {"name": match["name"], "effect": effect}
+                    def modifyStatusEffects(creature):
+                        with open(STATUS_EFFECT_LIST_FILE, "r") as f:
+                            status_defs = json.load(f)
+                        available = [s["name"] for s in status_defs if s["name"].lower() not in IGNORED]
+
+                        endSEChange = False
+                        while not endSEChange:
+                            print("\n--- Status Effect Menu ---")
+                            print("1. Add Status Effect")
+                            print("2. Remove Status Effect")
+                            print("3. Exit")
+                            try:
+                                seChoice = int(input().strip())
+                            except ValueError:
+                                seChoice = 0
+                            if seChoice not in [1, 2, 3]:
+                                print("Invalid input.")
+                                continue
+
+                            if seChoice == 1:
+                                se_name = _prompt_choice("\nWhich status effect has been added? 'Exit' to exit", available).lower()
+                                seToAdd = _build_status_effect(se_name, status_defs)
+                                while not enemyCanMutate(seToAdd, creature) and se_name != "exit":
+                                    print("INVALID INPUT")
+                                    se_name = _prompt_choice("\nWhich status effect has been added? 'Exit' to exit", available).lower()
+                                    seToAdd = _build_status_effect(se_name, status_defs)
+                                if se_name == "exit":
+                                    continue
+                                if not seToAdd:
+                                    continue
+
+                                # Always let addStatusEffect handle merging logic
+                                addStatusEffect(seToAdd, creature, -1)
+
+                            elif seChoice == 2:
+                                active = creature["Statblock"].getActiveStatusEffects()
+                                if not active:
+                                    print("No active status effects.")
+                                    continue
+                                to_remove = _prompt_choice(
+                                    "\nSelect a status effect to remove: 'Exit' to exit",
+                                    [e["name"] for e in active]
+                                ).lower()
+                                while not enemyCanMutate(to_remove, creature) and to_remove != "exit":
+                                    print("INVALID INPUT")
+                                    to_remove = _prompt_choice(
+                                        "\nSelect a status effect to remove: 'Exit' to exit",
+                                        [e["name"] for e in active]
+                                    ).lower()
+                                if to_remove == "exit":
+                                    continue
+                                removeStatusEffect(to_remove, creature)
+                            else:
+                                endSEChange = True
+
+                    modifyStatusEffects(creature)
+                else:
+                    nextCreature = True
 #PRINT METHODS (dead but may use to debug)
 def printEncounterState(initiative):
     """
@@ -908,6 +1220,7 @@ def getPlayerStats(data):
     #TODO: Add new player attributes to this method.
     stats = data["stats"]
     saveProfs = stats["saveProfs"]
+    saveProfs = {a : int(i) for a, i in saveProfs.items()}
     playerName = stats["name"]
     playerLvl = int(stats["level"])
     playerAC = int(stats["ac"])
@@ -1045,7 +1358,7 @@ def addChosenSpell(spell, player):
             else:
                 targeting = spell["targeting" ]
             selfTarget = targeting["self"]
-            targetNum = targeting["number"]
+            targetNum = int(targeting["number"])
             damType = targeting["damType"] #TODO: Ensure that damType is always a list when saved.
             #TODO: Ensure that action costs are saved and loaded.
             if len(damType) == 1:
@@ -1260,7 +1573,7 @@ def loadMonsterActions(monsterData):
         #         addChosenaction(newaction, player)  # Adds the multiple types of effects as individual actions.
         # else:
         numTarget = action.get("numTarget", -10)
-        numTarget = action.get("number", 1) if numTarget == -10 else numTarget
+        numTarget = int(action.get("number", 1)) if numTarget == -10 else int(numTarget)
         selfTarget = True if numTarget == 0 else False
         damType = action["damType"]
         if len(damType) == 1:
@@ -1306,8 +1619,10 @@ def loadMonsterActions(monsterData):
             diceNum = int(damageDice[0])
             diceType = int(damageDice[1])
         damageMod = 0
-        if "damMod" in actionRolls and actionRolls["damMod"] != "":  # Accounts for schema error
-            damageMod = int(actionRolls["damMod"])
+        if (("damMod" in actionRolls and actionRolls["damMod"] != "") or
+                ("damageMod" in actionRolls and actionRolls["damageMod"] != "")):  # Accounts for schema error
+            damageMod = int(actionRolls.get("damageMod", 0))
+            damageMod = int(actionRolls.get("damMod", 0)) if damageMod == 0 else damageMod
         actions.append(MonAction(actionName, actionDesc, selfTarget, numTarget, actionRange, actionShape,
                  rollType, saveType, saveDC, halfSave, damageMod, diceNum, diceType,
                  attackBonus, extraDamage, damType, conditions, statusEffect, lingEffect, extraEffect,
@@ -1415,7 +1730,7 @@ def loadMonsterSpells(monsterData):
             else:
                 targeting = spell["targeting"]
             selfTarget = targeting["self"]
-            targetNum = targeting["number"]
+            targetNum = int(targeting["number"])
             damType = targeting["damType"]  # TODO: Ensure that damType is always a list when saved.
             # TODO: Ensure that action costs are saved and loaded.
             if len(damType) == 1:
@@ -1790,265 +2105,6 @@ def enemyCanMutate(newEffect, creature):
             if effect["effect"]["resultID"] == -1:
                 return True
             return False
-def enemyTurnRULESET(initiative, encounter):
-    #TODO: Make a "Ruleset mode" that allows for monster statblocks to be used.
-    # If they choose an action that is not properly loaded, then boot up manual mode.
-    # Give them an option to go straight into manual mode as well.
-    # NOTE: "Manual mode" is what is already coded here. Will eventually rewrite to use user input from the front end.
-
-    pass
-def enemyTurnMANUAL(initiative, encounter):
-    printCreatureNames(initiative)
-    affectedCreatures = enemySetTargets(initiative, True)
-    for creature in affectedCreatures:
-        if not creature["Statblock"].isActiveCondition("Dead") \
-            and not creature["Statblock"].isActiveCondition("Out of Combat"):
-            printCreatureStats(affectedCreatures)
-            nextCreature = False
-            print(f"{creature['name']} SELECTION: ")
-            while not nextCreature:
-                print("1. Change HP")
-                print("2. Change Conditions")
-                print("3. Change Status Effects")
-                print("4. Exit")
-                damChoice = int(input("Choose enemy outcome"))
-                while damChoice < 1 or damChoice > 4:
-                    print("Incorrect input.")
-                    damChoice=int(input())
-                if damChoice == 1: #Change HP
-                    damage = int(input("How much damage?"))
-                    if damage > 0:
-                        creature["Statblock"].setHP(creature["Statblock"].getHP() - damage)
-                        if damage != 0 and any("concentration" in se["name"].lower() for se in creature["Statblock"].getActiveStatusEffects()):
-                            print("Active concentration detected!")
-                            removeConc = input("Did the creature lose concentration? (y/n)")
-                            while removeConc not in ["y", "n"]:
-                                print("BAD INPUT")
-                                removeConc = input(f"Did the {creature['name']} lose concentration (y/n)")
-                            if removeConc == "y":
-                                concentration = {}
-                                for se in creature["Statblock"].getActiveStatusEffects():
-                                    if se["name"].lower() == "concentration":
-                                        concentration = se
-                                        break
-                                endConcentration(creature, concentration, initiative)
-                                if encounter.monsterSize() != len(initiative):
-                                    summonCleanUp(encounter, initiative)
-                        if creature["Statblock"].isActiveCondition("downed") and damage > 0:
-                            removeCondition("downed", creature)
-                            addCondition("dead", creature, -1)
-                        elif creature["Statblock"].getHP() <= 0:
-                            creature["Statblock"].setHP(0)
-                            if creature["turnType"].lower() == "player":
-                                addCondition("downed", creature, -1)
-                            else:
-                                addCondition("dead", creature, -1)
-                    else:
-                        print("Invalid: Cannot have negative damage!")
-                elif damChoice == 2: #Change Conditions
-                    endConditionChange = False
-                    while not endConditionChange:
-                        print("1. Add Condition")
-                        print("2. Remove Condition")
-                        print("3. Exit")
-                        condChoice = int(input())
-                        while condChoice < 1 or condChoice > 3:
-                            print("Incorrect input.")
-                            condChoice=int(input())
-                        if condChoice == 1: #Add Condition
-                            printConditions()
-                            conditionToAdd = input("Which condition has been added?").lower()
-                            validCondition = False
-                            while not validCondition:
-                                if enemyCanMutate(conditionToAdd, creature):
-                                    if addCondition(conditionToAdd, creature, -1):
-                                        validCondition = True
-                                    else:
-                                        if conditionToAdd == "exit":
-                                            validCondition = True
-                                if not validCondition:
-                                    print("INVALID CHOICE")
-                                    conditionToAdd = input("Which condition has been added? 'Exit' to exit").lower()
-                        elif condChoice == 2: #Remove Condition
-                            if len(creature["Statblock"].getActiveConditions()) != 0:
-                                for condition in creature["Statblock"].getActiveConditions():
-                                    if isinstance(condition, dict):
-                                        if -1 in condition["resultID"]:
-                                            print(condition["cond"])
-                                    else:
-                                        print(condition)
-                                conditionToRemove = input("Which condition has been removed? 'Exit' to exit").lower()
-                                validCondition = False
-                                while not validCondition:
-                                    if enemyCanMutate(conditionToRemove, creature):
-                                        if removeCondition(conditionToRemove, creature):
-                                            validCondition = True
-                                        else:
-                                            if conditionToRemove == "exit":
-                                                validCondition = True
-                                    if not validCondition:
-                                        print("Creature does not have that condition!")
-                                        conditionToRemove = input("Which condition has been removed? 'Exit' to exit").lower()
-                            else:
-                                print("Invalid input! No conditions exist.")
-                        else:
-                            endConditionChange = True
-                elif damChoice == 3:
-                    IGNORED = {"time stop", "transform", "summon"}
-
-                    # Your allowed attributes by effect, per your schema
-                    ATTRS_BY_EFFECT = {
-                        # attack roll / save modifiers
-                        "advantage": ["attack rolls for", "attack rolls against", "STR save", "DEX save", "CON save",
-                                      "INT save", "WIS save", "CHA save", "ALL save"],
-                        "disadvantage": ["attack rolls for", "attack rolls against", "STR save", "DEX save",
-                                         "CON save", "INT save", "WIS save", "CHA save", "ALL save"],
-                        "buff": ["attack rolls for", "attack rolls against", "STR save", "DEX save", "CON save",
-                                 "INT save", "WIS save", "CHA save", "AC", "ALL save"],
-                        "debuff": ["attack rolls for", "attack rolls against", "AC", "STR save", "DEX save",
-                                   "CON save", "INT save", "WIS save", "CHA save", "ALL save"],
-                        "autocrit": ["attack rolls against"],
-                        "autofail": ["STR save", "DEX save", "CON save", "INT save", "WIS save", "CHA save", "ALL save"],
-
-                        # score-based defenses
-                        "resistance": ["fire", "psychic", "force", "cold", "poison", "acid", "thunder", "lightning", "radiant", "necrotic", "bludgeoning", "piercing", "slashing"],
-                        "immunity": ["fire", "psychic", "force", "cold", "poison", "acid", "thunder", "lightning", "radiant", "necrotic", "bludgeoning", "piercing", "slashing"],
-                        "vulnerability": ["fire", "psychic", "force", "cold", "poison", "acid", "thunder", "lightning", "radiant", "necrotic", "bludgeoning", "piercing", "slashing"],
-
-                        # others typically have no attribute (but we’ll keep template behavior)
-                        "concentration": [],
-                        "switchsides": []
-                    }
-
-                    def _prompt_choice(title, options):
-                        print(title)
-                        for i, opt in enumerate(options, 1):
-                            print(f"{i}. {opt}")
-                        while True:
-                            try:
-                                n = int(input("> ").strip())
-                                if 1 <= n <= len(options):
-                                    return options[n - 1]
-                            except ValueError:
-                                pass
-                            print("Enter a number from the list.")
-                    def _build_status_effect(se_name, status_defs):
-                        # find template
-                        match = next((s for s in status_defs if s["name"].lower() == se_name.lower()), None)
-                        if not match:
-                            print("Unknown status effect.")
-                            return None
-                        if match["name"].lower() in IGNORED:
-                            print("That effect is handled elsewhere.")
-                            return None
-
-                        effect = copy.deepcopy(match["effect"])
-
-                        if "rolls" in effect:
-                            default_roll = effect["rolls"]
-                            if match["name"].lower() in ("buff", "debuff"):
-                                user_roll = input(f"Enter roll for {match['name']} (default {default_roll}): ").strip()
-                                if user_roll:
-                                    effect["rolls"] = user_roll
-                            elif default_roll in ("", None):
-                                user_roll = input(f"Enter roll for {match['name']}: ").strip()
-                                effect["rolls"] = user_roll or default_roll
-
-                        if "damage" in effect and (effect["damage"] in ("", None)):
-                            user_damage = input(f"Enter damage modifier for {match['name']} (e.g., /2, *2): ").strip()
-                            if user_damage:
-                                effect["damage"] = user_damage
-
-                        if "value" in effect and effect["value"] == "T/F":
-                            user_value = input(f"{match['name']} active? (True/False): ").strip()
-                            effect["value"] = user_value
-
-                        allowed_attrs = ATTRS_BY_EFFECT.get(match["name"].lower())
-                        if allowed_attrs:
-                            chosen_attrs = []
-                            while True:
-                                remaining = [a for a in allowed_attrs if a not in chosen_attrs]
-                                if not remaining:
-                                    print("All valid attributes already chosen.")
-                                    break
-                                chosen = _prompt_choice(
-                                    f"Choose an attribute for {match['name']} (or type 0 to finish):",
-                                    remaining + ["Finish selection"]
-                                )
-                                if chosen == "Finish selection":
-                                    break
-                                chosen_attrs.append(chosen)
-
-                                again = input("Add another attribute? Y/N: ").strip().lower()
-                                if again != "y":
-                                    break
-
-                            effect["attribute"] = chosen_attrs or []
-
-                        else:
-                            if "attribute" in effect and effect["attribute"]:
-                                if isinstance(effect["attribute"], str):
-                                    effect["attribute"] = [effect["attribute"]]
-
-                        return {"name": match["name"], "effect": effect}
-                    def modifyStatusEffects(creature):
-                        with open(STATUS_EFFECT_LIST_FILE, "r") as f:
-                            status_defs = json.load(f)
-                        available = [s["name"] for s in status_defs if s["name"].lower() not in IGNORED]
-
-                        endSEChange = False
-                        while not endSEChange:
-                            print("\n--- Status Effect Menu ---")
-                            print("1. Add Status Effect")
-                            print("2. Remove Status Effect")
-                            print("3. Exit")
-                            try:
-                                seChoice = int(input().strip())
-                            except ValueError:
-                                seChoice = 0
-                            if seChoice not in [1, 2, 3]:
-                                print("Invalid input.")
-                                continue
-
-                            if seChoice == 1:
-                                se_name = _prompt_choice("\nWhich status effect has been added? 'Exit' to exit", available).lower()
-                                seToAdd = _build_status_effect(se_name, status_defs)
-                                while not enemyCanMutate(seToAdd, creature) and se_name != "exit":
-                                    print("INVALID INPUT")
-                                    se_name = _prompt_choice("\nWhich status effect has been added? 'Exit' to exit", available).lower()
-                                    seToAdd = _build_status_effect(se_name, status_defs)
-                                if se_name == "exit":
-                                    continue
-                                if not seToAdd:
-                                    continue
-
-                                # Always let addStatusEffect handle merging logic
-                                addStatusEffect(seToAdd, creature, -1)
-
-                            elif seChoice == 2:
-                                active = creature["Statblock"].getActiveStatusEffects()
-                                if not active:
-                                    print("No active status effects.")
-                                    continue
-                                to_remove = _prompt_choice(
-                                    "\nSelect a status effect to remove: 'Exit' to exit",
-                                    [e["name"] for e in active]
-                                ).lower()
-                                while not enemyCanMutate(to_remove, creature) and to_remove != "exit":
-                                    print("INVALID INPUT")
-                                    to_remove = _prompt_choice(
-                                        "\nSelect a status effect to remove: 'Exit' to exit",
-                                        [e["name"] for e in active]
-                                    ).lower()
-                                if to_remove == "exit":
-                                    continue
-                                removeStatusEffect(to_remove, creature)
-                            else:
-                                endSEChange = True
-
-                    modifyStatusEffects(creature)
-                else:
-                    nextCreature = True
 def endOfEncounter(initiative):
     allPlayersDead = True
     for playerTurns in initiative:
@@ -2063,66 +2119,6 @@ def endOfEncounter(initiative):
                 allMonstersDead = False
                 break
     return allPlayersDead or allMonstersDead
-def enemySetTargets(initiative, duplicateTargets):
-    affectedCreatures = []
-    if not TEST_MODE:
-        affInput = input("Which creatures were affected? Please input one at a time. ('Exit' to exit)").lower()
-    else:
-        validTargets = []
-        for creature in initiative:
-            if (creature["turnType"] == "Player" or
-                    (creature["turnType"] == "Monster" and creature["Statblock"].isActiveStatusEffect("SwitchSides"))
-                    and not creature["Statblock"].isActiveCondition("Dead")
-                    and not creature["Statblock"].isActiveCondition("Out of Combat")):
-                validTargets.append(creature)
-        affInput = input(f"Which creatures were affected? ({0}) ({[f"{target["name"]}" for target in validTargets]})").lower()
-    tgtctr = 0
-    while affInput != "exit":
-        found = False
-        idx = 0
-        while not found and idx < len(initiative):  # find creature
-            if initiative[idx]["name"].lower() == affInput.lower():
-                if not duplicateTargets:
-                    if affInput in affectedCreatures:
-                        print("Invalid selection: Creature is already targeted!")
-                        break
-                if initiative[idx]["Statblock"].isActiveCondition("Dead") or initiative[idx]["Statblock"].isActiveCondition("Out Of Combat"):
-                    print("Invalid selection: Creature cannot be targeted!")
-                    break
-                else:
-                    creature = initiative[idx]
-                    if (creature["turnType"] == "Player"
-                            or (creature["turnType"] == "Monster" and creature["Statblock"].isActiveStatusEffect(
-                                "SwitchSides"))
-                            and not creature["Statblock"].isActiveCondition("Dead")
-                            and not creature["Statblock"].isActiveCondition("Out of Combat")):
-                        validTarget = True
-                    else:
-                        validTarget = False
-                    if not validTarget:
-                        print("Invalid selection: Creature cannot be targeted!")
-                        break
-                    else:
-                        affectedCreatures.append(initiative[idx])
-                        tgtctr += 1
-                        found = True
-            idx += 1
-        if not found and idx == len(initiative):
-            print("Creature not found!")
-        if not TEST_MODE:
-            affInput = input("Which creatures were affected? Please input one at a time. ('Exit' to exit)").lower()
-        else:
-            validTargets = []
-            for creature in initiative:
-                if (creature["turnType"] == "Player" or
-                        (creature["turnType"] == "Monster" and creature["Statblock"].isActiveStatusEffect(
-                            "SwitchSides"))
-                        and not creature["Statblock"].isActiveCondition("Dead")
-                        and not creature["Statblock"].isActiveCondition("Out of Combat")):
-                    validTargets.append(creature)
-            affInput = input(
-                f"Which creatures were affected? ({tgtctr}) ({[f"{target["name"]}" for target in validTargets]})").lower()
-    return affectedCreatures
 
 #GENERAL HELPER METHODS
 def translateBasicAction(creature, action):
@@ -2130,7 +2126,7 @@ def translateBasicAction(creature, action):
         actionName = action["spellname"]
         targeting = action["targeting"][0]
         selfTarget = targeting["self"]
-        targetNum = targeting["number"]
+        targetNum = int(targeting["number"])
         damType = targeting["damType"]
         if len(damType) == 1:
             damType = damType[0]
@@ -2376,7 +2372,7 @@ def translateLingEffect(action, lingEffect, spellMod):
 
     # 4. Build the lingering Spell object
     if "number" in lingEffect:
-        numTarget = lingEffect["number"]
+        numTarget = int(lingEffect["number"])
     else:
         numTarget = action.getNumTarget()
 
@@ -2447,8 +2443,12 @@ def calcLingeringSavesProbability(player, spell, initiative):
 def getMultiTargetWeights(player, action, initiative):
     modifier = player.getSpellMod()
     weights = []
+    if isinstance(player, Player):
+        isPlayerTurn=True
+    else:
+        isPlayerTurn=False
     for creature in initiative:
-        if isValidTarget(action, creature):
+        if isValidTarget(action, creature, isPlayerTurn):
             eDam = calcIndividualExpectedDamage(player, action, creature)
             hp = creature["Statblock"].getHP()
             if action.getRollType().lower() == "tohit":
@@ -2477,26 +2477,47 @@ def getMultiTargetWeights(player, action, initiative):
     weights = [weight["Creature"] for weight in weights]
     weights = weights[0:min(action.getNumTarget(), len(weights))]
     return weights
-def isValidTarget(action, creature):
-    if isinstance(action, Weapon) or (isinstance(action, Spell) and action.getDamType() != "healing"):
-        if (creature["turnType"] == "Monster"
-            and not creature["Statblock"].isActiveStatusEffect("SwitchSides")
-            and not creature["Statblock"].isActiveCondition("Dead")
-            and not creature["Statblock"].isActiveCondition("Out of Combat")):
-            validTarget = True
+def isValidTarget(action, creature, isPlayerTurn=True):
+    if isPlayerTurn:
+        if isinstance(action, Weapon) or (isinstance(action, Spell) and action.getDamType() != "healing"):
+            if (creature["turnType"] == "Monster"
+                and not creature["Statblock"].isActiveStatusEffect("SwitchSides")
+                and not creature["Statblock"].isActiveCondition("Dead")
+                and not creature["Statblock"].isActiveCondition("Out of Combat")):
+                validTarget = True
+            else:
+                validTarget = False
+        elif action.getDamType() == "healing":
+            if (creature["turnType"] == "Player"
+                     or (creature["turnType"] == "Monster" and creature["Statblock"].isActiveStatusEffect("SwitchSides"))
+                     and not creature["Statblock"].isActiveCondition("Dead")
+                     and not creature["Statblock"].isActiveCondition("Out of Combat")):
+                validTarget = True
+            else:
+                validTarget = False
         else:
             validTarget = False
-    elif action.getDamType() == "healing":
-        if (creature["turnType"] == "Player"
-                 or (creature["turnType"] == "Monster" and creature["Statblock"].isActiveStatusEffect("SwitchSides"))
-                 and not creature["Statblock"].isActiveCondition("Dead")
-                 and not creature["Statblock"].isActiveCondition("Out of Combat")):
-            validTarget = True
-        else:
-            validTarget = False
+        return validTarget
     else:
-        validTarget = False
-    return validTarget
+        if isinstance(action, MonAction) or isinstance(action, Spell) and action.getDamType() != "healing":
+            if (creature["turnType"] == "Player"
+                and not creature["Statblock"].isActiveStatusEffect("SwitchSides")
+                and not creature["Statblock"].isActiveCondition("Dead")
+                and not creature["Statblock"].isActiveCondition("Out of Combat")):
+                validTarget = True
+            else:
+                validTarget = False
+        elif action.getDamType() == "healing":
+            if (creature["turnType"] == "Monster"
+                     or (creature["turnType"] == "Player" and creature["Statblock"].isActiveStatusEffect("SwitchSides"))
+                     and not creature["Statblock"].isActiveCondition("Dead")
+                     and not creature["Statblock"].isActiveCondition("Out of Combat")):
+                validTarget = True
+            else:
+                validTarget = False
+        else:
+            validTarget = False
+        return validTarget
 def ensureList(x):
     return x if isinstance(x, list) else [x]
 def _cr_to_float(cr_str: str) -> float:
@@ -2510,7 +2531,11 @@ def _cr_to_float(cr_str: str) -> float:
 #EXPECTED DAMAGE METHODS
 def calcIndividualExpectedDamage(player, action, creature):
     #Only for weapon attacks and single-target spells.
-    if isValidTarget(action, creature):
+    if isinstance(player, Player):
+        isPlayerTurn=True
+    else:
+        isPlayerTurn=False
+    if isValidTarget(action, creature, isPlayerTurn):
         creatureStats = creature["Statblock"]
         probNormalHit = -1
         critChance = -1
@@ -2522,7 +2547,10 @@ def calcIndividualExpectedDamage(player, action, creature):
             damModifier = modifier
         else:
             if action.getRollType().lower() == "tohit":
-                modifier = player.getSpellMod()
+                if isinstance(player, Player):
+                    modifier = player.getSpellMod()
+                else:
+                    modifier = action.getAttackBonus()
                 probNormalHit, critChance = defProbHit(player, creatureStats, modifier)
                 damModifier = action.getDamMod()
             elif action.getRollType().lower() == "save":
@@ -2588,10 +2616,14 @@ def calcIndividualExpectedDamage(player, action, creature):
 def calcTotalExpectedDamage(player, action, initiative):
     eDamages = 0
     numMonsters = 0
+    if isinstance(player, Player):
+        isPlayerTurn=True
+    else:
+        isPlayerTurn=False
     if isinstance(action, Spell) and action.getRollType().lower() == "onhit":
         weaponMean = 0
     for creature in initiative:
-        if isValidTarget(action, creature):
+        if isValidTarget(action, creature, isPlayerTurn):
             if isinstance(action, Weapon):
                 eDamages += calcIndividualExpectedDamage(player, action, creature)
             elif action.getRollType().lower() == "tohit":
@@ -2623,10 +2655,7 @@ def calcTotalExpectedDamage(player, action, initiative):
                 else:
                     targets = [
                         creature for creature in initiative
-                        if creature["turnType"] == "Monster"
-                           and not creature["Statblock"].isActiveStatusEffect("SwitchSides")
-                           and not creature["Statblock"].isActiveCondition("Dead")
-                           and not creature["Statblock"].isActiveCondition("Out of Combat")
+                        if isValidTarget(action, creature, isPlayerTurn)
                     ]
 
                     # Cache individual probabilities once
@@ -2794,12 +2823,15 @@ def influenceToHit(player, creatureStats, toHitMod, critChance):
 def calcIndividualToHitProbability(player, action, creature):
     creatureStats = creature["Statblock"]
     modifier = 0
-    if (creature["turnType"] == "Monster"
-            and not creature["Statblock"].isActiveStatusEffect("SwitchSides")
-            and not creature["Statblock"].isActiveCondition("Dead")
-            and not creature["Statblock"].isActiveCondition("Out of Combat")):
+    if isinstance(player, Player):
+        isPlayerTurn=True
+    else:
+        isPlayerTurn=False
+    if isValidTarget(action, creature, isPlayerTurn):
         if isinstance(action, Weapon):
             modifier = player.getMod(action.getStatType())
+        elif isinstance(action, MonAction):
+            modifier = action.getAttackBonus()
         elif isinstance(action, Spell):
             modifier = player.getSpellMod()
         else:
@@ -2808,6 +2840,8 @@ def calcIndividualToHitProbability(player, action, creature):
         return None
 
     probNormalHit, critChance = defProbHit(player, creatureStats, modifier)
+    if isinstance(action, MonAction):
+        modifier = action.getDamMod()
     normDamProb, critDamProb = calcDamProbs(creatureStats, action, modifier, "NORM")
 
     #NOTE: No specialNotes relevant to probability of success in all toHit spells
@@ -2815,8 +2849,12 @@ def calcIndividualToHitProbability(player, action, creature):
     return successProb
 def calcTotalToHitProbability(player, action, initiative):
     #Only 1 or >1 targets for spells; also covers weapons.
-
     if isinstance(action, Weapon) or action.getNumTarget() == 1:
+        if isinstance(player, Player):
+            isPlayerTurn = True
+        else:
+            isPlayerTurn = False
+
         successProbs = 0
         numMonsters = 0
 
@@ -2831,9 +2869,7 @@ def calcTotalToHitProbability(player, action, initiative):
         checkLingSaves = True if isinstance(action, Spell) and action.getLingSaves() else False
 
         for creature in initiative:
-            if (creature["turnType"] == "Monster" and not creature["Statblock"].isActiveStatusEffect("SwitchSides")
-                    and not creature["Statblock"].isActiveCondition("Dead")
-                    and not creature["Statblock"].isActiveCondition("Out of Combat")):
+            if isValidTarget(action, creature, isPlayerTurn):
                 successProb = calcIndividualToHitProbability(player, action, creature)
                 successProbs += successProb
                 numMonsters += 1
@@ -3027,7 +3063,7 @@ def calcIndividualSaveProbability(action, dc, creature):
         specImm, specRes, specVuln = saveSpecialNotesCheck(action, creature)
     except TypeError:
         return 0
-
+    #Defines chance the creature fails the save.
     probFail = 1 - defSave(action, dc, creature)
     modifier = action.getDamMod()
     failDamProb = calcDamProbs(creature, action, modifier, "NORM")[0]
@@ -3050,15 +3086,19 @@ def calcTotalSaveProbability(player, action, initiative):
     checkExtraEffects = True if action.getExtraEffect() else False
     lingSavesProb = 0
     checkLingSaves = True if action.getLingSaves() else False
+    if isinstance(player, Player):
+        isPlayerTurn=True
+    else:
+        isPlayerTurn=False
     if action.getNumTarget() == 1:
         successProbs = 0
         numMonsters = 0
         for creature in initiative:
-            if (creature["turnType"] == "Monster"
-                    and not creature["Statblock"].isActiveStatusEffect("SwitchSides")
-                    and not creature["Statblock"].isActiveCondition("Dead")
-                    and not creature["Statblock"].isActiveCondition("Out of Combat")):
-                successProb = calcIndividualSaveProbability(action, player.getDC(), creature["Statblock"])
+            if isValidTarget(action, creature, isPlayerTurn):
+                if isinstance(player, Player) or isinstance(action, Spell):
+                    successProb = calcIndividualSaveProbability(action, player.getDC(), creature["Statblock"])
+                else:
+                    successProb = calcIndividualSaveProbability(action, action.getDC(), creature["Statblock"])
                 successProbs += successProb
                 numMonsters += 1
         if numMonsters != 0:
@@ -3077,13 +3117,7 @@ def calcTotalSaveProbability(player, action, initiative):
             return 0
     elif action.getNumTarget() == -1:
         # Filter eligible targets
-        targets = [
-            creature["Statblock"] for creature in initiative
-            if creature["turnType"] == "Monster"
-               and not creature["Statblock"].isActiveStatusEffect("SwitchSides")
-               and not creature["Statblock"].isActiveCondition("Dead")
-               and not creature["Statblock"].isActiveCondition("Out of Combat")
-        ]
+        targets = [creature["Statblock"] for creature in initiative if isValidTarget(action, creature, isPlayerTurn)]
 
         # Cache individual probabilities once
         p_cache = {creature.getName(): calcIndividualSaveProbability(action, player.getDC(), creature)
@@ -3111,6 +3145,10 @@ def calcTotalSaveProbability(player, action, initiative):
     }
 def calcOnHitProbability(action, weapons, player, initiative):
     #Only 1 target per spell.
+    if isinstance(player, Player):
+        isPlayerTurn=True
+    else:
+        isPlayerTurn=False
     probWeaponSuccess = []
     for weapon in weapons:
         probWeaponSuccess.append(calcTotalToHitProbability(player, weapon, initiative))
@@ -3123,10 +3161,7 @@ def calcOnHitProbability(action, weapons, player, initiative):
         probInitDam = 0
         numMonsters = 0
         for creature in initiative:
-            if (creature["turnType"] == "Monster"
-                    and not creature["Statblock"].isActiveStatusEffect("SwitchSides")
-                    and not creature["Statblock"].isActiveCondition("Dead")
-                    and not creature["Statblock"].isActiveCondition("Out of Combat")):
+            if isValidTarget(action, creature, isPlayerTurn):
                 probNormDam, probCritDam = calcDamProbs(creature["Statblock"], action, action.getDamMod(), "NORM")
                 probInitDam += (probNormDam + probCritDam)
                 numMonsters += 1
@@ -3178,21 +3213,26 @@ def calcIndividualAutoHitProbability(action, creature):
     return damProb
 def calcTotalAutoHitProbability(player, action, initiative):
     #All possible targets.
-    if not isinstance(action.getDamType(), list) and action.getDamType().lower() == "healing":
-        targets = [
-            creature for creature in initiative
-            if (creature["turnType"] == "Player" or (creature["turnType"] == "Monster" and creature["Statblock"].isActiveStatusEffect("SwitchSides")))
-               and not creature["Statblock"].isActiveCondition("Dead")
-               and not creature["Statblock"].isActiveCondition("Out of Combat")
-        ]
+    if isinstance(player, Player):
+        isPlayerTurn=True
     else:
-        targets = [
-            creature for creature in initiative
-            if creature["turnType"] == "Monster"
-               and not creature["Statblock"].isActiveStatusEffect("SwitchSides")
-               and not creature["Statblock"].isActiveCondition("Dead")
-               and not creature["Statblock"].isActiveCondition("Out of Combat")
-        ]
+        isPlayerTurn=False
+    targets = [creature for creature in initiative if isValidTarget(action, creature, isPlayerTurn)]
+    # if not isinstance(action.getDamType(), list) and action.getDamType().lower() == "healing":
+    #     targets = [
+    #         creature for creature in initiative
+    #         if (creature["turnType"] == "Player" or (creature["turnType"] == "Monster" and creature["Statblock"].isActiveStatusEffect("SwitchSides")))
+    #            and not creature["Statblock"].isActiveCondition("Dead")
+    #            and not creature["Statblock"].isActiveCondition("Out of Combat")
+    #     ]
+    # else:
+    #     targets = [
+    #         creature for creature in initiative
+    #         if creature["turnType"] == "Monster"
+    #            and not creature["Statblock"].isActiveStatusEffect("SwitchSides")
+    #            and not creature["Statblock"].isActiveCondition("Dead")
+    #            and not creature["Statblock"].isActiveCondition("Out of Combat")
+    #     ]
 
     lingEffectProb = 0
     checkLingEffects = True if action.getLingEffects() else False
@@ -3463,7 +3503,11 @@ def calcImpact(player, action, probSuccess, expectedDamage, initiative, leRecurs
                     break
 
         return sum(impacts) / len(impacts)
-    targets = [creature for creature in initiative if isValidTarget(action, creature)]
+    if isinstance(player, Player):
+        isPlayerTurn=True
+    else:
+        isPlayerTurn=False
+    targets = [creature for creature in initiative if isValidTarget(action, creature, isPlayerTurn)]
     perTarget = []
     checkExtraEffects = True if isinstance(action, Spell) and action.getExtraEffect() else False
     checkLingEffects = True if isinstance(action, Spell) and action.getLingEffects() else False
@@ -3620,7 +3664,7 @@ def calcImpact(player, action, probSuccess, expectedDamage, initiative, leRecurs
         else:
             impact = 0
     else:
-        impact = perTarget[0]
+        impact = perTarget[0] if perTarget else 0
 
     impact += extraImpact
     impact += (impact * lingSImpact)
@@ -4402,7 +4446,10 @@ def playerActionResolution(player, action, actionStats, initiative):
     Returns:
         Updated initiative list
     """
-
+    if isinstance(player, Player):
+        isPlayerTurn=True
+    else:
+        isPlayerTurn=False
     print(f"\n{player.getName()} used {action.getName()}!")
 
     if isinstance(action, Spell) and action.getRollType().lower() == "onhit" and player.getWeaponLength() == 0:
@@ -4417,19 +4464,12 @@ def playerActionResolution(player, action, actionStats, initiative):
         if not isinstance(action.getDamType(), list) and action.getDamType().lower() == "healing":
             validTargets = [
                 creature for creature in initiative
-                if (creature["turnType"] == "Player" or (
-                        creature["turnType"] == "Monster" and creature["Statblock"].isActiveStatusEffect(
-                    "SwitchSides")))
-                   and not creature["Statblock"].isActiveCondition("Dead")
-                   and not creature["Statblock"].isActiveCondition("Out of Combat")
+                if isValidTarget(action, creature, isPlayerTurn)
             ]
         else:
             validTargets = [
                 creature for creature in initiative
-                if creature["turnType"] == "Monster"
-                   and not creature["Statblock"].isActiveStatusEffect("SwitchSides")
-                   and not creature["Statblock"].isActiveCondition("Dead")
-                   and not creature["Statblock"].isActiveCondition("Out of Combat")
+                if isValidTarget(action, creature, isPlayerTurn)
             ]
 
         # Step 2: Prompt for target(s)
@@ -4727,147 +4767,106 @@ def preTurnCheck(creature, encounter, initiative):
                 raise ValueError("Invalid effect type in preTurnCheck")
             for result in preTurnLogs: #Result log all preTurnEffects.
                 encounter.addResult(result)
-def playerTurn(player, initiative):
-    if endOfEncounter(initiative):
-        return {}
+
+def merge_sort_spells(spell_list):
+    if len(spell_list) <= 1:
+        return spell_list
+
+    mid = len(spell_list) // 2
+    left_half = merge_sort_spells(spell_list[:mid])
+    right_half = merge_sort_spells(spell_list[mid:])
+
+    return merge_spells(left_half, right_half)
+def merge_spells(left, right):
+    result = []
+    i = j = 0
+
+    while i < len(left) and j < len(right):
+        left_spell = left[i]
+        right_spell = right[j]
+
+        # Primary key: spell level
+        if left_spell.getLvl() < right_spell.getLvl():
+            result.append(left_spell)
+            i += 1
+        elif left_spell.getLvl() > right_spell.getLvl():
+            result.append(right_spell)
+            j += 1
+        else:
+            # Secondary key: alphabetical by name (case-insensitive)
+            if left_spell.getName().lower() <= right_spell.getName().lower():
+                result.append(left_spell)
+                i += 1
+            else:
+                result.append(right_spell)
+                j += 1
+
+    while i < len(left):
+        result.append(left[i])
+        i += 1
+
+    while j < len(right):
+        result.append(right[j])
+        j += 1
+
+    return result
+def processSpellAnalytics(spellList, creature, initiative):
     actionNames = []
     actionTypes = []
     actionProbs = []
     actionEDams = []
     actionImpacts = []
-
-    defineBasicActions(actionNames, actionTypes, actionProbs,
-                       actionEDams, actionImpacts,  player,initiative)
-    if player.getWeaponLength() > 0:
-        for i in range(player.getWeaponLength()):
-            try:
-                weaponProb = calcTotalToHitProbability(player, player.getWeapon(i), initiative)["probSuccess"]
-            except:
-                try:
-                    weaponProb = int(calcTotalToHitProbability(player, player.getWeapon(i), initiative))
-                except:
-                    weaponProb = 0
-            weaponEDam = calcTotalExpectedDamage(player, player.getWeapon(i), initiative)
-            weaponImpact = calcImpact(player, player.getWeapon(i), weaponProb, weaponEDam, initiative)
-            actionNames.append(player.getWeapon(i).getName())
-            actionTypes.append("Weapon")
-            actionProbs.append(weaponProb)
-            actionEDams.append(weaponEDam)
-            actionImpacts.append(weaponImpact)
-    if player.getSpellLength() > 0:
-        def merge_sort_spells(spell_list):
-            if len(spell_list) <= 1:
-                return spell_list
-
-            mid = len(spell_list) // 2
-            left_half = merge_sort_spells(spell_list[:mid])
-            right_half = merge_sort_spells(spell_list[mid:])
-
-            return merge_spells(left_half, right_half)
-        def merge_spells(left, right):
-            result = []
-            i = j = 0
-
-            while i < len(left) and j < len(right):
-                left_spell = left[i]
-                right_spell = right[j]
-
-                # Primary key: spell level
-                if left_spell.getLvl() < right_spell.getLvl():
-                    result.append(left_spell)
-                    i += 1
-                elif left_spell.getLvl() > right_spell.getLvl():
-                    result.append(right_spell)
-                    j += 1
+    for i in range(len(spellList)):
+        spellName = spellList[i].getName()
+        spellProb = 0
+        spellEDam = -1
+        spellImpact = -1
+        if spellList[i].getSelfTarget():
+            spellProb = 1.0
+            spellEDam = 0
+        else:
+            if spellList[i].getRollType().lower() == "tohit":
+                spellProb = calcTotalToHitProbability(creature, spellList[i], initiative)
+            elif spellList[i].getRollType().lower() == "save":
+                spellProb = calcTotalSaveProbability(creature, spellList[i], initiative)
+            elif spellList[i].getRollType().lower() == "autohit":
+                if spellList[i].getDiceNum() == 0 and not spellList[i].getLingSaves() \
+                        and not spellList[i].getLingEffects() and not spellList[i].getExtraEffect() \
+                        and not (spellList[i].getSpecialNotes() and "HPCap" in spellList[i].getSpecialNotes()):
+                    spellProb = 1.0
+                    spellEDam = 0
                 else:
-                    # Secondary key: alphabetical by name (case-insensitive)
-                    if left_spell.getName().lower() <= right_spell.getName().lower():
-                        result.append(left_spell)
-                        i += 1
-                    else:
-                        result.append(right_spell)
-                        j += 1
-
-            while i < len(left):
-                result.append(left[i])
-                i += 1
-
-            while j < len(right):
-                result.append(right[j])
-                j += 1
-
-            return result
-
-        spellList = [player.getSpell(i) for i in range(player.getSpellLength())]
-        spellList = merge_sort_spells(spellList)
-
-        for i in range(len(spellList)):
-            spellName = spellList[i].getName()
-            spellProb = 0
-            spellEDam = -1
-            spellImpact = -1
-            if spellList[i].getSelfTarget():
-                spellProb = 1.0
-                spellEDam = 0
-            else:
-                if spellList[i].getRollType().lower() == "tohit":
-                    spellProb = calcTotalToHitProbability(player, spellList[i], initiative)
-                elif spellList[i].getRollType().lower() == "save":
-                    spellProb = calcTotalSaveProbability(player, spellList[i], initiative)
-                elif spellList[i].getRollType().lower() == "autohit":
-                    if spellList[i].getDiceNum() == 0 and not spellList[i].getLingSaves() \
-                            and not spellList[i].getLingEffects() and not spellList[i].getExtraEffect() \
-                            and not (spellList[i].getSpecialNotes() and "HPCap" in spellList[i].getSpecialNotes()):
+                    if spellList[i].getStatusEffects() and any(
+                            [se["name"] == "Summon" for se in spellList[i].getStatusEffects()]):
                         spellProb = 1.0
                         spellEDam = 0
                     else:
-                        if spellList[i].getStatusEffects() and any(
-                                [se["name"] == "Summon" for se in spellList[i].getStatusEffects()]):
-                            spellProb = 1.0
-                            spellEDam = 0
-                        else:
-                            spellProb = calcTotalAutoHitProbability(player, spellList[i], initiative)
-                elif spellList[i].getRollType().lower() == "onhit":
-                    spellProb = calcOnHitProbability(spellList[i],
-                                                     [player.getWeapon(i) for i in range(player.getWeaponLength())],
-                                                     player, initiative)
-                if isinstance(spellProb, dict):
-                    probToStr = f"{spellProb["probSuccess"]}" if spellProb["probSuccess"] else f"0.0"
-                    probToStr += f" - {spellProb["probLingEffect"]}LE" if spellProb["probLingEffect"] else ""
-                    probToStr += f" - {spellProb['probExtraEffect']}EE" if spellProb["probExtraEffect"] else ""
-                    probToStr += f" - {spellProb['probLingSaves']}LS" if spellProb["probLingSaves"] else ""
-                else:
-                    probToStr = spellProb
-                spellProb = probToStr
+                        spellProb = calcTotalAutoHitProbability(creature, spellList[i], initiative)
+            elif spellList[i].getRollType().lower() == "onhit":
+                spellProb = calcOnHitProbability(spellList[i],
+                                                 [creature.getWeapon(i) for i in range(creature.getWeaponLength())],
+                                                 creature, initiative)
+            if isinstance(spellProb, dict):
+                probToStr = f"{spellProb["probSuccess"]}" if spellProb["probSuccess"] else f"0.0"
+                probToStr += f" - {spellProb["probLingEffect"]}LE" if spellProb["probLingEffect"] else ""
+                probToStr += f" - {spellProb['probExtraEffect']}EE" if spellProb["probExtraEffect"] else ""
+                probToStr += f" - {spellProb['probLingSaves']}LS" if spellProb["probLingSaves"] else ""
+            else:
+                probToStr = spellProb
+            spellProb = probToStr
+            spellEDam = calcTotalExpectedDamage(creature, spellList[i], initiative) if spellEDam == -1 else spellEDam
 
-                spellEDam = calcTotalExpectedDamage(player, spellList[i], initiative) if spellEDam == -1 else spellEDam
+        spellImpact = calcImpact(creature, spellList[i], spellProb, spellEDam, initiative)
 
-            spellImpact = calcImpact(player, spellList[i], spellProb, spellEDam, initiative)
-
-            actionNames.append(spellName)
-            actionTypes.append(f"Lvl {spellList[i].getLvl()} Spell" if spellList[i].getLvl() > 0 else "Cantrip")
-            actionProbs.append(spellProb)
-            actionEDams.append(spellEDam)
-            actionImpacts.append(spellImpact)
+        actionNames.append(spellName)
+        actionTypes.append(f"Lvl {spellList[i].getLvl()} Spell" if spellList[i].getLvl() > 0 else "Cantrip")
+        actionProbs.append(spellProb)
+        actionEDams.append(spellEDam)
+        actionImpacts.append(spellImpact)
 
     actions = [{"name" : actionNames[i], "prob" : actionProbs[i], "eDam" : actionEDams[i], "impact" : actionImpacts[i]} for i in range(len(actionNames))]
-    # def probSort(a):
-    #     return a["prob"]
-    # probRankings = copy.deepcopy(actions)
-    # probRankings.sort(reverse=True, key=probSort)
-    # def eDamSort(a):
-    #     return a["eDam"]
-    # eDamRankings = copy.deepcopy(actions)
-    # eDamRankings.sort(reverse=True, key=eDamSort)
-    # def impactSort(a):
-    #     return a["impact"]
-    # impactRankings = copy.deepcopy(actions)
-    # impactRankings.sort(reverse=True, key=impactSort)
-    # for j in range(len(actions)):
-    #     probRankings[j]["rank"] = j + 1
-    #     eDamRankings[j]["rank"] = j + 1
-    #     impactRankings[j]["rank"] = j + 1
-    console.print(actions)
+    return actions
+def rankActions(actions):
     KEYS = ("prob", "eDam", "impact")
 
     SEG_RE = re.compile(
@@ -4894,6 +4893,8 @@ def playerTurn(player, initiative):
             raise TypeError(f"Unsupported prob type: {type(prob_str_or_num)}")
 
         s = prob_str_or_num.strip()
+        if s[0] == "-":
+            s = s[1:]
         chunks = [c.strip() for c in s.split(" - ")]
 
         if not chunks:
@@ -4902,7 +4903,7 @@ def playerTurn(player, initiative):
         # First chunk: initial (no tag)
         m0 = SEG_RE.match(chunks[0])
         if not m0:
-            raise ValueError(f"Could not parse initial prob chunk: {chunks[0]!r}")
+            raise ValueError(f"Could not parse initial prob chunk: {chunks[0]!r} of {s}")
 
         a0 = float(m0.group("a"))
         b0 = float(m0.group("b")) if m0.group("b") is not None else None
@@ -4966,7 +4967,6 @@ def playerTurn(player, initiative):
             out.append(x)
 
         return out
-
     def pareto_front_set(actions, keys=KEYS):
         """
         Returns a set of ids() for non-dominated actions.
@@ -5050,10 +5050,116 @@ def playerTurn(player, initiative):
             x["overallRank"] = i
 
         return enriched
-    #TODO: Double check accuracy of ranking logic
+
+    # TODO: Double check accuracy of ranking logic
     overallRankings = prepare_actions_for_ranking(actions)
     overallRankings = rank_all_actions(overallRankings, weights={"prob": 1.0, "eDam": 1.0, "impact": 1.25})
     return overallRankings
+def monsterTurn(creature, initiative):
+    def loadSpells(spells):
+        with open("CoreEngine/data/spell_list.json", "r") as sf:
+            spell_list = json.load(sf)
+            spell_names = [spell["spellname"].lower() for spell in spell_list]
+        for si, spell in enumerate(spells):
+            if spell["name"].lower() in spell_names:
+                spells[si]["spellData"] = spell_list[spell_names.index(spell["name"].lower())]
+        return spells
+    if endOfEncounter(initiative):
+        return {}
+    actionNames = []
+    actionTypes = []
+    actionProbs = []
+    actionEDams = []
+    actionImpacts = []
+    actions = []
+
+    defineBasicActions(actionNames, actionTypes, actionProbs,
+                       actionEDams, actionImpacts, creature, initiative)
+    if creature.isCaster():
+        monSpells = [creature.getSpell(i) for i in range(creature.getSpellLength())]
+        monSpells = loadSpells(monSpells)
+        for spell in monSpells:
+            if "spellData" not in spell:
+                continue
+            spellList = merge_sort_spells(monSpells)
+            spellData = processSpellAnalytics(spellList, creature, initiative)
+            actions.append(spellData)
+    monActions = [creature.getAction(i) for i in range(creature.getActionLength())]
+    for i, monAction in enumerate(monActions):
+        if monAction.isBadObj():
+            actions.append({"name" : monAction.getName(), "prob" : 0, "eDam": 0, "impact" : 0})
+            continue
+
+        actionName = monAction.getName()
+        actionProb = 0
+        actionEDam = -1
+        actionImpact = -1
+        if monAction.getSelfTarget():
+            actionProb = 1.0
+            actionEDam = 0
+        else:
+            if monAction.getRollType().lower() == "tohit":
+                actionProb = calcTotalToHitProbability(creature, monAction, initiative)
+            elif monAction.getRollType().lower() == "save":
+                actionProb = calcTotalSaveProbability(creature, monAction, initiative)
+            if isinstance(actionProb, dict):
+                probToStr = f"{actionProb["probSuccess"]}" if actionProb["probSuccess"] else f"0.0"
+                probToStr += f" - {actionProb["probLingEffect"]}LE" if actionProb["probLingEffect"] else ""
+                probToStr += f" - {actionProb['probExtraEffect']}EE" if actionProb["probExtraEffect"] else ""
+                probToStr += f" - {actionProb['probLingSaves']}LS" if actionProb["probLingSaves"] else ""
+            else:
+                probToStr = actionProb
+            actionProb = probToStr
+            actionEDam = calcTotalExpectedDamage(creature,
+                monAction, initiative) if actionEDam == -1 else actionEDam
+        actionImpact = calcImpact(creature, monAction, actionProb,
+                    actionEDam, initiative)
+
+        actionNames.append(actionName)
+        actionProbs.append(actionProb)
+        actionEDams.append(actionEDam)
+        actionImpacts.append(actionImpact)
+
+    actions.extend([{"name": actionNames[i], "prob": actionProbs[i], "eDam": actionEDams[i], "impact": actionImpacts[i]} for
+               i in range(len(actionNames))])
+    console.print(actions)
+    return rankActions(actions)
+def playerTurn(player, initiative):
+    if endOfEncounter(initiative):
+        return {}
+    actionNames = []
+    actionTypes = []
+    actionProbs = []
+    actionEDams = []
+    actionImpacts = []
+
+    defineBasicActions(actionNames, actionTypes, actionProbs,
+                       actionEDams, actionImpacts,  player,initiative)
+    if player.getWeaponLength() > 0:
+        for i in range(player.getWeaponLength()):
+            try:
+                weaponProb = calcTotalToHitProbability(player, player.getWeapon(i), initiative)["probSuccess"]
+            except:
+                try:
+                    weaponProb = int(calcTotalToHitProbability(player, player.getWeapon(i), initiative))
+                except:
+                    weaponProb = 0
+            weaponEDam = calcTotalExpectedDamage(player, player.getWeapon(i), initiative)
+            weaponImpact = calcImpact(player, player.getWeapon(i), weaponProb, weaponEDam, initiative)
+            actionNames.append(player.getWeapon(i).getName())
+            actionTypes.append("Weapon")
+            actionProbs.append(weaponProb)
+            actionEDams.append(weaponEDam)
+            actionImpacts.append(weaponImpact)
+    actions = [{"name": actionNames[i], "prob": actionProbs[i], "eDam": actionEDams[i], "impact": actionImpacts[i]} for
+               i in range(len(actionNames))]
+    if player.getSpellLength() > 0:
+        spellList = [player.getSpell(i) for i in range(player.getSpellLength())]
+        spellList = merge_sort_spells(spellList)
+        spellActions = processSpellAnalytics(spellList, player, initiative)
+        actions.extend(spellActions)
+    console.print(actions)
+    return rankActions(actions)
 def setActiveInitiative(encounter):
     initiative = copy.deepcopy(encounter.getInitiative())
     for creature in initiative:
@@ -5166,44 +5272,53 @@ def runEncounter(encounter):
         inIdx += 1
     saveEncounter(encounter)
 def main():
-    try:
-        print("Welcome to Encounter Simulator!")
-
-        if TEST_MODE:
-            print("[TEST MODE ENABLED]")
-
-        print("\nType 1 to load a previous Encounter")
-        print("Type 2 to create a new Encounter")
-        encChoice = input().strip()
-        while encChoice != "1" and encChoice != "2":
-            print("Type 1 to load a previous Encounter")
-            print("Type 2 to create a new Encounter")
-            encChoice = input().strip()
-
-        if encChoice == "1":
-            encIdx = chooseEncounter()
-            encounter = loadEncounter(encIdx)
-        else:
-            encounter = createEncounter()
-            saveEncounter(encounter)
-        runEncounter(encounter)
-    finally:
-        # --- Clean shutdown for pytest and normal runs ---
-        try:
-            if hasattr(console, "file"):
-                # Only flush, never close under pytest
-                console.file.flush()
-                if "pytest" not in sys.modules:
-                    console.file.close()
-        except Exception:
-            pass
-
-        # Only perform hard exit for pytest-controlled sessions
-        if "pytest" in sys.modules:
-            import atexit
-            atexit.register(lambda: os._exit(0))
-
-        print("[SHUTDOWN] Console and file handles flushed. Program terminated cleanly.")
+    # try:
+    #     print("Welcome to Encounter Simulator!")
+    #
+    #     if TEST_MODE:
+    #         print("[TEST MODE ENABLED]")
+    #
+    #     print("\nType 1 to load a previous Encounter")
+    #     print("Type 2 to create a new Encounter")
+    #     encChoice = input().strip()
+    #     while encChoice != "1" and encChoice != "2":
+    #         print("Type 1 to load a previous Encounter")
+    #         print("Type 2 to create a new Encounter")
+    #         encChoice = input().strip()
+    #
+    #     if encChoice == "1":
+    #         encIdx = chooseEncounter()
+    #         encounter = loadEncounter(encIdx)
+    #     else:
+    #         encounter = createEncounter()
+    #         saveEncounter(encounter)
+    #     runEncounter(encounter)
+    # finally:
+    #     # --- Clean shutdown for pytest and normal runs ---
+    #     try:
+    #         if hasattr(console, "file"):
+    #             # Only flush, never close under pytest
+    #             console.file.flush()
+    #             if "pytest" not in sys.modules:
+    #                 console.file.close()
+    #     except Exception:
+    #         pass
+    #
+    #     # Only perform hard exit for pytest-controlled sessions
+    #     if "pytest" in sys.modules:
+    #         import atexit
+    #         atexit.register(lambda: os._exit(0))
+    #
+    #     print("[SHUTDOWN] Console and file handles flushed. Program terminated cleanly.")
+    with open(ENCOUNTER_LIST_FILE, "r") as ef:
+        encounters = json.load(ef)
+        encounter = {}
+        for enc in encounters:
+            if enc["eid"] == "a4695c":
+                encounter = enc
+                break
+        encounter = loadEncounter(encounter)
+        console.print(monsterTurn(encounter.getMonster(0), setActiveInitiative(encounter)))
 
 if __name__ == "__main__":
     main()

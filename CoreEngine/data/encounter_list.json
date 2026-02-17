@@ -2735,7 +2735,7 @@
                     {
                         "name": "Rock",
                         "desc": "Ranged Weapon Attack: +10 to hit, range 60/180 ft., one target. Hit: 28 (4d10 + 6) bludgeoning damage.",
-                        "number": "0",
+                        "number": "1",
                         "actionRange": "180",
                         "shape": "",
                         "rolls": {
@@ -2744,8 +2744,8 @@
                             "halfSave": false,
                             "saveDC": null,
                             "damage": "4d10",
-                            "attackBonus": "",
-                            "damageMod": "0"
+                            "attackBonus": "10",
+                            "damageMod": "6"
                         },
                         "extraDamage": [],
                         "damType": [
@@ -2816,7 +2816,7 @@
                         {
                             "name": "disadvantage",
                             "effect": {
-                                "roll": -4,
+                                "rolls": -4,
                                 "attribute": [
                                     "attack rolls against"
                                 ],
@@ -2828,12 +2828,12 @@
                     ],
                     "activeConditions": [],
                     "saveProfs": {
-                        "STR": "20",
-                        "DEX": "18",
-                        "CON": "16",
-                        "INT": "14",
-                        "WIS": "12",
-                        "CHA": "10"
+                        "STR": "5",
+                        "DEX": "4",
+                        "CON": "3",
+                        "INT": "2",
+                        "WIS": "1",
+                        "CHA": "0"
                     },
                     "damImmunes": [],
                     "damResists": [],
@@ -2885,7 +2885,37 @@
                         ]
                     ]
                 },
-                "spells": [],
+                "spells": [
+                    {
+                        "spellname": "Harm",
+                        "level": 6,
+                        "targeting": [
+                            {
+                                "targetType": null,
+                                "self": false,
+                                "number": 1,
+                                "rolls": {
+                                    "rollType": "save",
+                                    "saveType": "CON",
+                                    "halfSave": false,
+                                    "damage": "14d6",
+                                    "damageMod": "0"
+                                },
+                                "damType": [
+                                    "necrotic"
+                                ],
+                                "conditions": [],
+                                "statusEffect": [],
+                                "lingEffect": {},
+                                "extraEffect": {},
+                                "lingSave": {},
+                                "scaling": "1d6",
+                                "specialNotes": [],
+                                "actionCost": "action"
+                            }
+                        ]
+                    }
+                ],
                 "weapons": [
                     {
                         "name": "whip",

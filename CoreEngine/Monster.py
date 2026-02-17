@@ -1,3 +1,4 @@
+from .MonAction import MonAction
 from .Stats import Stats
 
 class Monster(Stats):
@@ -9,6 +10,7 @@ class Monster(Stats):
                          activeStatusEffects, activeConditions, cid, position)
         self.__name = name
         self.__cr = cr
+        self.calcProfBonus()
         self.__creatureType = cType
         self.setHP(hp)
         self.setMaxHP(maxHP)
@@ -19,7 +21,7 @@ class Monster(Stats):
         self.__enemy = enemy
         self.__actions = actions
         self.__spellInfo = spellInfo
-        self.__caster = True if spellInfo else False
+        self.__caster = True if spellInfo["spells"] else False
         self.__legActions = legActions
 
     def setName(self, name):
@@ -30,6 +32,34 @@ class Monster(Stats):
         self.__cr = cr
     def getLevel(self):
         return self.__cr
+    def calcProfBonus(self):
+        def _cr_to_float(cr_str: str) -> float:
+            """'1/4' -> 0.25, '2' -> 2.0"""
+            s = str(cr_str).strip()
+            if "/" in s:
+                num, den = s.split("/")
+                return float(num) / float(den)
+            return float(s)
+        cr = _cr_to_float(self.__cr)
+        if cr <= 4:
+            pb = 2
+        elif cr <= 8:
+            pb = 3
+        elif cr <= 12:
+            pb = 4
+        elif cr <= 16:
+            pb = 5
+        elif cr <= 20:
+            pb = 6
+        elif cr <= 24:
+            pb = 7
+        elif cr <= 28:
+            pb = 8
+        else:
+            pb = 9
+        self.__profBonus = pb
+    def getProfBonus(self):
+        return self.__profBonus
     def setCreatureType(self, creatureType):
         self.__creatureType = creatureType
     def getCreatureType(self):
@@ -46,6 +76,79 @@ class Monster(Stats):
         return self.__lairAction
     def isEnemy(self):
         return self.__enemy
+
+    def isCaster(self):
+        return self.__caster
+    def getSpellInfo(self):
+        if self.isCaster():
+            return self.__spellInfo
+    def getDC(self):
+        if self.isCaster():
+            return int(self.__spellInfo["DC"])
+        return 10
+    def getSpellAttack(self):
+        if self.isCaster():
+            return int(self.__spellInfo["attackRoll"])
+        return 0
+    def addSpell(self, name, charges=0):
+        if charges == 0:
+            self.__spellInfo["spells"].append({"name" : name})
+        else:
+            self.__spellInfo["spells"].append({"name" : name, "charges" : charges})
+    def removeSpell(self, name):
+        for spell in self.__spellInfo["spells"]:
+            if name.lower() == spell["name"].lower():
+                self.__spellInfo["spells"].remove(spell)
+        #Removes every instance of a given spell.
+    def findSpell(self, name):
+        i = 0
+        found = False
+        while not found and i < len(self.__spellInfo["spells"]):
+            if self.__spellInfo["spells"][i]["name"].lower() == name.lower():
+                found = True
+            else:
+                i += 1
+        return i
+    def getSpell(self, idx):
+        return self.__spellInfo["spells"][idx]
+    def getSpellByName(self, name):
+        for spell in self.__spellInfo["spells"]:
+            if spell["name"].lower() == name.lower():
+                return spell
+    def getSpellLength(self):
+        return len(self.__spellInfo["spells"])
+
+    def addAction(self, name, desc, selfTarget, numTarget, actionRange, shape,
+                 rollType, saveType, saveDC, halfSave, damageMod, diceNum, diceType, attackBonus,
+                 extraDamage, damType, conditions, statusEffects, lingEffects, extraEffect,
+                 lingSaves, actionCost, recharge, specialNotes):
+        self.__actions.append(MonAction(name, desc, selfTarget, numTarget, actionRange, shape,
+                 rollType, saveType, saveDC, halfSave, damageMod, diceNum, diceType, attackBonus,
+                 extraDamage, damType, conditions, statusEffects, lingEffects, extraEffect,
+                 lingSaves, actionCost, recharge, specialNotes))
+    def removeAction(self, name):
+        for action in self.__actions:
+            if name.lower() == action["name"].lower():
+                self.__actions.remove(action)
+        # Removes every instance of a given spell.
+    def findAction(self, name):
+        i = 0
+        found = False
+        while not found and i < len(self.__actions):
+            if self.__actions.getName().lower() == name.lower():
+                found = True
+            else:
+                i += 1
+        return i
+    def getAction(self, idx):
+        return self.__actions[idx]
+    def getActionByName(self, name):
+        for action in self.__actions:
+            if action["name"].lower() == name.lower():
+                return action
+    def getActionLength(self):
+        return len(self.__actions)
+
     def hasLegAction(self):
         return True if self.__legActions else False
     def getLegAction(self, name):

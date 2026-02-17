@@ -397,11 +397,12 @@ def actionRecommendation(eid : str, cid : str):
         rankings = main.playerTurn(player, initiative)
         return rankings
     else:
-        monsters = encounter.get("monsters", [])
+        monsters = [encounter.getMonster(i) for i in range(encounter.monsterSize())]
         monstercids = [monster.getCID().lower() for monster in monsters]
         if cid.lower() in monstercids:
             monster = monsters[monstercids.index(cid.lower())]
-            pass #TODO
+            rankings = main.monsterTurn(monster, initiative)
+            return rankings
 
 
 
@@ -486,10 +487,12 @@ def getPlayerPacket(eid : str):
     encounter = getEncounter(eid)
     players = encounter.get("players", [])
     print(players)
-    packet = [{"name" : player.get("stats").get("name"), "level" : player.get("stats").get("level"), "characterClass" : player.get("stats").get("characterClass")} for player in players]
+    packet = [{"name" : player.get("stats").get("name"), "level" : player.get("stats").get("level"),
+               "characterClass" : player.get("stats").get("characterClass")} for player in players]
     return packet
 @app.get("/dashboard/{eid}/monsters")
 def getMonsterPacket(eid : str):
+    #TODO: size
     encounter = getEncounter(eid)
     monsters = encounter.get("monsters", [])
     print(monsters)

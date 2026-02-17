@@ -28,6 +28,12 @@ class MonAction(Action):
         self.__actionCost = actionCost
         self.__recharge = recharge
         self.setDice(diceNum, diceType, damageMod)
+        badObj = False
+        if self.__rollType not in ["tohit", "save"] and not self.__saveType and not self.__saveDC \
+            and not self.__conditions and not self.__statusEffects and not self.__lingEffects and not self.__extraEffect \
+            and not self.__damType and not self.getMean():
+            badObj = True
+        self.__badObj = badObj
 
     def toDict(self):
         if not isinstance(self.__damType, list):
@@ -61,6 +67,9 @@ class MonAction(Action):
             "specialNotes": self.__specialNotes
         }
 
+    def isBadObj(self):
+        return self.__badObj
+
     def getName(self):
         return self.__name
     def setName(self, value):
@@ -85,6 +94,16 @@ class MonAction(Action):
         return self.__saveType
     def setSaveType(self, value):
         self.__saveType = value
+
+    def setDC(self, dc):
+        self.__saveDC = dc
+    def getDC(self):
+        return self.__saveDC
+
+    def getAttackBonus(self):
+        return self.__attackBonus
+    def setAttackBonus(self, ab):
+        self.__attackBonus = ab
 
     def getHalfSave(self):
         return self.__halfSave
