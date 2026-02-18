@@ -5,15 +5,15 @@ from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
-def _coerce_int_or_none(v: Any) -> Optional[int]:
+def _coerce_int(v: Any, default: int = 0) -> int:
     if v is None:
-        return None
+        return default
     if isinstance(v, int):
         return v
     if isinstance(v, str):
         s = v.strip()
         if s == "":
-            return None
+            return default
         return int(s)
     return int(v)
 def _coerce_bool(v: Any) -> bool:
@@ -58,7 +58,7 @@ class ActionRollsModel(BaseModel):
 
     save_dc: Optional[int] = Field(default=None, alias="saveDC")
     damage: str = Field(default="")
-    attack_bonus: int = Field(default=0, alias="attackBonus")
+    attack_bonus: Optional[int] = Field(default=0, alias="attackBonus")
 
     dam_mod: Optional[int] = Field(default=None, alias="damMod")
 
@@ -75,10 +75,10 @@ class ActionRollsModel(BaseModel):
 
         return d
 
-    @field_validator("save_dc", "dam_mod", mode="before")
+    @field_validator("save_dc", "dam_mod", "attack_bonus", mode="before")
     @classmethod
     def coerce_int_fields(cls, v: Any):
-        return _coerce_int_or_none(v)
+        return _coerce_int(v)
 
     @field_validator("half_save", mode="before")
     @classmethod
@@ -96,7 +96,7 @@ class LingSaveModel(BaseModel):
     @field_validator("save_dc", mode="before")
     @classmethod
     def coerce_save_dc(cls, v: Any):
-        return _coerce_int_or_none(v)
+        return _coerce_int(v)
 
 
 class MonAction(BaseModel):
@@ -137,6 +137,20 @@ class MonAction(BaseModel):
     @classmethod
     def normalize_str_list_fields(cls, v: Any):
         return _split_csvish(v)
+
+    @field_validator("ling_save", "extra_effect", "ling_effect", mode="before")
+    @classmethod
+    def normalize_dict_fields(cls, v : Any):
+        if v is None:
+            return {}
+        return v
+
+    @field_validator("special_notes", "status_effect", "conditions", "dam_type", "extra_damage", mode="before")
+    @classmethod
+    def normalize_list_fields(cls, v : Any):
+        if v is None:
+            return []
+        return v
 
     @field_validator("num_target", mode="before")
     @classmethod

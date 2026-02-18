@@ -84,75 +84,75 @@
         },
         "spells": [
             {
-            "spellname": "Conjure Animals",
-            "level": 3,
-            "targeting": [
-            {
-                "self": false,
-                "number": 0,
-                "rolls": {
-                    "rollType": "autoHit",
-                    "saveType": "none",
-                    "halfSave": false,
-                    "damage": ""
-                },
-                "damType": [
-                    "none"
-                ],
-                "conditions": [],
-                "statusEffect": [
+                "spellname": "Conjure Animals",
+                "level": 3,
+                "targeting": [
                     {
-                        "name": "Summon",
-                        "effect": {
-                            "type": "Beast",
-                            "monsterName": "",
-                            "crCap": "2",
-                            "numSummons": "1"
-                        }
-                    },
-                    {
-                        "name": "Summon",
-                        "effect": {
-                            "type": "Beast",
-                            "monsterName": "",
-                            "crCap": "1",
-                            "numSummons": "2"
-                        }
-                    },
-                    {
-                        "name": "Summon",
-                        "effect": {
-                            "type": "Beast",
-                            "monsterName": "",
-                            "crCap": "1/2",
-                            "numSummons": "4"
-                        }
-                    },
-                    {
-                        "name": "Summon",
-                        "effect": {
-                            "type": "Beast",
-                            "monsterName": "",
-                            "crCap": "1/4",
-                            "numSummons": "8"
-                        }
-                    },
-                    {
-                        "name": "Concentration",
-                        "effect": {
-                            "value": "T/F"
-                        }
+                        "self": false,
+                        "number": 0,
+                        "rolls": {
+                            "rollType": "autoHit",
+                            "saveType": "none",
+                            "halfSave": false,
+                            "damage": ""
+                        },
+                        "damType": [
+                            "none"
+                        ],
+                        "conditions": [],
+                        "statusEffect": [
+                            {
+                                "name": "Summon",
+                                "effect": {
+                                    "type": "Beast",
+                                    "monsterName": "",
+                                    "crCap": "2",
+                                    "numSummons": "1"
+                                }
+                            },
+                            {
+                                "name": "Summon",
+                                "effect": {
+                                    "type": "Beast",
+                                    "monsterName": "",
+                                    "crCap": "1",
+                                    "numSummons": "2"
+                                }
+                            },
+                            {
+                                "name": "Summon",
+                                "effect": {
+                                    "type": "Beast",
+                                    "monsterName": "",
+                                    "crCap": "1/2",
+                                    "numSummons": "4"
+                                }
+                            },
+                            {
+                                "name": "Summon",
+                                "effect": {
+                                    "type": "Beast",
+                                    "monsterName": "",
+                                    "crCap": "1/4",
+                                    "numSummons": "8"
+                                }
+                            },
+                            {
+                                "name": "Concentration",
+                                "effect": {
+                                    "value": "T/F"
+                                }
+                            }
+                        ],
+                        "lingEffect": {},
+                        "extraEffect": {},
+                        "lingSave": {},
+                        "scaling": "mult PER2",
+                        "specialNotes": [],
+                        "actionCost": "action"
                     }
-                ],
-                "lingEffect": {},
-                "extraEffect": {},
-                "lingSave": {},
-                "scaling": "mult PER2",
-                "specialNotes": [],
-                "actionCost": "action"
-            }
-        ]
-    },
+                ]
+            },
             {
                 "spellname": "Harm",
                 "level": 6,
@@ -279,5 +279,74 @@
                 ]
             }
         ]
+    },
+    {
+        "stats": {
+            "statArray": {
+                "STR": 20,
+                "DEX": 16,
+                "CON": 18,
+                "INT": 8,
+                "WIS": 15,
+                "CHA": 11
+            },
+            "saveProfs": {
+                "STR": 5,
+                "DEX": 3,
+                "CON": 4,
+                "INT": -1,
+                "WIS": 2,
+                "CHA": 0
+            },
+            "damResists": [],
+            "damImmunes": [],
+            "damVulns": [],
+            "conImmunes": [],
+            "activeConditions": [],
+            "activeStatusEffects": [],
+            "hp": 100,
+            "maxHP": 0,
+            "position": [
+                0,
+                0
+            ],
+            "cid": "f1",
+            "name": "Thorrin",
+            "level": 10,
+            "ac": 19,
+            "characterClass": "fighter",
+            "spellSlots": [],
+            "conImmunities": [],
+            "modifiers": {
+                "STR": 5,
+                "DEX": 3,
+                "CON": 4,
+                "INT": -1,
+                "WIS": 2,
+                "CHA": 0
+            }
+        },
+        "spells": [],
+        "weapons": [
+            {
+                "name": "longsword",
+                "properties": {
+                    "damage": "1d8",
+                    "damageType": "slashing",
+                    "weaponStat": "STR"
+                }
+            },
+            {
+                "name": "shortsword",
+                "properties": {
+                    "damage": "1d6",
+                    "damageType": "piercing",
+                    "weaponStat": "STR"
+                }
+            }
+        ],
+        "secondWindCharges": 1,
+        "actionSurgeCharges": 1,
+        "extraAttackAmt": 3
     }
 ]

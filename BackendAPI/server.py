@@ -1,16 +1,22 @@
 import json
+import logging
 import os
 import sys
-from typing import Dict, Union, List
+from typing import Union, List
 
 import uvicorn
-from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from logs.loggingConfig import setupLogging
+from BackendAPI.models import ActionRequest, Monster, Player, Encounter, Spell, Weapon, MonAction
+from BackendAPI.models.DNDClasses import Barbarian, Bard, Cleric, Druid, Fighter, Paladin, Sorcerer
 
-from BackendAPI.models import Sorcerer, ActionRequest, Monster, Player, Encounter, Spell, Weapon, MonAction
 from dotenv import load_dotenv
 import main
+from fastapi import FastAPI, Request
+import time
 
+setupLogging()
+logger = logging.getLogger("backend")
 load_dotenv()
 
 origins = [os.getenv("ORIGIN1"), os.getenv("ORIGIN2")]
@@ -24,13 +30,24 @@ app.add_middleware(
     allow_headers=["*"], #Specific requests from specific sources.
 )
 
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    logger.info("Incoming request: %s %s", request.method, request.url.path)
+    response = await call_next(request)
+    duration = time.time() - start_time
+    logger.info(
+        "Completed request: %s %s Status=%s Duration=%.4fs",request.method,request.url.path,response.status_code,duration)
+
+    return response
+
 ENCOUNTER_LIST = []
 def refresh():
     with open("CoreEngine/data/ENCOUNTER_LIST.json", "r") as rf: #TODO: DB pull here
         global ENCOUNTER_LIST
         ENCOUNTER_LIST = json.load(rf)
 refresh()
-AnyPlayer = Union[Sorcerer]
+AnyPlayer = Union[Barbarian, Bard, Cleric, Druid, Fighter, Paladin, Sorcerer]
 
 def isPlayer(creature):
     if isinstance(creature, dict):
@@ -42,7 +59,6 @@ def isPlayer(creature):
         return True
     else:
         return False
-
 @app.get("/encounter/{eid}/creature/{cid}/position")
 def getCreaturePosition(eid : str, cid : str):
     creature = getCreature(eid, cid)
@@ -60,7 +76,7 @@ def getCreatureActions(eid : str, cid : str):
     if creature.get("spellInfo", {}):
         actions += creature.get("spellInfo").get("spells", [])
     return actions
-@app.get("/encounter/{eid}/creature/{cid}", response_model=Union[Player, Monster])
+@app.get("/encounter/{eid}/creature/{cid}", response_model=Player)
 def getCreature(eid : str, cid : str):
     enc = getEncounter(eid)
     creatures = enc.get("players", []) + enc.get("monsters", [])
@@ -71,7 +87,11 @@ def getCreature(eid : str, cid : str):
         else:
             foundcid = creature.get("cid", "")
         cids.append(foundcid)
-    creatureIdx = cids.index(cid)
+    try:
+        creatureIdx = cids.index(cid)
+    except:
+        raise ValueError(f"{cid} not a recognized creature.")
+
     return creatures[creatureIdx]
 @app.post("/encounter/{eid}/creature")
 def addtoEncounter(eid : str, creature : Union[AnyPlayer, Monster]):
@@ -94,9 +114,9 @@ def getEncounter(eid : str):
     for encounter in ENCOUNTER_LIST:
         db_eid = encounter.get("eid", None)
         if eid == db_eid:
-            print(f"{eid} found!")
+            logger.info(f"{eid} found!")
             return encounter
-    print(f"{eid} not found!")
+    logger.info(f"{eid} not found!")
 
 @app.get("/encounter/{eid}/recommendation/{cid}")
 def actionRecommendation(eid : str, cid : str):
@@ -115,7 +135,9 @@ def actionRecommendation(eid : str, cid : str):
         if cid.lower() in monstercids:
             monster = monsters[monstercids.index(cid.lower())]
             rankings = main.monsterTurn(monster, initiative)
+            logger.info("Rankings for %s: %s", eid, rankings)
             return rankings
+
 
 
 
@@ -125,14 +147,14 @@ def getNextTurn(eid : str):
     initiative = encounter.getInitiative()
     for i, turn in enumerate(initiative):
         if turn["currentTurn"]:
-            print("currentTurn creature: " + turn["name"])
+            logger.info("currentTurn creature: " + turn["name"])
             turn["currentTurn"] = False
             if i == len(initiative) - 1:
                 initiative[0]["currentTurn"] = True
-                print("New currentTurnCreature: " + initiative[0]["name"])
+                logger.info("New currentTurnCreature: " + initiative[0]["name"])
             else:
                 initiative[i + 1]["currentTurn"] = True
-                print("New currentTurnCreature: " + initiative[i + 1]["name"])
+                logger.info("New currentTurnCreature: " + initiative[i + 1]["name"])
             break
     currentCreature = {}
     for creature in initiative:
@@ -172,8 +194,8 @@ def getNextTurn(eid : str):
     main.saveEncounter(encounter)
     refresh()
     preEffects = {"preEffects" : preEffects, "refresh" : refreshFlag}
+    logger.info(f"preEffects: {preEffects}")
     return preEffects
-
 @app.get("/encounter/{eid}/initiative/currentturn")
 def getTurn(eid : str):
     encounter = getEncounter(eid)
@@ -189,16 +211,18 @@ def getInitiative(eid : str):
 @app.post("/encounter")
 def postEncounter(encounter : Encounter):
     ENCOUNTER_LIST.append(encounter.model_dump(mode="json", by_alias=True))
-    with open("../CoreEngine/data/ENCOUNTER_LIST.json", "w") as wf:
+    with open("CoreEngine/data/encounter_list.json", "w") as wf:
         json.dump(ENCOUNTER_LIST, wf, indent=4)
     refresh()
     return dict(verification="true")
+
+
 
 @app.get("/dashboard/{eid}/players")
 def getPlayerPacket(eid : str):
     encounter = getEncounter(eid)
     players = encounter.get("players", [])
-    print(players)
+    logger.info(players)
     packet = [{"name" : player.get("stats").get("name"), "level" : player.get("stats").get("level"),
                "characterClass" : player.get("stats").get("characterClass")} for player in players]
     return packet
@@ -207,7 +231,7 @@ def getMonsterPacket(eid : str):
     #TODO: size
     encounter = getEncounter(eid)
     monsters = encounter.get("monsters", [])
-    print(monsters)
+    logger.info(monsters)
     packet = [{"name" : monster.get("name"), "cr" : monster.get("cr")} for monster in monsters]
     return packet
 @app.get("/dashboard/players")
@@ -242,6 +266,7 @@ def getSpells(classid : str, level : int):
                     found = True
                 else:
                     i += 1
+    logger.info("Spell data from get spells: %s", relevantSpellData)
     return relevantSpellData
 @app.get("/dashboard/encounters")
 def getEncounterPacket():
@@ -249,10 +274,10 @@ def getEncounterPacket():
 @app.post("/dashboard/players")
 def postPlayerToPlayerList(player : AnyPlayer):
     #TODO: Replace with DB call to add in.
-    with open("../CoreEngine/data/player_list.json", "r") as rpf:
+    with open("CoreEngine/data/player_list.json", "r") as rpf:
         player_list = json.load(rpf)
     player_list.append(player.model_dump(mode="json", by_alias=True))
-    with open("../CoreEngine/data/player_list.json", "w") as wpf:
+    with open("CoreEngine/data/player_list.json", "w") as wpf:
         json.dump(player_list, wpf, indent=4)
     return dict(verification="true")
 

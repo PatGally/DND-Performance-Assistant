@@ -159,3 +159,10 @@ class Monster(Stats):
     @classmethod
     def coerce_bool_fields(cls, v: Any):
         return _coerce_bool(v)
+
+    @field_validator("spell_info", "multiattack", mode="before")
+    @classmethod
+    def normalize_dict_fields(cls, v:Any):
+        if v is None:
+            return {}
+        return v

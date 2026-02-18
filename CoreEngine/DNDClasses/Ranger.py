@@ -1,10 +1,10 @@
 from CoreEngine.Player import Player
 
 class Ranger(Player):
-    def __init__(self, lvl, name, stats, ac, hp, class_type, level, conImmunities, damImmunes, damResists, damVulns,
-                 activeStatusEffects, activeConditions):
-        super().__init__(name, stats, ac, hp, class_type, level, conImmunities, damImmunes, damResists, damVulns,
-                         activeStatusEffects, activeConditions)
+    def __init__(self, lvl, name, stats, saveProfs, ac, hp, class_type, level, conImmunities, damImmunes, damResists, damVulns,
+                 activeStatusEffects, activeConditions, cid, position):
+        super().__init__(name, stats, saveProfs, ac, hp, class_type, level, conImmunities, damImmunes, damResists, damVulns,
+                         activeStatusEffects, activeConditions, cid, position)
         self.__abilities = [
             {
                 "name": "Extra attack",

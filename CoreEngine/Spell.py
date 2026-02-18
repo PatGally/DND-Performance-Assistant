@@ -32,7 +32,7 @@ class Spell(Action):
         return {
             "spellname" : self.__name,
             "level" : str(self.__lvl),
-            "targeting" : {
+            "targeting" : [{
                 "self" : self.__selfTarget,
                 "number" : str(self.__numTarget),
                 "rolls" : {
@@ -51,8 +51,7 @@ class Spell(Action):
                 "scaling" : self.__scaling,
                 "actionCost" : self.__actionCost,
                 "specialNotes" : self.__specialNotes
-            }
-
+            }]
         }
 
     def getName(self):

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Literal, Optional
 from pydantic import BaseModel, Field, ConfigDict, computed_field, model_validator
 
-from .Player import Player
+from BackendAPI.models.Player import Player
 
 class MetaMagic(BaseModel):
     name: str

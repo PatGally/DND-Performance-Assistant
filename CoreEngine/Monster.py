@@ -21,7 +21,7 @@ class Monster(Stats):
         self.__enemy = enemy
         self.__actions = actions
         self.__spellInfo = spellInfo
-        self.__caster = True if spellInfo["spells"] else False
+        self.__caster = True if spellInfo.get("spells", []) else False
         self.__legActions = legActions
 
     def setName(self, name):
@@ -85,7 +85,7 @@ class Monster(Stats):
     def getDC(self):
         if self.isCaster():
             return int(self.__spellInfo["DC"])
-        return 10
+        return 8 + self.getProfBonus() + self.getMod("STR")
     def getSpellAttack(self):
         if self.isCaster():
             return int(self.__spellInfo["attackRoll"])

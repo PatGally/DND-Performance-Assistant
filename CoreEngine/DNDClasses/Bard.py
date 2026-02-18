@@ -25,7 +25,6 @@ class Bard(Player):
             return 10
         elif 15 <= self.getLevel() <= 20:
             return 12
-
     def getDieType(self):
         return self.__bardicDieType
 
@@ -34,13 +33,16 @@ class Bard(Player):
             return 1
         else:
             return self.getMod("CHA")
-
-
     def getBardicCharges(self):
         return self.__bardicCharges
-
     def useBardicCharges(self):
         self.__bardicCharges = self.setBardicCharges() - 1
+    def resetBardicCharges(self):
+        if self.getMod("CHA") == 0:
+            return 1
+        else:
+            self.__bardicCharges = self.getMod("CHA")
+            return self.__bardicCharges
 
     def getMagicalSecret(self, magicalSecret):
         with open(SPELL_LIST_FILE, "r") as f:
@@ -51,7 +53,6 @@ class Bard(Player):
                 return spell
 
         return {}
-
     def addMagicalSecret(self, magicalSecret):
         if self.checkMagicalSecrets():
             spell = self.getMagicalSecret(magicalSecret)
@@ -138,7 +139,6 @@ class Bard(Player):
                                 scaling, actionCost, specialNotes)
 
             self.__magicalSecrets.append(spellName)
-
     def checkMagicalSecrets(self):
         if self.getLevel() < 10:
             if len(self.__magicalSecrets) >= 0:
@@ -159,10 +159,3 @@ class Bard(Player):
             else:
                 return True
         return False
-
-    def resetBardicCharges(self):
-        if self.getMod("CHA") == 0:
-            return 1
-        else:
-            self.__bardicCharges = self.getMod("CHA")
-            return self.__bardicCharges

@@ -1465,7 +1465,7 @@ def savePlayer(player, filename):
         "conImmunities": player.getConImmunities(),
         "activeStatusEffects": player.getActiveStatusEffects(),
         "activeConditions": player.getActiveConditions(),
-        "saveProfs" : [str(player.getStat(stat)) for stat in ["STR", "DEX", "CON", "INT", "WIS", "CHA"]],
+        "saveProfs" : [str(player.getMod(stat)) for stat in ["STR", "DEX", "CON", "INT", "WIS", "CHA"]],
         "damImmunes": player.getDamImmunities(),
         "damResists": player.getDamResistances(),
         "damVulns": player.getDamVulnerabilities(),
@@ -1854,7 +1854,14 @@ def loadEncounter(encounterData):
         damImmunes = monsterJSON["damImmunes"]
         damVulns = monsterJSON["damVulns"]
         conImmunes = monsterJSON["conImmunes"]
-        activeConditions = monsterJSON["activeCons"]
+        if "activeCons" in monsterJSON:
+            acons = "activeCons"
+            activeConditions = monsterJSON[acons]
+        elif "activeConditions" in monsterJSON:
+            acons = "activeConditions"
+            activeConditions = monsterJSON[acons]
+        else:
+            activeConditions = []
         activeStatusEffects = monsterJSON["activeStatusEffects"]
         lairAction = bool(monsterJSON["lairAction"])
         magicResist = monsterJSON.get("magicResist", False)
@@ -2145,10 +2152,6 @@ def translateBasicAction(creature, action):
         lingSaves = None
         if targeting["lingSave"]:
             lingSaves = targeting["lingSave"]
-        scaling = targeting["scaling"]
-        specialNotes = None
-        if len(targeting["specialNotes"]) != 0:
-            specialNotes = targeting["specialNotes"]
 
         actionRolls = targeting["rolls"]
         rollType = actionRolls["rollType"]
@@ -2168,10 +2171,19 @@ def translateBasicAction(creature, action):
             elif actionRolls["damageMod"] != "":
                 damageMod = int(actionRolls["damageMod"])
 
-        return Spell(actionName, -1, selfTarget,
-                     targetNum, rollType, saveType, halfSave, damageMod, diceNum, diceType,
-                     damType, conditions, statusEffect, lingEffect, extraEffect, lingSaves,
-                     scaling, "action",specialNotes)
+        if actionName.lower() == "grapple":
+            saveDC = 8 + creature.getProfBonus() + creature.getMod("STR")
+        elif actionName.lower() == "shove" or actionName.lower() == "hide":
+            saveDC = 8 + creature.getProfBonus() + creature.getMod("DEX")
+        else:
+            saveDC = 0
+
+        return MonAction(actionName, "", selfTarget,
+                     targetNum, 5, "", rollType, saveType,
+                         saveDC, halfSave, damageMod, diceNum, diceType,
+                     "", [], damType, conditions,
+                         statusEffect, lingEffect, extraEffect, lingSaves,
+                         "action","", [])
 def defineBasicActions(actionNames, actionTypes, actionProbs, actionEDams, actionImpacts, player, initiative):
     #Load basic actions
     try:
@@ -2188,6 +2200,8 @@ def defineBasicActions(actionNames, actionTypes, actionProbs, actionEDams, actio
     dodge = translateBasicAction(player, dodge)
 
     grappleProb = calcTotalSaveProbability(player, grapple, initiative)  # Calculate probability of save
+    grappleProb["probSuccess"] = 0 if grappleProb["probSuccess"] < 0 else grappleProb["probSuccess"]
+    grappleProb["probSuccess"] = 1 if grappleProb["probSuccess"] > 1 else grappleProb["probSuccess"]
     probToStr = f"{grappleProb["probSuccess"]}"
     probToStr += f" - {grappleProb["probLingEffect"]}LE" if grappleProb["probLingEffect"] else ""
     probToStr += f" - {grappleProb['probExtraEffect']}EE" if grappleProb["probExtraEffect"] else ""
@@ -2195,6 +2209,8 @@ def defineBasicActions(actionNames, actionTypes, actionProbs, actionEDams, actio
     grappleProb = probToStr
 
     shoveProb = calcTotalSaveProbability(player, shove, initiative)
+    shoveProb["probSuccess"] = 0 if shoveProb["probSuccess"] < 0 else shoveProb["probSuccess"]
+    shoveProb["probSuccess"] = 1 if shoveProb["probSuccess"] > 1 else shoveProb["probSuccess"]
     probToStr = f"{shoveProb["probSuccess"]}"
     probToStr += f" - {shoveProb["probLingEffect"]}LE" if shoveProb["probLingEffect"] else ""
     probToStr += f" - {shoveProb['probExtraEffect']}EE" if shoveProb["probExtraEffect"] else ""
@@ -4847,11 +4863,15 @@ def processSpellAnalytics(spellList, creature, initiative):
                                                  [creature.getWeapon(i) for i in range(creature.getWeaponLength())],
                                                  creature, initiative)
             if isinstance(spellProb, dict):
+                spellProb["probSuccess"] = 0 if spellProb["probSuccess"] < 0 else spellProb["probSuccess"]
+                spellProb["probSuccess"] = 1 if spellProb["probSuccess"] > 1 else spellProb["probSuccess"]
                 probToStr = f"{spellProb["probSuccess"]}" if spellProb["probSuccess"] else f"0.0"
                 probToStr += f" - {spellProb["probLingEffect"]}LE" if spellProb["probLingEffect"] else ""
                 probToStr += f" - {spellProb['probExtraEffect']}EE" if spellProb["probExtraEffect"] else ""
                 probToStr += f" - {spellProb['probLingSaves']}LS" if spellProb["probLingSaves"] else ""
             else:
+                spellProb = 0 if spellProb < 0 else spellProb
+                spellProb = 1 if spellProb > 1 else spellProb
                 probToStr = spellProb
             spellProb = probToStr
             spellEDam = calcTotalExpectedDamage(creature, spellList[i], initiative) if spellEDam == -1 else spellEDam
@@ -4962,6 +4982,11 @@ def rankActions(actions):
             else:
                 x["prob"] = prob_score_multiplicative(init, parts)
 
+            if float(x["prob"]) < 0:
+                x["probDisplay"] = 0
+            elif float(x["prob"]) > 1.0:
+                x["probDisplay"] = 1
+
             x["eDam"] = float(x["eDam"])
             x["impact"] = float(x["impact"])
             out.append(x)
@@ -5054,6 +5079,8 @@ def rankActions(actions):
     # TODO: Double check accuracy of ranking logic
     overallRankings = prepare_actions_for_ranking(actions)
     overallRankings = rank_all_actions(overallRankings, weights={"prob": 1.0, "eDam": 1.0, "impact": 1.25})
+    print("POST PROBS")
+    console.print(overallRankings)
     return overallRankings
 def monsterTurn(creature, initiative):
     def loadSpells(spells):
@@ -5103,11 +5130,15 @@ def monsterTurn(creature, initiative):
             elif monAction.getRollType().lower() == "save":
                 actionProb = calcTotalSaveProbability(creature, monAction, initiative)
             if isinstance(actionProb, dict):
+                actionProb["probSuccess"] = 0 if actionProb["probSuccess"] < 0 else actionProb["probSuccess"]
+                actionProb["probSuccess"] = 1 if actionProb["probSuccess"] > 1 else actionProb["probSuccess"]
                 probToStr = f"{actionProb["probSuccess"]}" if actionProb["probSuccess"] else f"0.0"
                 probToStr += f" - {actionProb["probLingEffect"]}LE" if actionProb["probLingEffect"] else ""
                 probToStr += f" - {actionProb['probExtraEffect']}EE" if actionProb["probExtraEffect"] else ""
                 probToStr += f" - {actionProb['probLingSaves']}LS" if actionProb["probLingSaves"] else ""
             else:
+                actionProb = 0 if actionProb < 0 else actionProb
+                actionProb = 1 if actionProb > 1 else actionProb
                 probToStr = actionProb
             actionProb = probToStr
             actionEDam = calcTotalExpectedDamage(creature,
@@ -5122,6 +5153,7 @@ def monsterTurn(creature, initiative):
 
     actions.extend([{"name": actionNames[i], "prob": actionProbs[i], "eDam": actionEDams[i], "impact": actionImpacts[i]} for
                i in range(len(actionNames))])
+    print("PRE PROBS")
     console.print(actions)
     return rankActions(actions)
 def playerTurn(player, initiative):
@@ -5314,11 +5346,12 @@ def main():
         encounters = json.load(ef)
         encounter = {}
         for enc in encounters:
-            if enc["eid"] == "a4695c":
+            if enc["eid"] == "a4695c2":
                 encounter = enc
                 break
         encounter = loadEncounter(encounter)
-        console.print(monsterTurn(encounter.getMonster(0), setActiveInitiative(encounter)))
+        # console.print(monsterTurn(encounter.getMonster(0), setActiveInitiative(encounter)))
+        console.print(playerTurn(encounter.getPlayer(0), setActiveInitiative(encounter)))
 
 if __name__ == "__main__":
     main()
