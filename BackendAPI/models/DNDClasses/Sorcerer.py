@@ -30,8 +30,8 @@ SORCERER_METAMAGIC_CATALOG: List[MetaMagic] = [ #read only
 class Sorcerer(Player):
     model_config = ConfigDict(populate_by_name=True, extra="allow")
 
-    sorceryPoints: int = Field(default=-1)
-    chosenMetaMagics: List[MetaMagic] = Field(default_factory=list)
+    sorceryPoints: int = Field(default=-1, alias="sorceryPoints")
+    chosenMetaMagics: List[MetaMagic] = Field(default_factory=list, alias="chosenMetaMagics")
 
     @computed_field
     @property
