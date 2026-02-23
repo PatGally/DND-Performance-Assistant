@@ -1,0 +1,310 @@
+[
+	{
+		"name" : "Blinded",
+		"statusEffects" : [
+			{
+				"name" : "Advantage",
+				"effect" : {
+					"rolls" : "4",
+					"attribute" : ["attack rolls against"]
+				}
+			},
+			{
+				"name" : "Disadvantage",
+				"effect" : {
+					"rolls" : "-4",
+					"attribute" : ["attack rolls for"]
+				}
+			}
+		],
+		"conditionEffects" : []
+	},
+	{
+		"name" : "Charmed",
+		"statusEffects" : [
+			{
+				"name" : "nonTarget",
+				"effect" : {
+					"value" : "True",
+					"target" : "caster"
+			    }
+            }
+		],
+		"conditionEffects" : []
+	},
+    {
+        "name" : "Frightened",
+        "statusEffects": [
+            {
+				"name" : "Disadvantage",
+				"effect" : {
+					"rolls" : "-4",
+					"attribute" : ["attack rolls for"]
+				}
+			}
+        ],
+        "conditionEffects" : []
+    },
+    {
+      "name" : "Incapacitated",
+      "statusEffects" : [],
+      "conditionEffects" : ["No Actions"]
+    },
+    {
+      "name" : "Invisible",
+      "statusEffects" : [
+          {
+				"name" : "Disadvantage",
+				"effect" : {
+					"rolls" : "-4",
+					"attribute" : ["attack rolls against"]
+				}
+          },
+          {
+				"name" : "Advantage",
+				"effect" : {
+					"rolls" : "4",
+					"attribute" : ["attack rolls for"]
+				}
+          },
+          {
+				"name" : "nonTarget",
+				"effect" : {
+					"value" : "True",
+					"target" : "self"
+			    }
+          }
+      ],
+      "conditionEffects" : ["End on Action"]
+    },
+    {
+      "name" : "GreaterInvisible",
+      "statusEffects" : [
+          {
+				"name" : "Disadvantage",
+				"effect" : {
+					"rolls" : "-4",
+					"attribute" : ["attack rolls against"]
+				}
+          },
+          {
+				"name" : "Advantage",
+				"effect" : {
+					"rolls" : "4",
+					"attribute" : ["attack rolls for"]
+				}
+          },
+          {
+				"name" : "nonTarget",
+				"effect" : {
+					"value" : "True",
+					"target" : "self"
+			    }
+          }
+      ],
+      "conditionEffects" : []
+    },
+    {
+    "name": "Paralyzed",
+    "statusEffects": [
+      { "name": "Autofail",
+        "effect": {
+          "rolls" : "-30",
+          "attribute": ["STR save", "DEX save"]
+        }
+      },
+      { "name": "autocrit",
+        "effect": {
+          "damage" : "*2",
+          "attribute": ["attack rolls against"]
+        }
+      }
+    ],
+    "conditionEffects": [
+      "Incapacitated"
+    ]
+  },
+  {
+    "name": "Petrified",
+    "statusEffects": [
+      { "name": "Autofail",
+        "effect": {
+          "rolls" : "-30",
+          "attribute": ["STR save", "DEX save"]
+        }
+      },
+      {
+        "name": "Resistance",
+        "effect": {
+          "damage" : "/2",
+          "attribute": ["all"]
+        }
+      },
+      {
+        "name": "Immunity",
+        "effect": {
+          "damage" : "*0",
+          "attribute": ["poison"]
+        }
+      }
+    ],
+    "conditionEffects": [
+      "Incapacitated"
+    ]
+  },
+  {
+    "name": "Poisoned",
+    "statusEffects": [
+      {
+        "name": "Disadvantage",
+        "effect": {
+          "rolls" : "-4",
+          "attribute": ["attack rolls for"]
+        }
+      }
+    ],
+    "conditionEffects": []
+  },
+  {
+    "name": "Diseased",
+    "statusEffects": [
+      {
+        "name": "Disadvantage",
+        "effect": {
+          "rolls" : "-4",
+          "attribute": ["attack rolls for"]
+        }
+      }
+    ],
+    "conditionEffects": []
+  },
+  {
+    "name": "Prone",
+    "statusEffects": [
+      {
+        "name": "Disadvantage",
+        "effect": {
+        "rolls" : "-4",
+        "attribute": ["attack rolls for"]
+        }
+      },
+      {
+        "name": "Advantage",
+        "effect": {
+          "rolls" : "4",
+          "attribute": ["attack rolls against"]
+        }
+      }
+    ],
+    "conditionEffects": []
+  },
+  {
+    "name": "Restrained",
+    "statusEffects": [
+      { "name": "Advantage",
+        "effect": {
+          "rolls" : "4",
+          "attribute": ["attack rolls against"]
+        }
+      },
+      { "name": "Disadvantage",
+        "effect": {
+          "rolls" : "-4",
+          "attribute": ["attack rolls for"]
+        }
+      },
+      {
+        "name": "Disadvantage",
+        "effect": {
+          "rolls" : "-4",
+          "attribute": ["DEX save"]
+        }
+      }
+    ],
+    "conditionEffects": []
+  },
+  {
+    "name": "Stunned",
+    "statusEffects": [
+      {
+        "name": "Autofail",
+        "effect": {
+          "rolls" : "-30",
+          "attribute": ["STR save", "DEX save"]
+        }
+      },
+      {
+        "name": "Advantage",
+        "effect": {
+          "rolls" : "4",
+          "attribute": ["attack rolls against"]
+        }
+      }
+    ],
+    "conditionEffects": [
+      "Incapacitated"
+    ]
+  },
+  {
+    "name": "Unconscious",
+    "statusEffects": [
+      {
+        "name": "Autofail",
+        "effect": {
+          "rolls": "-30",
+          "attribute": [
+            "STR save",
+            "DEX save"
+          ]
+        }
+      },
+      {
+        "name": "autocrit",
+        "effect": {
+          "damage": "*2",
+          "attribute": [
+            "attack rolls against"
+          ]
+        }
+      }
+    ],
+    "conditionEffects": [
+      "Incapacitated",
+      "Prone"
+    ]
+  },
+  {
+    "name": "Out of Combat",
+    "statusEffects": [
+      {
+        "name": "nonTarget",
+        "effect": {
+          "value": "True",
+          "target": "all"
+        }
+      }
+    ],
+    "conditionEffects": [
+      "Incapacitated"
+    ]
+  },
+  {
+    "name": "Stabilized",
+    "statusEffects": [],
+    "conditionEffects": []
+  },
+  {
+    "name": "Downed",
+    "statusEffects": [],
+    "conditionEffects": [],
+    "saves": 0,
+    "fails": 0
+  },
+  {
+    "name": "Dead",
+    "statusEffects": [],
+    "conditionEffects": [
+      "Out of Combat"
+    ]
+  }
+]

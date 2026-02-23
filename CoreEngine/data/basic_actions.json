@@ -1,0 +1,135 @@
+[
+  {
+    "spellname": "Grapple",
+    "level": -1,
+    "targeting": [
+      {
+        "self": false,
+        "number": 1,
+        "rolls": {
+          "rollType": "save",
+          "saveType": "STR",
+          "halfSave": false,
+          "damage": "",
+          "damageMod": ""
+        },
+        "damType": [
+          ""
+        ],
+        "conditions": [
+          "restrained"
+        ],
+        "statusEffect": [],
+        "lingEffect": [],
+        "extraEffect": {},
+        "lingSave": {
+          "saveType": "STR"
+        },
+        "scaling": "",
+        "actionCost": "action",
+        "specialNotes": []
+      }
+    ]
+  },
+  {
+    "spellname": "Shove",
+    "targeting": [
+      {
+        "self": false,
+        "number": 1,
+        "rolls": {
+          "rollType": "save",
+          "saveType": "DEX",
+          "halfSave": false,
+          "damage": "",
+          "damageMod": ""
+        },
+        "damType": [
+          ""
+        ],
+        "conditions": [
+          "Prone"
+        ],
+        "statusEffect": [],
+        "lingEffect": [],
+        "extraEffect": {},
+        "lingSave": {},
+        "scaling": "",
+        "actionCost": "action",
+        "specialNotes": [
+          "1Turn"
+        ]
+      }
+    ]
+  },
+  {
+    "spellname": "Dodge",
+    "targeting": [
+      {
+        "self": true,
+        "number": 0,
+        "rolls": {
+          "rollType": "autoHit",
+          "saveType": "",
+          "halfSave": false,
+          "damage": "",
+          "damageMod": ""
+        },
+        "damType": [
+          ""
+        ],
+        "conditions": [],
+        "statusEffect": [
+          {
+            "name": "Disadvantage",
+            "effect": {
+              "roll": -4,
+              "attribute": [
+                "attack rolls against"
+              ]
+            }
+          }
+        ],
+        "lingEffect": [],
+        "extraEffect": {},
+        "lingSave": {},
+        "scaling": "",
+        "actionCost": "action",
+        "specialNotes": [
+          "1Turn"
+        ]
+      }
+    ]
+  },
+  {
+    "spellname": "Hide",
+    "targeting": [
+      {
+        "self": true,
+        "number": 0,
+        "rolls": {
+          "rollType": "autoHit",
+          "saveType": "none",
+          "halfSave": false,
+          "damage": "",
+          "damageMod": ""
+        },
+        "damType": [
+          ""
+        ],
+        "conditions": [
+          "Invisible"
+        ],
+        "statusEffect": [],
+        "lingEffect": {},
+        "extraEffect": {},
+        "lingSave": {},
+        "scaling": "",
+        "actionCost": "action",
+        "specialNotes": [
+          "1Turn"
+        ]
+      }
+    ]
+  }
+]

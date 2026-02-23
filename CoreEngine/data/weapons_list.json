@@ -1,0 +1,434 @@
+[
+    {
+        "name": "club",
+        "properties": {
+            "damage": [
+                "1d4"
+            ],
+            "damageType": "bludgeoning",
+            "weaponStat": [
+                "STR"
+            ]
+        }
+    },
+    {
+        "name": "dagger",
+        "properties": {
+            "damage": [
+                "1d4"
+            ],
+            "damageType": "piercing",
+            "weaponStat": [
+                "STR",
+                "DEX"
+            ]
+        }
+    },
+    {
+        "name": "greatclub",
+        "properties": {
+            "damage": [
+                "1d8"
+            ],
+            "damageType": "bludgeoning",
+            "weaponStat": [
+                "STR"
+            ]
+        }
+    },
+    {
+        "name": "handaxe",
+        "properties": {
+            "damage": [
+                "1d6"
+            ],
+            "damageType": "slashing",
+            "weaponStat": [
+                "STR"
+            ]
+        }
+    },
+    {
+        "name": "javelin",
+        "properties": {
+            "damage": [
+                "1d6"
+            ],
+            "damageType": "piercing",
+            "weaponStat": [
+                "STR"
+            ]
+        }
+    },
+    {
+        "name": "light hammer",
+        "properties": {
+            "damage": [
+                "1d4"
+            ],
+            "damageType": "bludgeoning",
+            "weaponStat": [
+                "STR"
+            ]
+        }
+    },
+    {
+        "name": "mace",
+        "properties": {
+            "damage": [
+                "1d6"
+            ],
+            "damageType": "bludgeoning",
+            "weaponStat": [
+                "STR"
+            ]
+        }
+    },
+    {
+        "name": "quarterstaff",
+        "properties": {
+            "damage": [
+                "1d6",
+                "1d8"
+            ],
+            "damageType": "bludgeoning",
+            "weaponStat": [
+                "STR"
+            ]
+        }
+    },
+    {
+        "name": "sickle",
+        "properties": {
+            "damage": [
+                "1d4"
+            ],
+            "damageType": "slashing",
+            "weaponStat": [
+                "STR"
+            ]
+        }
+    },
+    {
+        "name": "spear",
+        "properties": {
+            "damage": [
+                "1d6",
+                "1d8"
+            ],
+            "damageType": "piercing",
+            "weaponStat": [
+                "STR"
+            ]
+        }
+    },
+    {
+        "name": "light crossbow",
+        "properties": {
+            "damage": [
+                "1d8"
+            ],
+            "damageType": "piercing",
+            "weaponStat": [
+                "STR"
+            ]
+        }
+    },
+    {
+        "name": "dart",
+        "properties": {
+            "damage": [
+                "1d4"
+            ],
+            "damageType": "piercing",
+            "weaponStat": [
+                "STR",
+                "DEX"
+            ]
+        }
+    },
+    {
+        "name": "shortbow",
+        "properties": {
+            "damage": [
+                "1d6"
+            ],
+            "damageType": "piercing",
+            "weaponStat": [
+                "STR"
+            ]
+        }
+    },
+    {
+        "name": "sling",
+        "properties": {
+            "damage": [
+                "1d4"
+            ],
+            "damageType": "bludgeoning",
+            "weaponStat": [
+                "STR"
+            ]
+        }
+    },
+    {
+        "name": "battleaxe",
+        "properties": {
+            "damage": [
+                "1d8",
+                "1d10"
+            ],
+            "damageType": "slashing",
+            "weaponStat": [
+                "STR"
+            ]
+        }
+    },
+    {
+        "name": "flail",
+        "properties": {
+            "damage": [
+                "1d8"
+            ],
+            "damageType": "bludgeoning",
+            "weaponStat": [
+                "STR"
+            ]
+        }
+    },
+    {
+        "name": "glaive",
+        "properties": {
+            "damage": [
+                "1d10"
+            ],
+            "damageType": "slashing",
+            "weaponStat": [
+                "STR"
+            ]
+        }
+    },
+    {
+        "name": "greataxe",
+        "properties": {
+            "damage": [
+                "1d12"
+            ],
+            "damageType": "slashing",
+            "weaponStat": [
+                "STR"
+            ]
+        }
+    },
+    {
+        "name": "greatsword",
+        "properties": {
+            "damage": [
+                "2d6"
+            ],
+            "damageType": "slashing",
+            "weaponStat": [
+                "STR"
+            ]
+        }
+    },
+    {
+        "name": "halberd",
+        "properties": {
+            "damage": [
+                "1d10"
+            ],
+            "damageType": "slashing",
+            "weaponStat": [
+                "STR"
+            ]
+        }
+    },
+    {
+        "name": "lance",
+        "properties": {
+            "damage": [
+                "1d12"
+            ],
+            "damageType": "piercing",
+            "weaponStat": [
+                "STR"
+            ]
+        }
+    },
+    {
+        "name": "longsword",
+        "properties": {
+            "damage": [
+                "1d8",
+                "1d10"
+            ],
+            "damageType": "slashing",
+            "weaponStat": [
+                "STR"
+            ]
+        }
+    },
+    {
+        "name": "maul",
+        "properties": {
+            "damage": [
+                "2d6"
+            ],
+            "damageType": "bludgeoning",
+            "weaponStat": [
+                "STR"
+            ]
+        }
+    },
+    {
+        "name": "morningstar",
+        "properties": {
+            "damage": [
+                "1d8"
+            ],
+            "damageType": "piercing",
+            "weaponStat": [
+                "STR"
+            ]
+        }
+    },
+    {
+        "name": "pike",
+        "properties": {
+            "damage": [
+                "1d10"
+            ],
+            "damageType": "piercing",
+            "weaponStat": [
+                "STR"
+            ]
+        }
+    },
+    {
+        "name": "rapier",
+        "properties": {
+            "damage": [
+                "1d8"
+            ],
+            "damageType": "piercing",
+            "weaponStat": [
+                "STR",
+                "DEX"
+            ]
+        }
+    },
+    {
+        "name": "scimitar",
+        "properties": {
+            "damage": [
+                "1d6"
+            ],
+            "damageType": "slashing",
+            "weaponStat": [
+                "STR",
+                "DEX"
+            ]
+        }
+    },
+    {
+        "name": "shortsword",
+        "properties": {
+            "damage": [
+                "1d6"
+            ],
+            "damageType": "piercing",
+            "weaponStat": [
+                "STR",
+                "DEX"
+            ]
+        }
+    },
+    {
+        "name": "trident",
+        "properties": {
+            "damage": [
+                "1d6",
+                "1d8"
+            ],
+            "damageType": "piercing",
+            "weaponStat": [
+                "STR"
+            ]
+        }
+    },
+    {
+        "name": "war pick",
+        "properties": {
+            "damage": [
+                "1d8"
+            ],
+            "damageType": "piercing",
+            "weaponStat": [
+                "STR"
+            ]
+        }
+    },
+    {
+        "name": "warhammer",
+        "properties": {
+            "damage": [
+                "1d8",
+                "1d10"
+            ],
+            "damageType": "bludgeoning",
+            "weaponStat": [
+                "STR"
+            ]
+        }
+    },
+    {
+        "name": "whip",
+        "properties": {
+            "damage": [
+                "1d4"
+            ],
+            "damageType": "slashing",
+            "weaponStat": [
+                "STR",
+                "DEX"
+            ]
+        }
+    },
+    {
+        "name": "crossbow",
+        "properties": {
+            "damage": [
+                "1d6"
+            ],
+            "damageType": "piercing",
+            "weaponStat": [
+                "STR"
+            ]
+        }
+    },
+    {
+        "name": "heavy crossbow",
+        "properties": {
+            "damage": [
+                "1d10"
+            ],
+            "damageType": "piercing",
+            "weaponStat": [
+                "STR"
+            ]
+        }
+    },
+    {
+        "name": "longbow",
+        "properties": {
+            "damage": [
+                "1d8"
+            ],
+            "damageType": "piercing",
+            "weaponStat": [
+                "STR"
+            ]
+        }
+    }
+]
