@@ -15,11 +15,12 @@ class PlayerStats(Stats):
     level: int = Field(alias="level")
     ac: int
     hp: int
+    maxhp : int
     class_: str = Field(alias="characterClass")
 
     # Present on some players (e.g., PlayerOne) :contentReference[oaicite:4]{index=4}
     # Looks like a list of pairs: [["4","4"], ["3","3"], ...]
-    spellSlots: Optional[List[List[int]]] = None
+    spellSlots: Optional[List[List[int]]] = []
     model_config = ConfigDict(populate_by_name=True)
 
 class Player(BaseModel):

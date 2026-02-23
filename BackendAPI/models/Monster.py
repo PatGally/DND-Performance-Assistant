@@ -19,8 +19,6 @@ def _coerce_int_or_none(v: Any) -> Optional[int]:
             return None
         return int(s)
     return int(v)
-
-
 def _coerce_int(v: Any, default: int = 0) -> int:
     if v is None:
         return default
@@ -32,8 +30,6 @@ def _coerce_int(v: Any, default: int = 0) -> int:
             return default
         return int(s)
     return int(v)
-
-
 def _coerce_bool(v: Any) -> bool:
     if isinstance(v, bool):
         return v
@@ -99,14 +95,14 @@ class Monster(Stats):
     name: str
     cr: str  # keep string: "1/4" etc.
     creature_type: str = Field(alias="creatureType")
-
     ac: int = Field(default=0, alias="ac")
     l_resists: int = Field(default=0, alias="lResists")
-
     magic_resist: bool = Field(default=False, alias="magicResist")
     lair_action: bool = Field(default=False, alias="lairAction")
-
     enemy: bool = Field(default=False)
+    size : str = Field(alias="size")
+    movement : int = Field(alias="movement")
+
 
     actions: List[MonAction] = Field(default_factory=list)
 

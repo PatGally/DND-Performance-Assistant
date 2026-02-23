@@ -2,11 +2,11 @@ from CoreEngine import Player
 
 class Cleric(Player):
     def __init__(self, name, stats, saveProfs, ac, hp, class_type, level, conImmunities, damImmunes, damResists,
-                 damVulns, activeStatusEffects, activeConditions):
+                 damVulns, activeStatusEffects, activeConditions, cid, position, turnUndeadCharges=-1, destroyUndeadCap=-1):
         super().__init__(name, stats, saveProfs, ac, hp, class_type, level, conImmunities, damImmunes, damResists,
-                         damVulns, activeStatusEffects, activeConditions)
+                         damVulns, activeStatusEffects, activeConditions, cid, position)
 
-        self.__turnUndeadCharges = 1
+        self.__turnUndeadCharges = 1 if turnUndeadCharges == -1 else turnUndeadCharges
         self.__abilties = [
             {
                 "name" : "Turn Undead",
@@ -61,7 +61,7 @@ class Cleric(Player):
                 }
             }
         ]
-        self.__destroyUndeadCap = self.setUndeadCap()
+        self.__destroyUndeadCap = self.setUndeadCap() if destroyUndeadCap == -1 else destroyUndeadCap
 
     def setUndeadCap(self):
         if self.getLevel() < 5:
@@ -79,3 +79,8 @@ class Cleric(Player):
         self.__turnUndeadCharges = 0
     def resetTurnUndead(self):
         self.__turnUndeadCharges = 1
+
+    def getTurnUndeadCharges(self):
+        return self.__turnUndeadCharges
+    def getDestroyUndeadCap(self):
+        return self.__destroyUndeadCap

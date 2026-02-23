@@ -303,6 +303,7 @@
         "name": "MonstIntDB2",
         "date": "2026-02-17",
         "eid": "a4695c2",
+        "maplink" : "",
         "completed": false,
         "monsters": [
             {
@@ -388,7 +389,9 @@
                     }
                 ],
                 "legActions": [],
-                "spellInfo": {}
+                "spellInfo": {},
+                "movement": 0,
+                "size": "medium"
             },
             {
                 "name": "Ettin",
@@ -459,7 +462,9 @@
                     }
                 ],
                 "legActions": [],
-                "spellInfo": {}
+                "spellInfo": {},
+                "movement": 0,
+                "size": "medium"
             }
         ],
         "players": [
@@ -637,7 +642,10 @@
                             "weaponStat": "STR"
                         }
                     }
-                ]
+                ],
+                "monster": {},
+                "wildShaped": false,
+                "wildShapeCharges": 1
             },
             {
                 "stats": {
@@ -823,7 +831,9 @@
                             "weaponStat": "STR"
                         }
                     }
-                ]
+                ],
+                "turnUndeadCharges": 1,
+                "destroyUndeadCap": 2
             }
         ],
         "results": [
@@ -874,7 +884,7 @@
                 "name": "Air Elemental",
                 "iValue": 12,
                 "turnType": "Monster",
-                "currentTurn": true,
+                "currentTurn": false,
                 "actionResource": 1,
                 "bonusActionResource": 1
             },
@@ -882,7 +892,7 @@
                 "name": "Ettin",
                 "iValue": 10,
                 "turnType": "Monster",
-                "currentTurn": false,
+                "currentTurn": true,
                 "actionResource": 1,
                 "bonusActionResource": 1
             },

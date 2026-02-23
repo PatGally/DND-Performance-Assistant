@@ -82,7 +82,7 @@ class Paladin(Player):
                     "lingSave": {},
                     "recharge" : {},
                     "actionCost" : "free action",
-                    "specialNotes": []
+                    "specialNotes": ["1Turn"]
                 }
             },
             {
@@ -110,7 +110,7 @@ class Paladin(Player):
                         "lingSave": {},
                         "recharge": {},
                         "actionCost": "free action",
-                        "specialNotes": []
+                        "specialNotes": ["1Turn"]
                 }
             }
         ]
@@ -123,3 +123,6 @@ class Paladin(Player):
             self.__layOnHandsPool -= amt
     def resetLayOnHands(self):
         self.__layOnHandsPool = 5 * self.getLevel()
+
+    def getLayOnHandsPool(self):
+        return self.__layOnHandsPool

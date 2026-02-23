@@ -54,12 +54,6 @@ class Rogue(Player):
                 "lvl" : "15",
                 "ability" : "Proficiency",
                 "attribute" : ["WIS save"]
-            },
-            {
-                "name" : "Elusive",
-                "lvl" : "18",
-                "ability" : "neutrality",
-                "attribute" : ["attack rolls against"],
             }
         ]
 

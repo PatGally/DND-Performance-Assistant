@@ -1,12 +1,11 @@
 from CoreEngine import Player
 class Sorcerer(Player):
-    def __init__(self, lvl, name, stats, saveProfs, ac, hp, class_type, level, conImmunities, damImmunes, damResists,
-                 damVulns, activeStatusEffects, activeConditions, sPoints = -1, chosenMMag = None):
+    def __init__(self, name, stats, saveProfs, ac, hp, class_type, level, conImmunities, damImmunes, damResists,
+                 damVulns, activeStatusEffects, activeConditions, cid, position, sPoints = -1, chosenMMag = None):
         super().__init__(name, stats, saveProfs, ac, hp, class_type, level, conImmunities, damImmunes, damResists,
-                         damVulns, activeStatusEffects, activeConditions)
+                         damVulns, activeStatusEffects, activeConditions, cid, position)
         self.__sorceryPoints = sPoints if sPoints != -1 else self.setPoints()
         self.__className = "Sorcerer"
-        self.__lvl = lvl
         self.setPoints()
         self.__metamagics = [
             {
@@ -70,28 +69,30 @@ class Sorcerer(Player):
         self.__chosenMetamagics = chosenMMag if chosenMMag else []
 
     def setPoints(self):
-        if self.__lvl > 1:
-            self.__sorceryPoints = self.__lvl
+        if self.getLevel() > 1:
+            self.__sorceryPoints = self.getLevel()
         else:
             self.__sorceryPoints = 0
     def regainPoints(self, amt):
         self.__sorceryPoints += amt
     def usePoints(self, amt):
         self.__sorceryPoints -= amt
+    def getSorceryPoints(self):
+        return self.__sorceryPoints
 
     def displayMetamagics(self):
         return [m["name"] for m in self.__metamagics]
     def chooseMetaMagic(self, choice):
         reject = False
-        if self.__lvl < 2:
+        if self.getLevel() < 2:
             reject = True
-        elif self.__lvl < 10:
+        elif self.getLevel() < 10:
             if len(self.__chosenMetamagics) >= 2:
                 reject = True
-        elif self.__lvl < 17:
+        elif self.getLevel() < 17:
             if len(self.__chosenMetamagics) >= 3:
                 reject = True
-        elif self.__lvl < 21:
+        elif self.getLevel() < 21:
             if len(self.__chosenMetamagics) >= 4:
                 reject = True
         else:
@@ -104,6 +105,8 @@ class Sorcerer(Player):
             self.__chosenMetamagics.append(self.__metamagics[choiceIdx])
             return True
         return False #Already added!
+    def getChosenMetaMagics(self):
+        return self.__chosenMetamagics
 
     def executeMetaMagic(self, choiceIdx): #TODO
         pass

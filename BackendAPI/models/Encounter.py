@@ -14,6 +14,7 @@ class InitiativeEntry(BaseModel):
     currentTurn: bool = False
     actionResource: int = 1
     bonusActionResource: int = 1
+    movementResource : int
 
     model_config = ConfigDict(extra="ignore")
 

@@ -69,6 +69,8 @@ class Stats:
 
     def getSaveProf(self, stat):
         return self.__saveProfs[stat]
+    def setSaveProf(self, stat, mod):
+        self.__saveProfs[stat] = mod
 
     def getDamImmunities(self):
         return self.__damImmunes

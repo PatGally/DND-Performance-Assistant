@@ -7,9 +7,6 @@ import random
 import re
 from json import JSONDecodeError
 
-import openpyxl
-from openpyxl.utils import get_column_letter
-
 from scipy.stats import norm
 
 from rich.tree import Tree
@@ -324,6 +321,7 @@ def createEncounter():
             spellInfo = loadMonsterSpells(monsters[idx])
             magicResist = monsters[idx].get("magicResist", False)
             legActions = monsters[idx].get("legActions", [])
+
 
             encounter.addMonster(Monster(monChoice, cr, cType, stats, hp, maxHP,
                                          ac, saveProfs, lResists, damResists,
@@ -1218,6 +1216,60 @@ def printStatusEffects():
 def getPlayerStats(data):
     #Creates a player object based on pulled JSON player data.
     #TODO: Add new player attributes to this method.
+    def getClassStats(data, playerdata, characterClass):
+        if characterClass.lower() == "barbarian":
+            rageCharges = data["rageCharges"]
+            isRaging = data["isRaging"]
+            return Barbarian(playerdata[0], playerdata[1], playerdata[2], playerdata[3], playerdata[4],
+                             playerdata[5], playerdata[6], playerdata[7], playerdata[8], playerdata[9], playerdata[10],
+                             playerdata[11], playerdata[12], playerdata[13], playerdata[14], rageCharges, isRaging)
+        elif characterClass.lower() == "bard":
+            bardicCharges = data["bardicCharges"]
+            bardicDieType = data["bardicDieType"]
+            magicalSecrets = data["magicalSecrets"]
+            return Bard(playerdata[0], playerdata[1], playerdata[2], playerdata[3], playerdata[4],
+                        playerdata[5], playerdata[6], playerdata[7], playerdata[8], playerdata[9], playerdata[10],
+                        playerdata[11], playerdata[12], playerdata[13], playerdata[14], bardicCharges, bardicDieType,
+                        magicalSecrets)
+        elif characterClass.lower() == "cleric":
+            turnUndeadCharges = data["turnUndeadCharges"]
+            destroyUndeadCap = data["destroyUndeadCap"]
+            return Cleric(playerdata[0], playerdata[1], playerdata[2], playerdata[3], playerdata[4],
+                          playerdata[5], playerdata[6], playerdata[7], playerdata[8], playerdata[9], playerdata[10],
+                          playerdata[11], playerdata[12], playerdata[13], playerdata[14], turnUndeadCharges,
+                          destroyUndeadCap)
+        elif characterClass.lower() == "druid":
+            monster = data["monster"]
+            wildShaped = data["wildShaped"]
+            wildShapeCharges = data["wildShapeCharges"]
+            return Druid(playerdata[0], playerdata[1], playerdata[2], playerdata[3], playerdata[4],
+                        playerdata[5], playerdata[6], playerdata[7], playerdata[8], playerdata[9], playerdata[10],
+                        playerdata[11], playerdata[12], playerdata[13], playerdata[14], monster, wildShaped,
+                        wildShapeCharges)
+        elif characterClass.lower() == "fighter":
+            secondWindCharges = data["secondWindCharges"]
+            actionSurgeCharges = data["actionSurgeCharges"]
+            extraAttackAmt = data["extraAttackAmt"]
+            return Fighter(playerdata[0], playerdata[1], playerdata[2], playerdata[3], playerdata[4],
+                           playerdata[5], playerdata[6], playerdata[7], playerdata[8], playerdata[9], playerdata[10],
+                           playerdata[11], playerdata[12], playerdata[13], playerdata[14], secondWindCharges,
+                           actionSurgeCharges, extraAttackAmt)
+        elif characterClass.lower() == "paladin":
+            layOnHandsPool = data["layOnHandsPool"]
+            return Barbarian(playerdata[0], playerdata[1], playerdata[2], playerdata[3], playerdata[4],
+                             playerdata[5], playerdata[6], playerdata[7], playerdata[8], playerdata[9], playerdata[10],
+                             playerdata[11], playerdata[12], playerdata[13], playerdata[14], layOnHandsPool)
+        elif characterClass.lower() == "sorcerer":
+            sorceryPoints = data["sorceryPoints"]
+            chosenMetaMagics = data["chosenMetaMagics"]
+            return Sorcerer(playerdata[0], playerdata[1], playerdata[2], playerdata[3], playerdata[4],
+                            playerdata[5], playerdata[6], playerdata[7], playerdata[8], playerdata[9], playerdata[10],
+                            playerdata[11], playerdata[12], playerdata[13], playerdata[14], sorceryPoints,
+                            chosenMetaMagics)
+        else:
+            return Player(playerdata[0], playerdata[1], playerdata[2], playerdata[3], playerdata[4],
+                          playerdata[5], playerdata[6], playerdata[7], playerdata[8], playerdata[9], playerdata[10],
+                          playerdata[11], playerdata[12], playerdata[13], playerdata[14])
     stats = data["stats"]
     saveProfs = stats["saveProfs"]
     saveProfs = {a : int(i) for a, i in saveProfs.items()}
@@ -1243,11 +1295,9 @@ def getPlayerStats(data):
     cid = stats["cid"]
     position = stats["position"]
 
-    player = Player(playerName, playerStats,  saveProfs,playerAC, playerHP,
-                    class_type,playerLvl, conImmunities, damImmunes,
-        damResists, damVulns, activeStatusEffects,
-                    activeConditions, cid, position)
-    return player
+    playerdata = [playerName, playerStats, saveProfs, playerAC, playerHP, class_type, playerLvl, conImmunities, damImmunes,
+                  damResists, damVulns, activeStatusEffects, activeConditions, cid, position]
+    return getClassStats(data, playerdata, class_type)
 def getSavedWeapons(player, data):
     weapons = data["weapons"]
     for weapon in weapons:
@@ -1446,7 +1496,8 @@ def findSpell(spellName, spellData):
         return i
     else:
         return -1
-def savePlayer(player, filename):
+def savePlayer(player, filename=PLAYER_LIST_FILE):
+
     #Adds a serialized player to an existing player_list JSON file.
     try:
         with open(filename, "r") as f:
@@ -1465,7 +1516,7 @@ def savePlayer(player, filename):
         "conImmunities": player.getConImmunities(),
         "activeStatusEffects": player.getActiveStatusEffects(),
         "activeConditions": player.getActiveConditions(),
-        "saveProfs" : [str(player.getMod(stat)) for stat in ["STR", "DEX", "CON", "INT", "WIS", "CHA"]],
+        "saveProfs" : [str(player.getSaveProf(stat)) for stat in ["STR", "DEX", "CON", "INT", "WIS", "CHA"]],
         "damImmunes": player.getDamImmunities(),
         "damResists": player.getDamResistances(),
         "damVulns": player.getDamVulnerabilities(),
@@ -1820,6 +1871,7 @@ def loadMonsterSpells(monsterData):
     }
     return spellInfo
 
+
 #ENCOUNTER CREATE/SAVE/LOAD METHODS
 def loadEncounter(encounterData):
     #REFACTORING NOTES:
@@ -1830,14 +1882,12 @@ def loadEncounter(encounterData):
     encounter = Encounter(encounterData["name"], encounterData["date"], encounterData["eid"])
 
     for playerJSON in encounterData["players"]:
-        #TODO: refactor getPlayerStats
         playerObj = getPlayerStats(playerJSON)
         getSavedWeapons(playerObj, playerJSON)
         getSavedSpells(playerObj, playerJSON)
         encounter.addPlayer(playerObj)
 
     for monsterJSON in encounterData["monsters"]:
-        #TODO: Add monster actions to this method.
         #name, cr, cType, stats, hp, maxHP, ac, saveProfs, lResists, damResists,
         #damImmunes, damVulns, conImmunes, lairAction, legAction
         name = monsterJSON["name"]
@@ -1871,11 +1921,14 @@ def loadEncounter(encounterData):
         spellInfo = loadMonsterSpells(monsterJSON)
         cid = monsterJSON.get("cid", "")
         position = monsterJSON.get("position", [0, 0])
+        size = monsterJSON.get("size", "medium")
+        movement = monsterJSON.get("movement", 0)
         encounter.addMonster(Monster(name, cr, cType, stats, hp, maxHP,
                                      ac, saveProfs, lResists,damResists,
                                      damImmunes, damVulns, conImmunes, activeConditions,
                                      activeStatusEffects,lairAction, magicResist,
-                                     enemy, actions, spellInfo, legActions, cid, position))
+                                     enemy, actions, spellInfo, legActions,
+                                     cid, position, size, movement))
 
     for resultJSON in encounterData["results"]:
         encounter.addResult(resultJSON)
@@ -1885,6 +1938,38 @@ def loadEncounter(encounterData):
 def saveEncounter(encounter):
     # Adds a serialized encounter to an existing encounter_list JSON file.
     #REFACTOR CHANGES: Removed inputs so that encounter always overwrites.
+    def saveClassStats(player, saveDict, characterClass):
+        characterClass = characterClass.lower()
+
+        if characterClass == "barbarian":
+            saveDict["rageCharges"] = player.getRageCharges()
+            saveDict["isRaging"] = player.getIsRaging()
+
+        elif characterClass == "bard":
+            saveDict["bardicCharges"] = player.getBardicCharges()
+            saveDict["bardicDieType"] = player.getBardicDieType()
+            saveDict["magicalSecrets"] = player.getMagicalSecrets()
+
+        elif characterClass == "cleric":
+            saveDict["turnUndeadCharges"] = player.getTurnUndeadCharges()
+            saveDict["destroyUndeadCap"] = player.getDestroyUndeadCap()
+
+        elif characterClass == "druid":
+            saveDict["monster"] = player.getMonster()
+            saveDict["wildShaped"] = player.isWildShaped()
+            saveDict["wildShapeCharges"] = player.getWildShapeCharges()
+
+        elif characterClass == "fighter":
+            saveDict["secondWindCharges"] = player.getSecondWindCharges()
+            saveDict["actionSurgeCharges"] = player.getActionSurgeCharges()
+            saveDict["extraAttackAmt"] = player.getExtraAttackAmt()
+
+        elif characterClass == "paladin":
+            saveDict["layOnHandsPool"] = player.getLayOnHandsPool()
+
+        elif characterClass == "sorcerer":
+            saveDict["sorceryPoints"] = player.getSorceryPoints()
+            saveDict["chosenMetaMagics"] = player.getChosenMetaMagics()
     try:
         with open(ENCOUNTER_LIST_FILE, "r") as f:
             encounterFile = json.load(f)
@@ -1944,6 +2029,7 @@ def saveEncounter(encounter):
             "spells": spells_list,
             "weapons": weapons_list
         }
+        saveClassStats(player, player_dict, player.getClass())
         player_list.append(player_dict)
 
     result_list = [encounter.getResultByIdx(i) for i in range(encounter.resultSize())]
@@ -3731,145 +3817,6 @@ def logLingeringResult(resultID, creatureName, lingType, result):
         "timestamp": datetime.now().strftime("%H:%M:%S")
     }
     return entry
-def exportEncounterResultsToExcel(encounter, filename="Encounter_Master.xlsx"):
-    """
-    Consolidates all results from an encounter (turn actions + lingering effects)
-    and appends them to a single Excel workbook for later analysis.
-    """
-
-    # --- STEP 1: Gather & flatten results ---
-    results = [encounter.getResultByIdx(i) for i in range(encounter.resultSize())]
-    if not results:
-        print("No results to export.")
-        return
-
-    flattened = []
-    for entry in results:
-        if isinstance(entry, dict):
-            flattened.append(entry)
-        elif isinstance(entry, list):
-            flattened.extend(entry)
-
-    # --- STEP 2: Parse into row dictionaries ---
-    rows = []
-    for r in flattened:
-        rid = r.get("resultID")
-        actor = r.get("actor", "Unknown")
-        actionName = r.get("action", "Unknown")
-        actionType = r.get("actionType", "Unknown")
-        if actionType == "Unknown":
-            actionType = r.get("type", "Unknown")
-        outcome = r.get("outcome", {})
-
-        rollResults = outcome.get("rollResults", [])
-        diceResults = outcome.get("diceResults", [])
-        targets = r.get("targets", [])
-        if not targets and r.get("lingType", ""):
-            targets = [r.get("creature", "")]
-        targetCRs = r.get("targetCRs", [None]*len(targets))
-
-        rawExpected = r.get("actionEDam", "0.0")
-        predictedExpected = 0
-        if " - " in rawExpected:
-            predictedExpected = rawExpected.split(' - ')[1]
-            predictedExpected = predictedExpected.split("W")[0]
-            rawExpected = rawExpected.split(' - ')[0]
-        rawExpected = float(rawExpected)
-        predictedExpected = float(predictedExpected)
-
-        probSuccess = r.get("actionProb", "")
-        if ' - ' in probSuccess:
-            probSuccess = probSuccess.split(' - ')[0]
-            probSuccess = float(probSuccess)
-
-        player = encounter.getPlayerByName(actor)
-        action = {}
-        if player and not r.get("lingType", ""):
-            action = player.getSpellByName(actionName)
-
-        for i, target in enumerate(targets):
-            condSev = 0
-            seSev = 0
-            if action:
-                monster = encounter.getMonsterByName(target)
-                if not monster:
-                    condSev = computePerTargetConditionImpact(action, probSuccess, player, False)
-                    seSev = computePerTargetSEImpact(action, probSuccess, player, False)
-                else:
-                    condSev = computePerTargetConditionImpact(action, probSuccess, monster, False)
-                    seSev = computePerTargetSEImpact(action, probSuccess, monster, False)
-            if isinstance(targetCRs, list):
-                if i < len(targetCRs):
-                    targetCR = targetCRs[i]
-                else:
-                    targetCR = None
-            else:
-                targetCR = targetCRs
-            if isinstance(rollResults, list):
-                if i < len(rollResults):
-                    rollResult = rollResults[i]
-                else:
-                    rollResult = None
-            else:
-                rollResult = rollResults
-            if isinstance(diceResults, list):
-                if i < len(diceResults):
-                    diceResult = diceResults[i]
-                else:
-                    diceResult = None
-            else:
-                diceResult = diceResults
-            row = {
-                "ResultID": rid,
-                "Actor": actor,
-                "Action Name": actionName,
-                "Action Type": actionType,
-                "Target": target,
-                "Target CR": targetCR,
-                "Roll Result": rollResult,
-                "Dice Result": diceResult,
-                "probSuccess": r.get("actionProb"),
-                "RAW Expected Damage": rawExpected,
-                "Predicted Expected Damage": predictedExpected,
-                "Impact Rating": r.get("actionImpact"),
-                "Condition Severity": condSev,
-                "Status Effect Severity": seSev,
-                "Conditions Applied": ", ".join(r.get("conditions", [])) if r.get("conditions") else None,
-                "Status Effects Applied": ", ".join(
-                    [s["name"] for s in r.get("statuseffects", [])]
-                ) if r.get("statusEffects") else None,
-                "lingType": r.get("lingType", ""),
-                "Encounter Name": encounter.getName()
-            }
-            rows.append(row)
-
-    # --- STEP 3: Write or append to Excel ---
-    import os
-    file_exists = os.path.exists(filename)
-    if not file_exists:
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        ws.title = "All Encounters"
-        headers = list(rows[0].keys())
-        ws.append(headers)
-        wb.save(filename)  # <-- FIRST SAVE
-        print(f"[INIT] Created new workbook '{filename}'")
-
-    wb = openpyxl.load_workbook(filename)
-    ws = wb["All Encounters"] if "All Encounters" in wb.sheetnames else wb.create_sheet("All Encounters")
-
-    # for row in rows:
-        # ws.append([row.get(col) for col in ws[1]])
-    for rowDict in rows:
-        ws.append(list(rowDict.values()))
-
-    for col_idx in range(1, ws.max_column + 1):
-        max_len = max(len(str(ws.cell(row=r, column=col_idx).value)) for r in range(1, ws.max_row + 1))
-        ws.column_dimensions[get_column_letter(col_idx)].width = max(max_len + 2, 10)
-
-    wb.save(filename)
-    print(f"✅ Encounter '{encounter.getName()}' results appended to {filename}")
-    wb.close()
 
 #ENCOUNTER RUNTIME METHODS
 def resolve_summon_spell(encounter, player, spell, initiative_list):
@@ -4057,11 +4004,16 @@ def resolve_summon_spell(encounter, player, spell, initiative_list):
         spellInfo = loadMonsterSpells(chosen)
         magicResist = chosen.get("magicResist", False)
         legActions = chosen.get("legActions", [])
+        position = [0, 0]
+        cid = "-1"
+        size = "medium"
+        movement = 30
 
         mon_obj = Monster(unique_name, cr, cType, stats, hp, maxHP, ac, saves,
                           lResists, damResists, damImmunes, damVulns,
                           conImmunes, [], [], lairActions,
-                          magicResist, enemy, actions, spellInfo, legActions)
+                          magicResist, enemy, actions, spellInfo,
+                          legActions, cid, position, size, movement)
 
         # 9) Add SwitchSides status effect with resultID
         switch_effect = {
@@ -5157,6 +5109,8 @@ def monsterTurn(creature, initiative):
     console.print(actions)
     return rankActions(actions)
 def playerTurn(player, initiative):
+    #TODO: List of checked class passives: - Dont add any stats, check in engine.
+    # (BB/F/Pa/Ra)Extra attack, (Pa)Aura
     if endOfEncounter(initiative):
         return {}
     actionNames = []
@@ -5190,6 +5144,8 @@ def playerTurn(player, initiative):
         spellList = merge_sort_spells(spellList)
         spellActions = processSpellAnalytics(spellList, player, initiative)
         actions.extend(spellActions)
+    #TODO: Perform analytic generation on class abilities.
+
     console.print(actions)
     return rankActions(actions)
 def setActiveInitiative(encounter):
@@ -5279,7 +5235,7 @@ def runEncounter(encounter):
         else:
             encounter.setComplete(True)
             continueEncounter = False
-            exportEncounterResultsToExcel(encounter)
+            # exportEncounterResultsToExcel(encounter)
         if not encounter.isComplete() and not endOfEncounter(initiative):
             endProgram = input("Continue Encounter? Y/N").lower()
             while endProgram != "y" and endProgram != "n":
@@ -5350,8 +5306,10 @@ def main():
                 encounter = enc
                 break
         encounter = loadEncounter(encounter)
+        encounter.getPlayer(0).toggleWildShape()
         # console.print(monsterTurn(encounter.getMonster(0), setActiveInitiative(encounter)))
-        console.print(playerTurn(encounter.getPlayer(0), setActiveInitiative(encounter)))
+        # console.print(playerTurn(encounter.getPlayer(0), setActiveInitiative(encounter)))
+        saveEncounter(encounter)
 
 if __name__ == "__main__":
     main()

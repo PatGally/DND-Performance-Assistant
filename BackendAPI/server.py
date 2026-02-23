@@ -272,13 +272,27 @@ def getSpells(classid : str, level : int):
 def getEncounterPacket():
     return [{"name" : enc.get("name"), "date" : enc.get("date"), "eid" : enc.get("eid"), "completed" : enc.get("completed")} for enc in ENCOUNTER_LIST]
 @app.post("/dashboard/players")
-def postPlayerToPlayerList(player : AnyPlayer):
-    #TODO: Replace with DB call to add in.
-    with open("CoreEngine/data/player_list.json", "r") as rpf:
-        player_list = json.load(rpf)
-    player_list.append(player.model_dump(mode="json", by_alias=True))
-    with open("CoreEngine/data/player_list.json", "w") as wpf:
-        json.dump(player_list, wpf, indent=4)
+def postPlayerToPlayerList(player : Union[AnyPlayer, Player]):
+    # TODO: Replace with DB call to add in.
+    def addClassPassives():
+        #List of classes with relevant passives:
+        #Barbarian, Bard, Fighter, Monk, Paladin, Ranger, Rogue
+            #List of add and forget passives (here):
+                #(B)Magic Secrets, (Ro) Slippery Mind
+            #Rest are on playerTurn() logic
+        if playerObj.getClass().lower() == "bard":
+            extraSpells = player.getMagicalSecrets()
+            for spell in extraSpells:
+                player.getMagicalSecret(spell)
+                main.addChosenSpell(spell, playerObj)
+        elif playerObj.getClass().lower() == "rogue":
+            playerObj.setSaveProf("WIS", playerObj.getSaveProf("WIS") + playerObj.getProfBonus())
+    playerJSON = player.model_dump(mode="json", by_alias=True)
+    playerObj = main.getPlayerStats(playerJSON)
+    main.getSavedWeapons(playerObj, playerJSON)
+    main.getSavedSpells(playerObj, playerJSON)
+    addClassPassives()
+    main.savePlayer(playerObj)
     return dict(verification="true")
 
 #DEBUG ROUTE

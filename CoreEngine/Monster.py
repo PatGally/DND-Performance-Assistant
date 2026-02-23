@@ -4,7 +4,7 @@ from .Stats import Stats
 class Monster(Stats):
     def __init__(self, name, cr, cType, stats, hp, maxHP, ac, saveProfs, lResists, damResists, damImmunes, damVulns,
                  conImmunes, activeConditions, activeStatusEffects, lairAction, magicResist,
-                 enemy, actions, spellInfo, legActions, cid, position):
+                 enemy, actions, spellInfo, legActions, cid, position, size, movement):
         super().__init__(stats, saveProfs, damImmunes,
                          damResists, damVulns, conImmunes,
                          activeStatusEffects, activeConditions, cid, position)
@@ -23,6 +23,8 @@ class Monster(Stats):
         self.__spellInfo = spellInfo
         self.__caster = True if spellInfo.get("spells", []) else False
         self.__legActions = legActions
+        self.__size = size
+        self.__movement = movement
 
     def setName(self, name):
         self.__name = name
@@ -187,5 +189,7 @@ class Monster(Stats):
             "enemy": self.__enemy,
             "actions" : actions,
             "legActions" : self.__legActions,
-            "spellInfo" : self.__spellInfo
+            "spellInfo" : self.__spellInfo,
+            "movement" : self.__movement,
+            "size" : self.__size
         }

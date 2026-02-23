@@ -2,11 +2,11 @@ from CoreEngine import Player
 
 class Barbarian(Player):
     def __init__(self, name, stats, saveProfs, ac, hp, class_type, level, conImmunities, damImmunes, damResists,
-                 damVulns, activeStatusEffects, activeConditions):
+                 damVulns, activeStatusEffects, activeConditions, cid, position, rageCharges=-1, isRaging=None):
         super().__init__(name, stats, saveProfs, ac, hp, class_type, level, conImmunities, damImmunes, damResists,
-                         damVulns, activeStatusEffects, activeConditions)
-        self.__rageCharges = self.calcRageCharges()
-        self.__isRaging = False
+                         damVulns, activeStatusEffects, activeConditions, cid, position)
+        self.__rageCharges = self.calcRageCharges() if rageCharges == -1 else rageCharges
+        self.__isRaging = False if isRaging is None else isRaging
         self.__abilities = [
             {
                 "name" : "Rage",
@@ -30,6 +30,13 @@ class Barbarian(Player):
                         "damType": [],
                         "conditions": [],
                         "statusEffect": [
+                            {
+                                "name": "Concentration",
+                                "effect": {
+                                    "spellName": "",
+                                    "resultID": ""
+                                }
+                            },
                             {
                                 "name": "Advantage",
                                 "effect": {
@@ -112,7 +119,7 @@ class Barbarian(Player):
 
                         "actionCost": "free action",
                         "recharge": [],
-                        "specialNotes": [],
+                        "specialNotes": ["1Turn"],
                         "extraDamage": []
                     }
             },
@@ -151,6 +158,8 @@ class Barbarian(Player):
 
     def getRageCharges(self):
         return self.__rageCharges
+    def isRaging(self):
+        return self.__isRaging
 
     def toggleRage(self):
         if not self.__isRaging:

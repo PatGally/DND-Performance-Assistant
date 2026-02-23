@@ -9,12 +9,56 @@ SPELL_LIST_FILE = os.path.join(BASE_DIR, "..", "data", "spell_list_NEW.json")
 
 class Bard(Player):
     def __init__(self, name, stats, saveProfs, ac, hp, class_type, level, conImmunities, damImmunes, damResists,
-                 damVulns, activeStatusEffects, activeConditions):
+                 damVulns, activeStatusEffects, activeConditions, cid, position, bardicCharges=-1, bardicDieType=-1, magicalSecrets=[]):
         super().__init__(name, stats, saveProfs, ac, hp, class_type, level, conImmunities, damImmunes, damResists,
-                         damVulns, activeStatusEffects, activeConditions)
-        self.__bardicCharges = self.setBardicCharges()
-        self.__bardicDieType = self.setDieType()
-        self.__magicalSecrets = []
+                         damVulns, activeStatusEffects, activeConditions, cid, position)
+        self.__bardicCharges = self.setBardicCharges() if bardicCharges == -1 else bardicCharges
+        self.__bardicDieType = self.setDieType() if bardicDieType == -1 else bardicDieType
+        self.__magicalSecrets = [] if not magicalSecrets else magicalSecrets
+        self.__abilities = [
+            {
+                "name": "Bardic Inspiration",
+                "lvl": "1",
+                "action": {
+                    "action": {
+                        "name": "Bardic Inspiration",
+                        "desc": "",
+                        "actionRange": "",
+                        "numTarget": "1",
+                        "shape": "",
+                        "rolls": {
+                            "rollType": "autoHit",
+                            "saveType": "",
+                            "halfSave": "",
+                            "saveDC": "",
+                            "damage": "",
+                            "attackBonus": "",
+                            "damMod": ""
+                        },
+                        "damType": [],
+                        "conditions": [],
+                        "statusEffect": [
+                            {
+                                "name": "Buff",
+                                "effect": {
+                                    "roll": self.__bardicDieType,
+                                    "attribute": ["ALL save", "attack rolls for"],
+                                    "resultID": []
+                                },
+                            }
+                        ],
+                        "lingEffect": {},
+                        "extraEffect": {},
+                        "lingSave": {},
+
+                        "actionCost": "bonus action",
+                        "recharge": [],
+                        "specialNotes": ["1Use"],
+                        "extraDamage": []
+                    }
+                }
+            }
+        ]
 
     def setDieType(self):
         if self.getLevel() < 5:
@@ -53,6 +97,8 @@ class Bard(Player):
                 return spell
 
         return {}
+    def getMagicalSecrets(self):
+        return self.__magicalSecrets
     def addMagicalSecret(self, magicalSecret):
         if self.checkMagicalSecrets():
             spell = self.getMagicalSecret(magicalSecret)

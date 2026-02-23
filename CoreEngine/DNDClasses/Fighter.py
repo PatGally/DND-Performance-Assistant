@@ -2,19 +2,22 @@ from CoreEngine.Player import Player
 
 class Fighter(Player):
     def __init__(self, name, stats, ac, hp, class_type, level, conImmunities, damImmunes, damResists, damVulns,
-                 activeStatusEffects, activeConditions):
+                 activeStatusEffects, activeConditions, cid, position, secondWindCharges=-1, actionSurgeCharges=-1, extraAttackAmt=-1):
         super().__init__(name, stats, ac, hp, class_type, level, conImmunities, damImmunes, damResists, damVulns,
-                         activeStatusEffects, activeConditions)
-        self.__secondWindCharges = 1
-        self.__actionSurgeCharges = 1
-        if self.getLevel() < 5:
-            self.__extraAttackAmt = 0
-        elif self.getLevel() < 11:
-            self.__extraAttackTotal = 2
-        elif self.getLevel() < 20:
-            self.__extraAttackAmt = 3
+                         activeStatusEffects, activeConditions, cid, position)
+        self.__secondWindCharges = 1 if secondWindCharges == -1 else secondWindCharges
+        self.__actionSurgeCharges = 1 if actionSurgeCharges == -1 else actionSurgeCharges
+        if extraAttackAmt == -1:
+            if self.getLevel() < 5:
+                self.__extraAttackAmt = 0
+            elif self.getLevel() < 11:
+                self.__extraAttackTotal = 2
+            elif self.getLevel() < 20:
+                self.__extraAttackAmt = 3
+            else:
+                self.__extraAttackAmt = 4
         else:
-            self.__extraAttackAmt = 4
+            self.__extraAttackAmt = extraAttackAmt
         self.__abilities = [
             {
                 "name" : "Second Wind",
@@ -76,9 +79,15 @@ class Fighter(Player):
         self.__secondWindCharges = 0
     def resetSecondWind(self):
         self.__secondWindCharges = 1
+    def getSecondWindCharges(self):
+        return self.__secondWindCharges
 
     def useActionSurge(self):
         self.__actionSurgeCharges = 0
     def resetActionSurge(self):
         self.__actionSurgeCharges = 1
+    def getActionSurge(self):
+        return self.__actionSurgeCharges
 
+    def getExtraAttackAmt(self):
+        return self.__extraAttackAmt

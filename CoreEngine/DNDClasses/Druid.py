@@ -9,12 +9,12 @@ MONSTER_LIST_FILE = os.path.join(BASE_DIR, "..", "data", "monster_list_NEW.json"
 
 class Druid(Player):
     def __init__(self, name, stats, saveProfs, ac, hp, class_type, level, conImmunities, damImmunes, damResists,
-                 damVulns, activeStatusEffects, activeConditions):
+                 damVulns, activeStatusEffects, activeConditions, cid, position, monster=None, wildShaped=None, wildShapeCharges=-1):
         super().__init__(name, stats, saveProfs, ac, hp, class_type, level, conImmunities, damImmunes, damResists,
-                         damVulns, activeStatusEffects, activeConditions)
-        self.__monster = {}
-        self.__wildShaped = False
-        self.__wildShapeCharges = 2
+                         damVulns, activeStatusEffects, activeConditions, cid, position)
+        self.__monster = {} if monster is None else monster
+        self.__wildShaped = False if wildShaped is None else wildShaped
+        self.__wildShapeCharges = 2 if wildShapeCharges is None else wildShapeCharges
 
     def setWildShape(self, name):
         monster = self.loadMonsterStats(name)
@@ -56,8 +56,17 @@ class Druid(Player):
 
         return {}
 
+    def getMonster(self):
+        return self.__monster
+
+    def getWildShapeCharges(self):
+        return self.__wildShapeCharges
+
     def getWildShape(self):
         return self.__monster
+
+    def isWildShaped(self):
+        return self.__wildShaped
 
     def toggleWildShape(self):
         if not self.__wildShaped:
