@@ -1,9 +1,9 @@
 from CoreEngine.Player import Player
 
 class Fighter(Player):
-    def __init__(self, name, stats, ac, hp, class_type, level, conImmunities, damImmunes, damResists, damVulns,
+    def __init__(self, name, stats, saveProfs, ac, hp, class_type, level, conImmunities, damImmunes, damResists, damVulns,
                  activeStatusEffects, activeConditions, cid, position, secondWindCharges=-1, actionSurgeCharges=-1, extraAttackAmt=-1):
-        super().__init__(name, stats, ac, hp, class_type, level, conImmunities, damImmunes, damResists, damVulns,
+        super().__init__(name, stats, saveProfs, ac, hp, class_type, level, conImmunities, damImmunes, damResists, damVulns,
                          activeStatusEffects, activeConditions, cid, position)
         self.__secondWindCharges = 1 if secondWindCharges == -1 else secondWindCharges
         self.__actionSurgeCharges = 1 if actionSurgeCharges == -1 else actionSurgeCharges

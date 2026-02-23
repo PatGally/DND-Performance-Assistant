@@ -1217,6 +1217,7 @@ def getPlayerStats(data):
     #Creates a player object based on pulled JSON player data.
     #TODO: Add new player attributes to this method.
     def getClassStats(data, playerdata, characterClass):
+        print(characterClass)
         if characterClass.lower() == "barbarian":
             rageCharges = data["rageCharges"]
             isRaging = data["isRaging"]
@@ -1224,6 +1225,7 @@ def getPlayerStats(data):
                              playerdata[5], playerdata[6], playerdata[7], playerdata[8], playerdata[9], playerdata[10],
                              playerdata[11], playerdata[12], playerdata[13], playerdata[14], rageCharges, isRaging)
         elif characterClass.lower() == "bard":
+            print("Correct with bard!")
             bardicCharges = data["bardicCharges"]
             bardicDieType = data["bardicDieType"]
             magicalSecrets = data["magicalSecrets"]
@@ -1260,6 +1262,7 @@ def getPlayerStats(data):
                              playerdata[5], playerdata[6], playerdata[7], playerdata[8], playerdata[9], playerdata[10],
                              playerdata[11], playerdata[12], playerdata[13], playerdata[14], layOnHandsPool)
         elif characterClass.lower() == "sorcerer":
+            print("In sorcerer path")
             sorceryPoints = data["sorceryPoints"]
             chosenMetaMagics = data["chosenMetaMagics"]
             return Sorcerer(playerdata[0], playerdata[1], playerdata[2], playerdata[3], playerdata[4],

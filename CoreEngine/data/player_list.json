@@ -882,5 +882,341 @@
                 }
             }
         ]
+    },
+    {
+        "stats": {
+            "name": "Testing5000",
+            "level": "14",
+            "ac": "10",
+            "hp": "143",
+            "class": "bard",
+            "conImmunities": [],
+            "activeStatusEffects": [],
+            "activeConditions": [],
+            "saveProfs": [
+                "0",
+                "4",
+                "2",
+                "-1",
+                "5",
+                "2"
+            ],
+            "damImmunes": [],
+            "damResists": [],
+            "damVulns": [],
+            "statArray": [
+                "12",
+                "20",
+                "20",
+                "20",
+                "20",
+                "12"
+            ],
+            "spellSlots": [
+                [
+                    "4",
+                    "4"
+                ],
+                [
+                    "3",
+                    "3"
+                ],
+                [
+                    "3",
+                    "3"
+                ],
+                [
+                    "3",
+                    "3"
+                ],
+                [
+                    "2",
+                    "2"
+                ],
+                [
+                    "1",
+                    "1"
+                ],
+                [
+                    "1",
+                    "1"
+                ],
+                [
+                    "0",
+                    "0"
+                ],
+                [
+                    "0",
+                    "0"
+                ]
+            ]
+        },
+        "spells": [
+            {
+                "spellname": "True Strike",
+                "level": "0",
+                "targeting": [
+                    {
+                        "self": true,
+                        "number": "0",
+                        "rolls": {
+                            "rollType": "autoHit",
+                            "saveType": "none",
+                            "halfSave": false,
+                            "damage": "",
+                            "damageMod": "0"
+                        },
+                        "damType": [
+                            "healing"
+                        ],
+                        "conditions": [],
+                        "statusEffect": [
+                            {
+                                "name": "Advantage",
+                                "effect": {
+                                    "rolls": "4",
+                                    "attribute": "attack rolls for"
+                                }
+                            },
+                            {
+                                "name": "Concentration",
+                                "effect": {}
+                            }
+                        ],
+                        "lingEffect": {},
+                        "extraEffect": {},
+                        "lingSave": {},
+                        "scaling": "",
+                        "actionCost": "action",
+                        "specialNotes": [
+                            "1Turn"
+                        ]
+                    }
+                ]
+            },
+            {
+                "spellname": "Vicious Mockery",
+                "level": "0",
+                "targeting": [
+                    {
+                        "self": false,
+                        "number": "1",
+                        "rolls": {
+                            "rollType": "save",
+                            "saveType": "WIS",
+                            "halfSave": false,
+                            "damage": "",
+                            "damageMod": "0"
+                        },
+                        "damType": [
+                            "psychic"
+                        ],
+                        "conditions": [],
+                        "statusEffect": [
+                            {
+                                "name": "Disadvantage",
+                                "effect": {
+                                    "attribute": "attack rolls for"
+                                }
+                            }
+                        ],
+                        "lingEffect": {},
+                        "extraEffect": {},
+                        "lingSave": {},
+                        "scaling": "1d4",
+                        "actionCost": "action",
+                        "specialNotes": [
+                            "1Turn"
+                        ]
+                    }
+                ]
+            }
+        ],
+        "weapons": [
+            {
+                "name": "battleaxe (1)",
+                "properties": {
+                    "damage": "1d8",
+                    "damageType": "slashing",
+                    "weaponStat": "STR"
+                }
+            },
+            {
+                "name": "battleaxe (2)",
+                "properties": {
+                    "damage": "1d10",
+                    "damageType": "slashing",
+                    "weaponStat": "STR"
+                }
+            }
+        ]
+    },
+    {
+        "stats": {
+            "name": "Testing5000",
+            "level": "14",
+            "ac": "10",
+            "hp": "143",
+            "class": "bard",
+            "conImmunities": [],
+            "activeStatusEffects": [],
+            "activeConditions": [],
+            "saveProfs": [
+                "0",
+                "4",
+                "2",
+                "-1",
+                "5",
+                "2"
+            ],
+            "damImmunes": [],
+            "damResists": [],
+            "damVulns": [],
+            "statArray": [
+                "12",
+                "20",
+                "20",
+                "20",
+                "20",
+                "12"
+            ],
+            "spellSlots": [
+                [
+                    "4",
+                    "4"
+                ],
+                [
+                    "3",
+                    "3"
+                ],
+                [
+                    "3",
+                    "3"
+                ],
+                [
+                    "3",
+                    "3"
+                ],
+                [
+                    "2",
+                    "2"
+                ],
+                [
+                    "1",
+                    "1"
+                ],
+                [
+                    "1",
+                    "1"
+                ],
+                [
+                    "0",
+                    "0"
+                ],
+                [
+                    "0",
+                    "0"
+                ]
+            ]
+        },
+        "spells": [
+            {
+                "spellname": "True Strike",
+                "level": "0",
+                "targeting": [
+                    {
+                        "self": true,
+                        "number": "0",
+                        "rolls": {
+                            "rollType": "autoHit",
+                            "saveType": "none",
+                            "halfSave": false,
+                            "damage": "",
+                            "damageMod": "0"
+                        },
+                        "damType": [
+                            "healing"
+                        ],
+                        "conditions": [],
+                        "statusEffect": [
+                            {
+                                "name": "Advantage",
+                                "effect": {
+                                    "rolls": "4",
+                                    "attribute": "attack rolls for"
+                                }
+                            },
+                            {
+                                "name": "Concentration",
+                                "effect": {}
+                            }
+                        ],
+                        "lingEffect": {},
+                        "extraEffect": {},
+                        "lingSave": {},
+                        "scaling": "",
+                        "actionCost": "action",
+                        "specialNotes": [
+                            "1Turn"
+                        ]
+                    }
+                ]
+            },
+            {
+                "spellname": "Vicious Mockery",
+                "level": "0",
+                "targeting": [
+                    {
+                        "self": false,
+                        "number": "1",
+                        "rolls": {
+                            "rollType": "save",
+                            "saveType": "WIS",
+                            "halfSave": false,
+                            "damage": "",
+                            "damageMod": "0"
+                        },
+                        "damType": [
+                            "psychic"
+                        ],
+                        "conditions": [],
+                        "statusEffect": [
+                            {
+                                "name": "Disadvantage",
+                                "effect": {
+                                    "attribute": "attack rolls for"
+                                }
+                            }
+                        ],
+                        "lingEffect": {},
+                        "extraEffect": {},
+                        "lingSave": {},
+                        "scaling": "1d4",
+                        "actionCost": "action",
+                        "specialNotes": [
+                            "1Turn"
+                        ]
+                    }
+                ]
+            }
+        ],
+        "weapons": [
+            {
+                "name": "battleaxe (1)",
+                "properties": {
+                    "damage": "1d8",
+                    "damageType": "slashing",
+                    "weaponStat": "STR"
+                }
+            },
+            {
+                "name": "battleaxe (2)",
+                "properties": {
+                    "damage": "1d10",
+                    "damageType": "slashing",
+                    "weaponStat": "STR"
+                }
+            }
+        ]
     }
 ]

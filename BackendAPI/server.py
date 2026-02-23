@@ -276,14 +276,15 @@ def postPlayerToPlayerList(player : Union[AnyPlayer, Player]):
                 #(B)Magic Secrets, (Ro) Slippery Mind
             #Rest are on playerTurn() logic
         if playerObj.getClass().lower() == "bard":
-            extraSpells = player.getMagicalSecrets()
+            extraSpells = playerObj.getMagicalSecrets()
             for spell in extraSpells:
-                player.getMagicalSecret(spell)
+                playerObj.getMagicalSecret(spell)
                 main.addChosenSpell(spell, playerObj)
         elif playerObj.getClass().lower() == "rogue":
             playerObj.setSaveProf("WIS", playerObj.getSaveProf("WIS") + playerObj.getProfBonus())
     playerJSON = player.model_dump(mode="json", by_alias=True)
     playerObj = main.getPlayerStats(playerJSON)
+    print(playerObj.getClass())
     main.getSavedWeapons(playerObj, playerJSON)
     main.getSavedSpells(playerObj, playerJSON)
     addClassPassives()
