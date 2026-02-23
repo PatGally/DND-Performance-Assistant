@@ -43,7 +43,7 @@ async def log_requests(request: Request, call_next):
 
 ENCOUNTER_LIST = []
 def refresh():
-    with open("CoreEngine/data/ENCOUNTER_LIST.json", "r") as rf: #TODO: DB pull here
+    with open("CoreEngine/data/encounter_list.json", "r") as rf: #TODO: DB pull here
         global ENCOUNTER_LIST
         ENCOUNTER_LIST = json.load(rf)
 refresh()
@@ -218,22 +218,17 @@ def postEncounter(encounter : Encounter):
 
 
 
-@app.get("/dashboard/{eid}/players")
-def getPlayerPacket(eid : str):
+@app.get("/dashboard/{eid}/packet")
+def getEncounterMiniData(eid : str):
     encounter = getEncounter(eid)
     players = encounter.get("players", [])
-    logger.info(players)
-    packet = [{"name" : player.get("stats").get("name"), "level" : player.get("stats").get("level"),
-               "characterClass" : player.get("stats").get("characterClass")} for player in players]
-    return packet
-@app.get("/dashboard/{eid}/monsters")
-def getMonsterPacket(eid : str):
-    #TODO: size
-    encounter = getEncounter(eid)
     monsters = encounter.get("monsters", [])
+    logger.info(players)
     logger.info(monsters)
-    packet = [{"name" : monster.get("name"), "cr" : monster.get("cr")} for monster in monsters]
-    return packet
+    p_packet = [{"name" : player.get("stats").get("name"), "level" : player.get("stats").get("level"),
+               "characterClass" : player.get("stats").get("characterClass")} for player in players]
+    m_packet = [{"name" : monster.get("name"), "cr" : monster.get("cr"), "size" : monster.get("size")} for monster in monsters]
+    return {"players" : p_packet, "monsters" : m_packet}
 @app.get("/dashboard/players")
 def getPlayers():
     with open("CoreEngine/data/player_list.json", "r") as pf:
