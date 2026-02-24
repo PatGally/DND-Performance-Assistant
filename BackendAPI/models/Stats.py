@@ -91,7 +91,7 @@ class Stats(BaseModel):
     hp: int = Field(default=0, alias="hp")
     max_hp: int = Field(default=0, alias="maxHP")
     position : List[int] = Field(min_length=2, max_length=2, default=[0, 0], alias="position")
-    cid : str
+    cid : str = Field(alias="cid")
 
     @computed_field
     @property

@@ -1,305 +1,5 @@
 [
     {
-        "name": "MonstIntDB",
-        "date": "2026-01-30",
-        "eid": "a4695c",
-        "completed": false,
-        "monsters": [
-            {
-                "name": "Treant0",
-                "cr": "9",
-                "creatureType": "Plant",
-                "statArray": {
-                    "STR": "23",
-                    "DEX": "8",
-                    "CON": "21",
-                    "INT": "12",
-                    "WIS": "16",
-                    "CHA": "12"
-                },
-                "hp": "138",
-                "maxHP": "138",
-                "cid": "m1",
-                "position": [
-                    0,
-                    0
-                ],
-                "ac": "16",
-                "saveProfs": {
-                    "STR": "6",
-                    "DEX": "-1",
-                    "CON": "5",
-                    "INT": "1",
-                    "WIS": "3",
-                    "CHA": "1"
-                },
-                "lResists": 0,
-                "damResists": [
-                    "bludgeoning",
-                    "piercing"
-                ],
-                "damImmunes": [],
-                "damVulns": [
-                    "fire"
-                ],
-                "conImmunes": [],
-                "activeCons": [],
-                "activeStatusEffects": [],
-                "magicResist": false,
-                "lairAction": false,
-                "enemy": true,
-                "actions": [
-                    {
-                        "name": "Rock",
-                        "desc": "Ranged Weapon Attack: +10 to hit, range 60/180 ft., one target. Hit: 28 (4d10 + 6) bludgeoning damage.",
-                        "number": "1",
-                        "actionRange": "180",
-                        "shape": "",
-                        "rolls": {
-                            "rollType": "toHit",
-                            "saveType": "",
-                            "halfSave": false,
-                            "saveDC": null,
-                            "damage": "4d10",
-                            "attackBonus": "10",
-                            "damageMod": "6"
-                        },
-                        "extraDamage": [],
-                        "damType": [
-                            "bludgeoning"
-                        ],
-                        "conditions": null,
-                        "statusEffect": null,
-                        "lingEffect": null,
-                        "extraEffect": null,
-                        "lingSave": null,
-                        "recharge": "",
-                        "actionCost": "action",
-                        "specialNotes": null
-                    },
-                    {
-                        "name": "Animate Trees (1/Day)",
-                        "desc": "The treant magically animates one or two trees it can see within 60 feet of it. These trees have the same statistics as a treant, except they have Intelligence and Charisma scores of 1, they can't speak, and they have only the Slam action option. An animated tree acts as an ally of the treant. The tree remains animate for 1 day or until it dies; until the treant dies or is more than 120 feet from the tree; or until the treant takes a bonus action to turn it back into an inanimate tree. The tree then takes root if possible.",
-                        "number": "0",
-                        "actionRange": "",
-                        "shape": "",
-                        "rolls": {
-                            "rollType": "toHit",
-                            "saveType": "",
-                            "halfSave": false,
-                            "saveDC": null,
-                            "damage": "",
-                            "attackBonus": "",
-                            "damageMod": "0"
-                        },
-                        "extraDamage": [],
-                        "damType": [],
-                        "conditions": null,
-                        "statusEffect": null,
-                        "lingEffect": null,
-                        "extraEffect": null,
-                        "lingSave": null,
-                        "recharge": "",
-                        "actionCost": "action",
-                        "specialNotes": null
-                    }
-                ],
-                "legActions": [],
-                "spellInfo": {
-                    "type": "",
-                    "DC": null,
-                    "attackRoll": null,
-                    "spells": [],
-                    "spellSlots": []
-                }
-            }
-        ],
-        "players": [
-            {
-                "stats": {
-                    "name": "William",
-                    "level": "18",
-                    "ac": "15",
-                    "hp": "155",
-                    "maxhp": "155",
-                    "cid": "p1",
-                    "position": [
-                        0,
-                        0
-                    ],
-                    "characterClass": "cleric",
-                    "conImmunities": [],
-                    "activeStatusEffects": [
-                        {
-                            "name": "disadvantage",
-                            "effect": {
-                                "rolls": -4,
-                                "attribute": [
-                                    "attack rolls against"
-                                ],
-                                "resultID": [
-                                    3642038751
-                                ]
-                            }
-                        }
-                    ],
-                    "activeConditions": [],
-                    "saveProfs": {
-                        "STR": "5",
-                        "DEX": "4",
-                        "CON": "3",
-                        "INT": "2",
-                        "WIS": "1",
-                        "CHA": "0"
-                    },
-                    "damImmunes": [],
-                    "damResists": [],
-                    "damVulns": [],
-                    "statArray": {
-                        "STR": "20",
-                        "DEX": "18",
-                        "CON": "16",
-                        "INT": "14",
-                        "WIS": "12",
-                        "CHA": "10"
-                    },
-                    "spellSlots": [
-                        [
-                            "4",
-                            "4"
-                        ],
-                        [
-                            "3",
-                            "3"
-                        ],
-                        [
-                            "3",
-                            "3"
-                        ],
-                        [
-                            "3",
-                            "3"
-                        ],
-                        [
-                            "3",
-                            "3"
-                        ],
-                        [
-                            "1",
-                            "1"
-                        ],
-                        [
-                            "1",
-                            "1"
-                        ],
-                        [
-                            "1",
-                            "1"
-                        ],
-                        [
-                            "1",
-                            "1"
-                        ]
-                    ]
-                },
-                "spells": [
-                    {
-                        "spellname": "Harm",
-                        "level": 6,
-                        "targeting": [
-                            {
-                                "targetType": null,
-                                "self": false,
-                                "number": 1,
-                                "rolls": {
-                                    "rollType": "save",
-                                    "saveType": "CON",
-                                    "halfSave": false,
-                                    "damage": "14d6",
-                                    "damageMod": "0"
-                                },
-                                "damType": [
-                                    "necrotic"
-                                ],
-                                "conditions": [],
-                                "statusEffect": [],
-                                "lingEffect": {},
-                                "extraEffect": {},
-                                "lingSave": {},
-                                "scaling": "1d6",
-                                "specialNotes": [],
-                                "actionCost": "action"
-                            }
-                        ]
-                    }
-                ],
-                "weapons": [
-                    {
-                        "name": "whip",
-                        "properties": {
-                            "damage": "1d4",
-                            "damageType": "slashing",
-                            "weaponStat": "STR"
-                        }
-                    }
-                ]
-            }
-        ],
-        "results": [
-            [
-                {
-                    "resultID": 3642038751,
-                    "actor": "William",
-                    "action": "Dodge",
-                    "actionType": "Basic Action",
-                    "actionProb": "1.0",
-                    "actionEDam": "0",
-                    "actionImpact": "1.47",
-                    "targets": [
-                        "William"
-                    ],
-                    "targetCRs": [
-                        18
-                    ],
-                    "conditions": "",
-                    "statuseffects": [
-                        "disadvantage"
-                    ],
-                    "outcome": {
-                        "rollResults": [
-                            "y"
-                        ],
-                        "diceResults": [
-                            0
-                        ]
-                    },
-                    "extraOutcome": {},
-                    "timestamp": "13:58:29",
-                    "turnCount": 0,
-                    "turnCap": 1
-                }
-            ]
-        ],
-        "initiative": [
-            {
-                "name": "William",
-                "iValue": 18,
-                "turnType": "Player",
-                "currentTurn": true,
-                "actionResource": 1,
-                "bonusActionResource": 1
-            },
-            {
-                "name": "Treant0",
-                "iValue": 12,
-                "turnType": "Monster",
-                "currentTurn": false,
-                "actionResource": 1,
-                "bonusActionResource": 1
-            }
-        ]
-    },
-    {
         "name": "MonstIntDB2",
         "date": "2026-02-17",
         "eid": "a4695c2",
@@ -319,7 +19,7 @@
                     "CHA": "6"
                 },
                 "hp": "90",
-                "maxHP": "90",
+                "maxhp": "90",
                 "cid": "m1",
                 "position": [
                     0,
@@ -390,7 +90,7 @@
                 ],
                 "legActions": [],
                 "spellInfo": {},
-                "movement": 0,
+                "movement":90,
                 "size": "medium"
             },
             {
@@ -406,7 +106,7 @@
                     "CHA": "8"
                 },
                 "hp": "85",
-                "maxHP": "85",
+                "maxhp": "85",
                 "cid": "m2",
                 "position": [
                     0,
@@ -654,7 +354,7 @@
                     "ac": "15",
                     "hp": "155",
                     "maxhp": "155",
-                    "cid": "p149f",
+                    "cid": "p2",
                     "position": [
                         0,
                         0

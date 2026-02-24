@@ -70,7 +70,7 @@ def getPlayerStats(data):
                            actionSurgeCharges, extraAttackAmt)
         elif characterClass.lower() == "paladin":
             layOnHandsPool = data["layOnHandsPool"]
-            return Barbarian(playerdata[0], playerdata[1], playerdata[2], playerdata[3], playerdata[4],
+            return Paladin(playerdata[0], playerdata[1], playerdata[2], playerdata[3], playerdata[4],
                              playerdata[5], playerdata[6], playerdata[7], playerdata[8], playerdata[9], playerdata[10],
                              playerdata[11], playerdata[12], playerdata[13], playerdata[14], layOnHandsPool)
         elif characterClass.lower() == "sorcerer":
@@ -98,7 +98,7 @@ def getPlayerStats(data):
     playerStats = stats["statArray"]
     playerStats = {a : int(i) for a, i in playerStats.items()}
 
-    conImmunities = stats["conImmunities"]
+    conImmunes = stats["conImmunes"]
     activeStatusEffects = stats["activeStatusEffects"]
     activeConditions = stats["activeConditions"]
 
@@ -109,7 +109,7 @@ def getPlayerStats(data):
     cid = stats["cid"]
     position = stats["position"]
 
-    playerdata = [playerName, playerStats, saveProfs, playerAC, playerHP, class_type, playerLvl, conImmunities, damImmunes,
+    playerdata = [playerName, playerStats, saveProfs, playerAC, playerHP, class_type, playerLvl, conImmunes, damImmunes,
                   damResists, damVulns, activeStatusEffects, activeConditions, cid, position]
     return getClassStats(data, playerdata, class_type)
 def getSavedWeapons(player, data):
@@ -312,18 +312,21 @@ def savePlayer(player, filename=PLAYER_LIST_FILE):
     stats_dict = {
         "name": player.getName(),
         "level": str(player.getLevel()),
-        "ac" : str(player.getAC()),
-        "hp" : str(player.getHP()),
-        "class": player.getClass(),
-        "conImmunities": player.getConImmunities(),
+        "ac": str(player.getAC()),
+        "hp": str(player.getHP()),
+        "maxhp": str(player.getMaxHP()),
+        "cid": str(player.getCID()),
+        "position": player.getPosition(),
+        "characterClass": player.getClass(),
+        "conImmunes": player.getConImmunes(),
         "activeStatusEffects": player.getActiveStatusEffects(),
         "activeConditions": player.getActiveConditions(),
-        "saveProfs" : [str(player.getSaveProf(stat)) for stat in ["STR", "DEX", "CON", "INT", "WIS", "CHA"]],
+        "saveProfs": {stat: str(player.getSaveProf(stat)) for stat in ["STR", "DEX", "CON", "INT", "WIS", "CHA"]},
         "damImmunes": player.getDamImmunities(),
         "damResists": player.getDamResistances(),
         "damVulns": player.getDamVulnerabilities(),
-        "statArray": [str(player.getStat(stat)) for stat in ["STR", "DEX", "CON", "INT", "WIS", "CHA"]],
-        "spellSlots" : player.getSpellSlots()
+        "statArray": {stat: str(player.getStat(stat)) for stat in ["STR", "DEX", "CON", "INT", "WIS", "CHA"]},
+        "spellSlots": player.getSpellSlots()
     }
 
     spells_list = []
@@ -334,10 +337,46 @@ def savePlayer(player, filename=PLAYER_LIST_FILE):
     for i in range(player.getWeaponLength()):
         weapons_list.append(player.getWeapon(i).toDict())
 
+    class_fields = {}
+
+    cls = player.getClass().lower()
+
+    if cls == "fighter":
+        class_fields["secondWindCharges"] = player.getSecondWindCharges()
+        class_fields["actionSurgeCharges"] = player.getActionSurge()
+        class_fields["extraAttackAmt"] = player.getExtraAttackAmt()
+
+    elif cls == "barbarian":
+        class_fields["rageCharges"] = player.getRageCharges()
+        class_fields["isRaging"] = player.isRaging()
+
+    elif cls == "bard":
+        class_fields["bardicCharges"] = player.getBardicCharges()
+        class_fields["bardicDieType"] = player.getBardicDieType()
+        class_fields["magicalSecrets"] = player.getMagicalSecrets()
+
+    elif cls == "cleric":
+        class_fields["turnUndeadCharges"] = player.getTurnUndeadCharges()
+        class_fields["destroyUndeadCap"] = player.getDestroyUndeadCap()
+
+    elif cls == "druid":
+        class_fields["monster"] = player.getMonster().toDict() if player.getMonster() else None
+        class_fields["wildShaped"] = player.getWildShaped()
+        class_fields["wildShapeCharges"] = player.getWildShapeCharges()
+
+    elif cls == "paladin":
+        class_fields["layOnHandsPool"] = player.getLayOnHandsPool()
+
+    elif cls == "sorcerer":
+        class_fields["sorceryPoints"] = player.getSorceryPoints()
+        class_fields["chosenMetaMagics"] = player.getChosenMetaMagics()
+
+
     player_dict = {
         "stats": stats_dict,
         "spells": spells_list,
-        "weapons": weapons_list
+        "weapons": weapons_list,
+        **class_fields
     }
 
     players.append(player_dict)
@@ -779,7 +818,7 @@ def saveEncounter(encounter):
             "cid" : str(player.getCID()),
             "position" : player.getPosition(),
             "characterClass": player.getClass(),
-            "conImmunities": player.getConImmunities(),
+            "conImmunes": player.getconImmunes(),
             "activeStatusEffects": player.getActiveStatusEffects(),
             "activeConditions": player.getActiveConditions(),
             "saveProfs": {stat : str(player.getSaveProf(stat)) for stat in ["STR", "DEX", "CON", "INT", "WIS", "CHA"]},

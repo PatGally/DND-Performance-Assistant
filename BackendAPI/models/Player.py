@@ -27,3 +27,4 @@ class Player(BaseModel):
     stats: PlayerStats = Field(alias="stats")
     spells: List[Spell] = Field(default_factory=list)
     weapons: List[Weapon] = Field(default_factory=list)
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)

@@ -2,10 +2,13 @@ import json
 import logging
 import os
 import sys
-from typing import Union, List
+from typing import Union, List, Annotated
+import uuid
 
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import Field
+
 from logs.loggingConfig import setupLogging
 from BackendAPI.models import ActionRequest, Monster, Player, Encounter, Spell, Weapon, MonAction
 from BackendAPI.models.DNDClasses import Barbarian, Bard, Cleric, Druid, Fighter, Paladin, Sorcerer
@@ -47,7 +50,7 @@ def refresh():
         global ENCOUNTER_LIST
         ENCOUNTER_LIST = json.load(rf)
 refresh()
-AnyPlayer = Union[Barbarian, Bard, Cleric, Druid, Fighter, Paladin, Sorcerer]
+AnyPlayer = Union[Fighter, Barbarian, Bard, Cleric, Druid, Paladin, Sorcerer]
 
 def isPlayer(creature):
     if isinstance(creature, dict):
@@ -76,7 +79,7 @@ def getCreatureActions(eid : str, cid : str):
     if creature.get("spellInfo", {}):
         actions += creature.get("spellInfo").get("spells", [])
     return actions
-@app.get("/encounter/{eid}/creature/{cid}", response_model=Player)
+@app.get("/encounter/{eid}/creature/{cid}", response_model=Union[AnyPlayer, Monster])
 def getCreature(eid : str, cid : str):
     enc = getEncounter(eid)
     creatures = enc.get("players", []) + enc.get("monsters", [])
@@ -94,7 +97,7 @@ def getCreature(eid : str, cid : str):
 
     return creatures[creatureIdx]
 @app.post("/encounter/{eid}/creature")
-def addtoEncounter(eid : str, creature : Union[AnyPlayer, Monster]):
+def addtoEncounter(eid : str, creature : Union[AnyPlayer, Player, Monster]):
     encounter = getEncounter(eid)
     if isPlayer(creature):
         encounter.get("players", []).append(creature)
@@ -117,7 +120,6 @@ def getEncounter(eid : str):
             logger.info(f"{eid} found!")
             return encounter
     logger.info(f"{eid} not found!")
-
 @app.get("/encounter/{eid}/recommendation/{cid}")
 def actionRecommendation(eid : str, cid : str):
     #Returns a list of all possible actions a given creature can perform, ordered by the rankings of best to worst.
@@ -137,7 +139,12 @@ def actionRecommendation(eid : str, cid : str):
             rankings = main.monsterTurn(monster, initiative)
             logger.info("Rankings for %s: %s", eid, rankings)
             return rankings
-
+@app.get("/uuid")
+def getUUID():
+    my_uuid_object = uuid.uuid4()
+    my_uuid_string = str(my_uuid_object)
+    logger.info(my_uuid_string)
+    return my_uuid_string
 
 
 

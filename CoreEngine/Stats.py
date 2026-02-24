@@ -102,7 +102,7 @@ class Stats:
         self.__damVulns.remove(damType)
         return True
 
-    def getConImmunities(self):
+    def getConImmunes(self):
         return self.__conImmunes
     def addConImmunity(self, condition):
         self.__conImmunes.append(condition)
