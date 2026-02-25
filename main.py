@@ -98,7 +98,7 @@ def getPlayerStats(data):
     playerStats = stats["statArray"]
     playerStats = {a : int(i) for a, i in playerStats.items()}
 
-    conImmunes = stats["conImmunes"]
+    conImmunes = stats.get("conImmunes", [])
     activeStatusEffects = stats["activeStatusEffects"]
     activeConditions = stats["activeConditions"]
 
@@ -113,96 +113,137 @@ def getPlayerStats(data):
                   damResists, damVulns, activeStatusEffects, activeConditions, cid, position]
     return getClassStats(data, playerdata, class_type)
 def getSavedWeapons(player, data):
-    weapons = data["weapons"]
+    searchdata = copy.deepcopy(data)
+    for i, w in enumerate(searchdata):
+        if " " in w:
+            searchdata[i] = w.split(" ")[0]
+    with open(WEAPONS_LIST_FILE, "r") as wlrf:
+        weapons = json.load(wlrf)
     for weapon in weapons:
-        weaponName = weapon["name"]
-        properties = weapon["properties"]
-        diceProperties = properties["damage"].split("d")
-        diceNum = int(diceProperties[0])
-        diceType = int(diceProperties[1])
-        damageType = properties["damageType"]
-        damMod = player.getMod(properties["weaponStat"])
-        statType = properties["weaponStat"]
+        if weapon["name"].lower() in searchdata:
+            idx = searchdata.index(weapon["name"].lower())
+            weaponName = weapon["name"]
+            properties = weapon["properties"]
+            if " " in data[idx]: #VERSATILE
+                for i in range(0, 2):
+                    diceProperties = properties["damage"][i].split("d")
+                    diceNum = int(diceProperties[0])
+                    diceType = int(diceProperties[1])
+                    statType = properties["weaponStat"]
+                    if len(statType) > 1:  # FINESSE
+                        if player.getStat(statType[0]) >= player.getStat(statType[1]):
+                            statType = statType[0]
+                        else:
+                            statType = statType[1]
+                    else:
+                        statType = statType[0]
 
-        player.addWeapon(weaponName, statType, diceNum, diceType, damageType, damMod)
+                    damageType = properties["damageType"]
+                    damMod = player.getMod(statType)
+
+                    player.addWeapon(weaponName, statType, diceNum, diceType, damageType, damMod)
+            else:
+                diceProperties = properties["damage"][0].split("d")
+                diceNum = int(diceProperties[0])
+                diceType = int(diceProperties[1])
+                statType = properties["weaponStat"]
+                if len(statType) > 1: #FINESSE
+                    print("FINESSE")
+                    if player.getStat(statType[0]) >= player.getStat(statType[1]):
+                        statType = statType[0]
+                    else:
+                        statType = statType[1]
+                else:
+                    statType = statType[0]
+
+                damageType = properties["damageType"]
+                damMod = player.getMod(statType)
+
+                player.addWeapon(weaponName, statType, diceNum, diceType, damageType, damMod)
 def getSavedSpells(player, data):
-    spells = data["spells"]
+    #TODO: Implement logic that pulls spells from spell_list.json
+    # And use that to populate the spell objs for the player.
+    data = [data[i].lower() for i in range(len(data))]
+    with open(SPELL_LIST_FILE, "r") as splrf:
+        spells = json.load(splrf)
     for spell in spells:
-        spellName = spell["spellname"]
-        spellLvl = int(spell["level"])
+        if spell["spellname"].lower() in data:
+            print("FOUND SPELL")
+            spellName = spell["spellname"]
+            spellLvl = int(spell["level"])
 
-        target = spell["targeting"]
-        if isinstance(target, list):
-            target = target[0]
-        targetNum = int(target["number"])
-        damType = target["damType"]
-        if len(damType) == 1:
-            damType = damType[0]
-        selfTarget = False
-        if "self" in target and target["self"]:
-            selfTarget = True
-        conditions = None
-        if "conditions" in target:
-            conditions = target["conditions"]
-        statusEffect = None
-        if "statusEffect" in target:
-            statusEffect = target["statusEffect"]
-        lingEffect = None
-        if "lingEffect" in target:
-            lingEffect = target["lingEffect"]
-        extraEffect = None
-        if "extraEffect" in target:
-            extraEffect = target["extraEffect"]
-        lingSaves = None
-        if "lingSave" in target:
-            lingSaves = target["lingSave"]
-        scaling = None
-        if "scaling" in target:
-            scaling = target["scaling"]
-        specialNotes = False
-        if "specialNotes" in target:
-            specialNotes = target["specialNotes"]
-        actionCost = target["actionCost"]
+            target = spell["targeting"]
+            if isinstance(target, list):
+                target = target[0]
+            targetNum = int(target["number"])
+            damType = target["damType"]
+            if len(damType) == 1:
+                damType = damType[0]
+            selfTarget = False
+            if "self" in target and target["self"]:
+                selfTarget = True
+            conditions = None
+            if "conditions" in target:
+                conditions = target["conditions"]
+            statusEffect = None
+            if "statusEffect" in target:
+                statusEffect = target["statusEffect"]
+            lingEffect = None
+            if "lingEffect" in target:
+                lingEffect = target["lingEffect"]
+            extraEffect = None
+            if "extraEffect" in target:
+                extraEffect = target["extraEffect"]
+            lingSaves = None
+            if "lingSave" in target:
+                lingSaves = target["lingSave"]
+            scaling = None
+            if "scaling" in target:
+                scaling = target["scaling"]
+            specialNotes = False
+            if "specialNotes" in target:
+                specialNotes = target["specialNotes"]
+            actionCost = target["actionCost"]
 
-        rolls = target["rolls"]
-        rollType = rolls["rollType"]
-        saveType = rolls["saveType"]
-        halfSave = rolls["halfSave"]
-        damage = rolls["damage"]
-        damageMod = 0
-        if "damageMod" in rolls:  # Accounts for schema error
-            if rolls["damageMod"] == "spellMod":
-                damageMod = player.getSpellMod()
-            elif rolls["damageMod"] != "":
-                damageMod = int(rolls["damageMod"])
-        diceNum = 0
-        diceType = 0
-        if damage and damage != "none":
-            damage = damage.split("d")
-            diceNum = int(damage[0])
-            diceType = int(damage[1])
+            rolls = target["rolls"]
+            rollType = rolls["rollType"]
+            saveType = rolls["saveType"]
+            halfSave = rolls["halfSave"]
+            damage = rolls["damage"]
+            damageMod = 0
+            if "damageMod" in rolls:  # Accounts for schema error
+                if rolls["damageMod"] == "spellMod":
+                    damageMod = player.getSpellMod()
+                elif rolls["damageMod"] != "":
+                    damageMod = int(rolls["damageMod"])
+            diceNum = 0
+            diceType = 0
+            if damage and damage != "none":
+                damage = damage.split("d")
+                diceNum = int(damage[0])
+                diceType = int(damage[1])
 
-        # if spellLvl == 0:
-        #     # Cantrips scale at lvls 5, 11, and 17.
-        #     if scaling and "d" in scaling:
-        #         if player.getLevel() >= 5:
-        #             diceNum += 1
-        #             if player.getLevel() >= 11:
-        #                 diceNum += 1
-        #                 if player.getLevel() >= 17:
-        #                     diceNum += 1
-        #     elif scaling and "extraTarget" in scaling:
-        #         if player.getLevel() >= 5:
-        #             targetNum += 1
-        #             if player.getLevel() >= 11:
-        #                 targetNum += 1
-        #                 if player.getLevel() >= 17:
-        #                     targetNum += 1
+            # if spellLvl == 0:
+            #     # Cantrips scale at lvls 5, 11, and 17.
+            #     if scaling and "d" in scaling:
+            #         if player.getLevel() >= 5:
+            #             diceNum += 1
+            #             if player.getLevel() >= 11:
+            #                 diceNum += 1
+            #                 if player.getLevel() >= 17:
+            #                     diceNum += 1
+            #     elif scaling and "extraTarget" in scaling:
+            #         if player.getLevel() >= 5:
+            #             targetNum += 1
+            #             if player.getLevel() >= 11:
+            #                 targetNum += 1
+            #                 if player.getLevel() >= 17:
+            #                     targetNum += 1
 
-        player.addSpell(spellName, spellLvl, selfTarget,
-                        targetNum, rollType, saveType, halfSave, damageMod, diceNum, diceType,
-                        damType, conditions, statusEffect, lingEffect, extraEffect, lingSaves,
-                        scaling, actionCost, specialNotes)
+            player.addSpell(spellName, spellLvl, selfTarget,
+                            targetNum, rollType, saveType, halfSave, damageMod, diceNum, diceType,
+                            damType, conditions, statusEffect, lingEffect, extraEffect, lingSaves,
+                            scaling, actionCost, specialNotes)
 def addChosenSpell(spell, player):
         spellName = spell["spellname"]
         spellLvl = spell["level"]
@@ -331,11 +372,11 @@ def savePlayer(player, filename=PLAYER_LIST_FILE):
 
     spells_list = []
     for i in range(player.getSpellLength()):
-        spells_list.append(player.getSpell(i).toDict())
+        spells_list.append(player.getSpell(i).getName().lower())
 
     weapons_list = []
     for i in range(player.getWeaponLength()):
-        weapons_list.append(player.getWeapon(i).toDict())
+        weapons_list.append(player.getWeapon(i).getName().lower())
 
     class_fields = {}
 
@@ -352,7 +393,7 @@ def savePlayer(player, filename=PLAYER_LIST_FILE):
 
     elif cls == "bard":
         class_fields["bardicCharges"] = player.getBardicCharges()
-        class_fields["bardicDieType"] = player.getBardicDieType()
+        class_fields["bardicDieType"] = player.getDieType()
         class_fields["magicalSecrets"] = player.getMagicalSecrets()
 
     elif cls == "cleric":
@@ -361,7 +402,7 @@ def savePlayer(player, filename=PLAYER_LIST_FILE):
 
     elif cls == "druid":
         class_fields["monster"] = player.getMonster().toDict() if player.getMonster() else None
-        class_fields["wildShaped"] = player.getWildShaped()
+        class_fields["wildShaped"] = player.getWildShape()
         class_fields["wildShapeCharges"] = player.getWildShapeCharges()
 
     elif cls == "paladin":
@@ -710,7 +751,7 @@ def loadEncounter(encounterData):
         stats = monsterJSON["statArray"]
         stats = {a: int(i) for a, i in stats.items()}
         hp = int(monsterJSON["hp"])
-        maxHP = int(monsterJSON["maxHP"])
+        maxHP = int(monsterJSON["maxhp"])
         ac = int(monsterJSON["ac"])
         saveProfs = {a : int(i) for a, i in monsterJSON["saveProfs"].items()}
         lResists = int(monsterJSON["lResists"])
@@ -818,7 +859,7 @@ def saveEncounter(encounter):
             "cid" : str(player.getCID()),
             "position" : player.getPosition(),
             "characterClass": player.getClass(),
-            "conImmunes": player.getconImmunes(),
+            "conImmunes": player.getConImmunes(),
             "activeStatusEffects": player.getActiveStatusEffects(),
             "activeConditions": player.getActiveConditions(),
             "saveProfs": {stat : str(player.getSaveProf(stat)) for stat in ["STR", "DEX", "CON", "INT", "WIS", "CHA"]},
@@ -831,11 +872,11 @@ def saveEncounter(encounter):
 
         spells_list = []
         for j in range(player.getSpellLength()):
-            spells_list.append(player.getSpell(j).toDict())
+            spells_list.append(player.getSpell(j).getName().lower())
 
         weapons_list = []
         for j in range(player.getWeaponLength()):
-            weapons_list.append(player.getWeapon(j).toDict())
+            weapons_list.append(player.getWeapon(j).getName().lower())
 
         player_dict = {
             "stats": stats_dict,

@@ -94,7 +94,7 @@ def getCreature(eid : str, cid : str):
         creatureIdx = cids.index(cid)
     except:
         raise ValueError(f"{cid} not a recognized creature.")
-
+    print(creatures)
     return creatures[creatureIdx]
 @app.post("/encounter/{eid}/creature")
 def addtoEncounter(eid : str, creature : Union[AnyPlayer, Player, Monster]):
@@ -292,8 +292,8 @@ def postPlayerToPlayerList(player : Union[AnyPlayer, Player]):
     playerJSON = player.model_dump(mode="json", by_alias=True)
     playerObj = main.getPlayerStats(playerJSON)
     print(playerObj.getClass())
-    main.getSavedWeapons(playerObj, playerJSON)
-    main.getSavedSpells(playerObj, playerJSON)
+    main.getSavedWeapons(playerObj, playerJSON["weapons"])
+    main.getSavedSpells(playerObj, playerJSON["spells"])
     addClassPassives()
     main.savePlayer(playerObj)
     return dict(verification="true")

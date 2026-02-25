@@ -5,9 +5,6 @@ from typing import Any, Optional, List
 from pydantic import BaseModel, Field, ConfigDict
 
 from .Stats import Stats
-from .Weapon import Weapon
-from .Spell import Spell
-
 
 class PlayerStats(Stats):
     # These fields exist inside stats in player_list.json
@@ -25,6 +22,6 @@ class PlayerStats(Stats):
 
 class Player(BaseModel):
     stats: PlayerStats = Field(alias="stats")
-    spells: List[Spell] = Field(default_factory=list)
-    weapons: List[Weapon] = Field(default_factory=list)
+    spells: List[str] = Field(default_factory=list)
+    weapons: List[str] = Field(default_factory=list)
     model_config = ConfigDict(extra="forbid", populate_by_name=True)

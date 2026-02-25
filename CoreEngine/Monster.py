@@ -181,7 +181,7 @@ class Monster(Stats):
             "damResists" : self.getDamResistances(),
             "damImmunes" : self.getDamImmunities(),
             "damVulns" : self.getDamVulnerabilities(),
-            "conImmunes" : self.getConImmunities(),
+            "conImmunes" : self.getConImmunes(),
             "activeCons" : self.getActiveConditions(),
             "activeStatusEffects" : self.getActiveStatusEffects(),
             "magicResist" : self.__magicResist,

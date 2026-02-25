@@ -1,11 +1,17 @@
 from __future__ import annotations
 
-from typing import Any, List
+from typing import Any, List, Union
 from pydantic import BaseModel, Field, ConfigDict
 
+from .DNDClasses import Fighter, Barbarian, Bard, Cleric, Druid, Paladin, Sorcerer
 # Adjust these imports to match your project structure
 from .Player import Player
 from .Monster import Monster
+
+AnyPlayer = Union[
+    Fighter, Barbarian, Bard, Cleric, Druid, Paladin, Sorcerer,
+    Player,  # keep Player last
+]
 
 class InitiativeEntry(BaseModel):
     name: str
@@ -36,7 +42,7 @@ class Encounter(BaseModel):
     completed: bool = False
 
     monsters: List[Monster] = Field(default_factory=list)
-    players: List[Player] = Field(default_factory=list)
+    players: List[Union[AnyPlayer, Player]] = Field(default_factory=list)
 
     # results is usually: list[resultSet], where each resultSet may be:
     # - a list[dict]  (your sample)
