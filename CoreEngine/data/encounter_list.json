@@ -3,26 +3,38 @@
         "name": "MonstIntDB3",
         "date": "2026-02-23",
         "eid": "a4695c3",
-        "maplink": "",
+        "maplink" : "",
         "completed": false,
         "monsters": [
             {
+                "name": "Air Elemental",
+                "cr": "5",
+                "creatureType": "Elemental",
                 "statArray": {
-                    "STR": 14,
-                    "DEX": 20,
-                    "CON": 14,
-                    "INT": 6,
-                    "WIS": 10,
-                    "CHA": 6
+                    "STR": "14",
+                    "DEX": "20",
+                    "CON": "14",
+                    "INT": "6",
+                    "WIS": "10",
+                    "CHA": "6"
                 },
+                "hp": "90",
+                "maxhp": "90",
+                "cid": "m1",
+                "position": [
+                    0,
+                    0
+                ],
+                "ac": "15",
                 "saveProfs": {
-                    "STR": 2,
-                    "DEX": 5,
-                    "CON": 2,
-                    "INT": -2,
-                    "WIS": 0,
-                    "CHA": -2
+                    "STR": "2",
+                    "DEX": "5",
+                    "CON": "2",
+                    "INT": "-2",
+                    "WIS": "0",
+                    "CHA": "-2"
                 },
+                "lResists": 0,
                 "damResists": [
                     "lightning",
                     "thunder; bludgeoning",
@@ -43,31 +55,17 @@
                     "restrained",
                     "unconscious"
                 ],
-                "activeConditions": [],
+                "activeCons": [],
                 "activeStatusEffects": [],
-                "hp": 90,
-                "maxHP": 90,
-                "position": [
-                    0,
-                    0
-                ],
-                "cid": "m1",
-                "name": "Air Elemental",
-                "cr": "5",
-                "creatureType": "Elemental",
-                "ac": 15,
-                "lResists": 0,
                 "magicResist": false,
                 "lairAction": false,
                 "enemy": false,
-                "size": "large",
-                "movement": 50,
                 "actions": [
                     {
                         "name": "Whirlwind (Recharge 4-6)",
                         "desc": "Each creature in the elemental's space must make a DC 13 Strength saving throw. On a failure, a target takes 15 (3d8 + 2) bludgeoning damage and is flung up 20 feet away from the elemental in a random direction and knocked prone. If a thrown target strikes an object, such as a wall or floor, the target takes 3 (1d6) bludgeoning damage for every 10 feet it was thrown. If the target is thrown at another creature, that creature must succeed on a DC 13 Dexterity saving throw or take the same damage and be knocked prone.\nIf the saving throw is successful, the target takes half the bludgeoning damage and isn't flung away or knocked prone.",
+                        "number": "0",
                         "actionRange": "",
-                        "numTarget": 0,
                         "shape": "",
                         "rolls": {
                             "rollType": "",
@@ -75,23 +73,18 @@
                             "halfSave": false,
                             "saveDC": 0,
                             "damage": "",
-                            "attackBonus": 0,
-                            "damMod": 0
+                            "attackBonus": "",
+                            "damageMod": "0"
                         },
-                        "damType": [],
-                        "conditions": [],
-                        "status_effect": null,
-                        "ling_effect": null,
-                        "extra_effect": null,
-                        "ling_save": null,
-                        "actionCost": "action",
-                        "recharge": "",
-                        "special_notes": null,
                         "extraDamage": [],
-                        "statusEffect": [],
-                        "lingEffect": {},
-                        "extraEffect": "",
-                        "lingSave": "",
+                        "damType": [],
+                        "conditions": null,
+                        "statusEffect": null,
+                        "lingEffect": null,
+                        "extraEffect": null,
+                        "lingSave": null,
+                        "recharge": "",
+                        "actionCost": "action",
                         "specialNotes": []
                     }
                 ],
@@ -103,68 +96,53 @@
                     "spells": [],
                     "spellSlots": []
                 },
-                "multiattack": {
-                    "name": "Multiattack",
-                    "total": 2,
-                    "split": []
-                },
-                "hit_points": 90,
-                "AC": 15,
-                "modifiers": {
-                    "STR": 2,
-                    "DEX": 5,
-                    "CON": 2,
-                    "INT": -2,
-                    "WIS": 0,
-                    "CHA": -2
-                }
+                "movement": 50,
+                "size": "large"
             },
             {
+                "name": "Ettin",
+                "cr": "4",
+                "creatureType": "Giant",
                 "statArray": {
-                    "STR": 21,
-                    "DEX": 8,
-                    "CON": 17,
-                    "INT": 6,
-                    "WIS": 10,
-                    "CHA": 8
+                    "STR": "21",
+                    "DEX": "8",
+                    "CON": "17",
+                    "INT": "6",
+                    "WIS": "10",
+                    "CHA": "8"
                 },
-                "saveProfs": {
-                    "STR": 5,
-                    "DEX": -1,
-                    "CON": 3,
-                    "INT": -2,
-                    "WIS": 0,
-                    "CHA": -1
-                },
-                "damResists": [],
-                "damImmunes": [],
-                "damVulns": [],
-                "conImmunes": [],
-                "activeConditions": [],
-                "activeStatusEffects": [],
-                "hp": 85,
-                "maxHP": 85,
+                "hp": "85",
+                "maxhp": "85",
+                "cid": "m2",
                 "position": [
                     0,
                     0
                 ],
-                "cid": "m2",
-                "name": "Ettin",
-                "cr": "4",
-                "creatureType": "Giant",
-                "ac": 12,
+                "ac": "12",
+                "saveProfs": {
+                    "STR": "5",
+                    "DEX": "-1",
+                    "CON": "3",
+                    "INT": "-2",
+                    "WIS": "0",
+                    "CHA": "-1"
+                },
                 "lResists": 0,
+                "damResists": [],
+                "damImmunes": [],
+                "damVulns": [],
+                "conImmunes": [],
+                "activeCons": [],
+                "activeStatusEffects": [],
                 "magicResist": false,
                 "lairAction": false,
                 "enemy": false,
-                "size": "huge",
-                "movement": 30,
                 "actions": [
                     {
                         "name": "Morningstar",
                         "desc": "Melee Weapon Attack: +7 to hit, reach 5 ft., one target. Hit: 14 (2d8 + 5) piercing damage.",
+                        "number": "1",
                         "actionRange": "5",
-                        "numTarget": 1,
                         "shape": "",
                         "rolls": {
                             "rollType": "toHit",
@@ -172,25 +150,20 @@
                             "halfSave": false,
                             "saveDC": 0,
                             "damage": "2d8",
-                            "attackBonus": 7,
-                            "damMod": 5
+                            "attackBonus": "7",
+                            "damageMod": "5"
                         },
+                        "extraDamage": [],
                         "damType": [
                             "piercing"
                         ],
-                        "conditions": [],
-                        "status_effect": null,
-                        "ling_effect": null,
-                        "extra_effect": null,
-                        "ling_save": null,
-                        "actionCost": "action",
+                        "conditions": null,
+                        "statusEffect": null,
+                        "lingEffect": null,
+                        "extraEffect": null,
+                        "lingSave": null,
                         "recharge": "",
-                        "special_notes": null,
-                        "extraDamage": [],
-                        "statusEffect": [],
-                        "lingEffect": {},
-                        "extraEffect": {},
-                        "lingSave": {},
+                        "actionCost": "action",
                         "specialNotes": []
                     }
                 ],
@@ -202,212 +175,170 @@
                     "spells": [],
                     "spellSlots": []
                 },
-                "multiattack": {
-                    "name": "Multiattack",
-                    "total": 2,
-                    "split": [
-                        {
-                            "name": "battleaxe",
-                            "number": 1
-                        },
-                        {
-                            "name": "morningstar",
-                            "number": 1
-                        }
-                    ]
-                },
-                "hit_points": 85,
-                "AC": 12,
-                "modifiers": {
-                    "STR": 5,
-                    "DEX": -1,
-                    "CON": 3,
-                    "INT": -2,
-                    "WIS": 0,
-                    "CHA": -1
-                }
+                "movement": 30,
+                "size": "huge"
             }
         ],
         "players": [
             {
                 "stats": {
-                    "statArray": {
-                        "STR": 10,
-                        "DEX": 18,
-                        "CON": 14,
-                        "INT": 9,
-                        "WIS": 20,
-                        "CHA": 15
-                    },
-                    "saveProfs": {
-                        "STR": 0,
-                        "DEX": 4,
-                        "CON": 2,
-                        "INT": -1,
-                        "WIS": 5,
-                        "CHA": 2
-                    },
-                    "damResists": [],
-                    "damImmunes": [],
-                    "damVulns": [],
-                    "conImmunes": [],
-                    "activeConditions": [],
-                    "activeStatusEffects": [],
-                    "hp": 70,
-                    "maxHP": 0,
+                    "name": "Morbius",
+                    "level": "9",
+                    "ac": "17",
+                    "hp": "70",
+                    "maxhp": "73",
+                    "cid": "p2",
                     "position": [
                         0,
                         0
                     ],
-                    "cid": "p2",
-                    "name": "Morbius",
-                    "level": 9,
-                    "ac": 17,
-                    "maxhp": 70,
                     "characterClass": "druid",
+                    "conImmunes": [],
+                    "activeStatusEffects": [],
+                    "activeConditions": [],
+                    "saveProfs": {
+                        "STR": "0",
+                        "DEX": "4",
+                        "CON": "2",
+                        "INT": "-1",
+                        "WIS": "5",
+                        "CHA": "2"
+                    },
+                    "damImmunes": [],
+                    "damResists": [],
+                    "damVulns": [],
+                    "statArray": {
+                        "STR": "10",
+                        "DEX": "18",
+                        "CON": "14",
+                        "INT": "9",
+                        "WIS": "20",
+                        "CHA": "15"
+                    },
                     "spellSlots": [
                         [
-                            4,
-                            4
+                            "4",
+                            "4"
                         ],
                         [
-                            3,
-                            3
+                            "3",
+                            "3"
                         ],
                         [
-                            2,
-                            2
+                            "3",
+                            "3"
                         ],
                         [
-                            1,
-                            1
+                            "3",
+                            "3"
                         ],
                         [
-                            0,
-                            0
+                            "1",
+                            "1"
                         ],
                         [
-                            0,
-                            0
+                            "0",
+                            "0"
                         ],
                         [
-                            0,
-                            0
+                            "0",
+                            "0"
                         ],
                         [
-                            0,
-                            0
+                            "0",
+                            "0"
                         ],
                         [
-                            0,
-                            0
+                            "0",
+                            "0"
                         ]
-                    ],
-                    "conImmunities": [],
-                    "modifiers": {
-                        "STR": 0,
-                        "DEX": 4,
-                        "CON": 2,
-                        "INT": -1,
-                        "WIS": 5,
-                        "CHA": 2
-                    }
+                    ]
                 },
                 "spells": [
                     "slow",
                     "blight"
                 ],
                 "weapons": [
-                    "whip",
-                    "sickle"
+                    "sickle",
+                    "whip"
                 ],
                 "monster": {},
-                "wildShapeCharges": 2,
-                "wildShaped": false
+                "wildShaped": false,
+                "wildShapeCharges": 2
             },
             {
                 "stats": {
-                    "statArray": {
-                        "STR": 20,
-                        "DEX": 18,
-                        "CON": 16,
-                        "INT": 14,
-                        "WIS": 12,
-                        "CHA": 10
-                    },
-                    "saveProfs": {
-                        "STR": 20,
-                        "DEX": 18,
-                        "CON": 16,
-                        "INT": 14,
-                        "WIS": 12,
-                        "CHA": 10
-                    },
-                    "damResists": [],
-                    "damImmunes": [],
-                    "damVulns": [],
-                    "conImmunes": [],
-                    "activeConditions": [],
-                    "activeStatusEffects": [],
-                    "hp": 155,
-                    "maxHP": 0,
+                    "name": "William",
+                    "level": "18",
+                    "ac": "15",
+                    "hp": "155",
+                    "maxhp": "155",
+                    "cid": "p1",
                     "position": [
                         0,
                         0
                     ],
-                    "cid": "p1",
-                    "name": "William",
-                    "level": 18,
-                    "ac": 15,
-                    "maxhp": 155,
                     "characterClass": "cleric",
+                    "conImmunes": [],
+                    "activeStatusEffects": [],
+                    "activeConditions": [],
+                    "saveProfs": {
+                        "STR": "20",
+                        "DEX": "18",
+                        "CON": "16",
+                        "INT": "14",
+                        "WIS": "12",
+                        "CHA": "10"
+                    },
+                    "damImmunes": [],
+                    "damResists": [],
+                    "damVulns": [],
+                    "statArray": {
+                        "STR": "20",
+                        "DEX": "18",
+                        "CON": "16",
+                        "INT": "14",
+                        "WIS": "12",
+                        "CHA": "10"
+                    },
                     "spellSlots": [
                         [
-                            4,
-                            4
+                            "4",
+                            "4"
                         ],
                         [
-                            3,
-                            3
+                            "3",
+                            "3"
                         ],
                         [
-                            3,
-                            3
+                            "3",
+                            "3"
                         ],
                         [
-                            3,
-                            3
+                            "3",
+                            "3"
                         ],
                         [
-                            3,
-                            3
+                            "3",
+                            "3"
                         ],
                         [
-                            1,
-                            1
+                            "1",
+                            "1"
                         ],
                         [
-                            1,
-                            1
+                            "1",
+                            "1"
                         ],
                         [
-                            1,
-                            1
+                            "1",
+                            "1"
                         ],
                         [
-                            1,
-                            1
+                            "1",
+                            "1"
                         ]
-                    ],
-                    "conImmunities": [],
-                    "modifiers": {
-                        "STR": 5,
-                        "DEX": 4,
-                        "CON": 3,
-                        "INT": 2,
-                        "WIS": 1,
-                        "CHA": 0
-                    }
+                    ]
                 },
                 "spells": [
                     "conjure animals",
@@ -469,7 +400,7 @@
                 "name": "CloudElemental0",
                 "iValue": 12,
                 "turnType": "Monster",
-                "currentTurn": true,
+                "currentTurn": false,
                 "actionResource": 1,
                 "bonusActionResource": 1,
                 "movementResource": 50
@@ -478,7 +409,7 @@
                 "name": "Ettin0",
                 "iValue": 10,
                 "turnType": "Monster",
-                "currentTurn": false,
+                "currentTurn": true,
                 "actionResource": 1,
                 "bonusActionResource": 1,
                 "movementResource": 30

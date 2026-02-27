@@ -148,7 +148,6 @@ def getSavedWeapons(player, data):
                 diceType = int(diceProperties[1])
                 statType = properties["weaponStat"]
                 if len(statType) > 1: #FINESSE
-                    print("FINESSE")
                     if player.getStat(statType[0]) >= player.getStat(statType[1]):
                         statType = statType[0]
                     else:
@@ -163,12 +162,14 @@ def getSavedWeapons(player, data):
 def getSavedSpells(player, data):
     #TODO: Implement logic that pulls spells from spell_list.json
     # And use that to populate the spell objs for the player.
-    data = [data[i].lower() for i in range(len(data))]
+    if data:
+        data = [data[i].lower() for i in range(len(data))]
+    else:
+        return
     with open(SPELL_LIST_FILE, "r") as splrf:
         spells = json.load(splrf)
     for spell in spells:
         if spell["spellname"].lower() in data:
-            print("FOUND SPELL")
             spellName = spell["spellname"]
             spellLvl = int(spell["level"])
 
@@ -729,67 +730,6 @@ def loadMonsterSpells(monsterData):
 
 
 #ENCOUNTER CREATE/SAVE/LOAD METHODS
-def loadEncounter(encounterData):
-    #REFACTORING NOTES:
-    #Uses encounterData from parameter instead of pulling it here.
-    if encounterData["completed"]:
-        return None
-    encounter = Encounter(encounterData["name"], encounterData["date"], encounterData["eid"])
-
-    for playerJSON in encounterData["players"]:
-        playerObj = getPlayerStats(playerJSON)
-        getSavedWeapons(playerObj, playerJSON)
-        getSavedSpells(playerObj, playerJSON)
-        encounter.addPlayer(playerObj)
-
-    for monsterJSON in encounterData["monsters"]:
-        #name, cr, cType, stats, hp, maxHP, ac, saveProfs, lResists, damResists,
-        #damImmunes, damVulns, conImmunes, lairAction, legAction
-        name = monsterJSON["name"]
-        cr = monsterJSON["cr"]
-        cType = monsterJSON["creatureType"]
-        stats = monsterJSON["statArray"]
-        stats = {a: int(i) for a, i in stats.items()}
-        hp = int(monsterJSON["hp"])
-        maxHP = int(monsterJSON["maxhp"])
-        ac = int(monsterJSON["ac"])
-        saveProfs = {a : int(i) for a, i in monsterJSON["saveProfs"].items()}
-        lResists = int(monsterJSON["lResists"])
-        damResists = monsterJSON["damResists"]
-        damImmunes = monsterJSON["damImmunes"]
-        damVulns = monsterJSON["damVulns"]
-        conImmunes = monsterJSON["conImmunes"]
-        if "activeCons" in monsterJSON:
-            acons = "activeCons"
-            activeConditions = monsterJSON[acons]
-        elif "activeConditions" in monsterJSON:
-            acons = "activeConditions"
-            activeConditions = monsterJSON[acons]
-        else:
-            activeConditions = []
-        activeStatusEffects = monsterJSON["activeStatusEffects"]
-        lairAction = bool(monsterJSON["lairAction"])
-        magicResist = monsterJSON.get("magicResist", False)
-        legActions = monsterJSON.get("legActions", [])
-        enemy = bool(monsterJSON["enemy"])
-        actions = loadMonsterActions(monsterJSON)
-        spellInfo = loadMonsterSpells(monsterJSON)
-        cid = monsterJSON.get("cid", "")
-        position = monsterJSON.get("position", [0, 0])
-        size = monsterJSON.get("size", "medium")
-        movement = monsterJSON.get("movement", 0)
-        encounter.addMonster(Monster(name, cr, cType, stats, hp, maxHP,
-                                     ac, saveProfs, lResists,damResists,
-                                     damImmunes, damVulns, conImmunes, activeConditions,
-                                     activeStatusEffects,lairAction, magicResist,
-                                     enemy, actions, spellInfo, legActions,
-                                     cid, position, size, movement))
-
-    for resultJSON in encounterData["results"]:
-        encounter.addResult(resultJSON)
-
-    encounter.setInitiative(encounterData["initiative"])
-    return encounter
 def saveEncounter(encounter):
     # Adds a serialized encounter to an existing encounter_list JSON file.
     def saveClassStats(player, saveDict, characterClass):
@@ -915,6 +855,67 @@ def saveEncounter(encounter):
             json.dump(encounterFile, f, indent=4)
     except TypeError as e:
         pass
+def loadEncounter(encounterData):
+    #REFACTORING NOTES:
+    #Uses encounterData from parameter instead of pulling it here.
+    if encounterData["completed"]:
+        return None
+    encounter = Encounter(encounterData["name"], encounterData["date"], encounterData["eid"])
+
+    for playerJSON in encounterData["players"]:
+        playerObj = getPlayerStats(playerJSON)
+        getSavedWeapons(playerObj, playerJSON["weapons"])
+        getSavedSpells(playerObj, playerJSON["spells"])
+        encounter.addPlayer(playerObj)
+
+    for monsterJSON in encounterData["monsters"]:
+        #name, cr, cType, stats, hp, maxHP, ac, saveProfs, lResists, damResists,
+        #damImmunes, damVulns, conImmunes, lairAction, legAction
+        name = monsterJSON["name"]
+        cr = monsterJSON["cr"]
+        cType = monsterJSON["creatureType"]
+        stats = monsterJSON["statArray"]
+        stats = {a: int(i) for a, i in stats.items()}
+        hp = int(monsterJSON["hp"])
+        maxHP = int(monsterJSON["maxhp"])
+        ac = int(monsterJSON["ac"])
+        saveProfs = {a : int(i) for a, i in monsterJSON["saveProfs"].items()}
+        lResists = int(monsterJSON["lResists"])
+        damResists = monsterJSON["damResists"]
+        damImmunes = monsterJSON["damImmunes"]
+        damVulns = monsterJSON["damVulns"]
+        conImmunes = monsterJSON["conImmunes"]
+        if "activeCons" in monsterJSON:
+            acons = "activeCons"
+            activeConditions = monsterJSON[acons]
+        elif "activeConditions" in monsterJSON:
+            acons = "activeConditions"
+            activeConditions = monsterJSON[acons]
+        else:
+            activeConditions = []
+        activeStatusEffects = monsterJSON["activeStatusEffects"]
+        lairAction = bool(monsterJSON["lairAction"])
+        magicResist = monsterJSON.get("magicResist", False)
+        legActions = monsterJSON.get("legActions", [])
+        enemy = bool(monsterJSON["enemy"])
+        actions = loadMonsterActions(monsterJSON)
+        spellInfo = loadMonsterSpells(monsterJSON)
+        cid = monsterJSON.get("cid", "")
+        position = monsterJSON.get("position", [0, 0])
+        size = monsterJSON.get("size", "medium")
+        movement = monsterJSON.get("movement", 0)
+        encounter.addMonster(Monster(name, cr, cType, stats, hp, maxHP,
+                                     ac, saveProfs, lResists,damResists,
+                                     damImmunes, damVulns, conImmunes, activeConditions,
+                                     activeStatusEffects,lairAction, magicResist,
+                                     enemy, actions, spellInfo, legActions,
+                                     cid, position, size, movement))
+
+    for resultJSON in encounterData["results"]:
+        encounter.addResult(resultJSON)
+
+    encounter.setInitiative(encounterData["initiative"])
+    return encounter
 
 #ENEMY TURN METHODS
 def addCondition(condToAdd, creature, resultID):

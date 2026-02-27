@@ -1,6 +1,48 @@
 [
     {
         "stats": {
+            "name": "Aurora",
+            "level": "14",
+            "ac": "10",
+            "hp": "73",
+            "maxhp": "73",
+            "cid": "e624b3af-1cb8-4913-bbf2-9da12b0040fb",
+            "position": [
+                0,
+                0
+            ],
+            "characterClass": "monk",
+            "conImmunes": [],
+            "activeStatusEffects": [],
+            "activeConditions": [],
+            "saveProfs": {
+                "STR": "2",
+                "DEX": "2",
+                "CON": "2",
+                "INT": "2",
+                "WIS": "2",
+                "CHA": "2"
+            },
+            "damImmunes": [],
+            "damResists": [],
+            "damVulns": [],
+            "statArray": {
+                "STR": "15",
+                "DEX": "15",
+                "CON": "15",
+                "INT": "15",
+                "WIS": "15",
+                "CHA": "15"
+            },
+            "spellSlots": []
+        },
+        "spells": [],
+        "weapons": [
+            "club"
+        ]
+    },
+    {
+        "stats": {
             "name": "Testing5004",
             "level": "14",
             "ac": "10",
@@ -78,8 +120,8 @@
             "eldritch blast"
         ],
         "weapons": [
-            "battleaxe",
-            "battleaxe"
+            "battleaxe ONEHAND",
+            "battleaxe TWOHAND"
         ]
     }
 ]

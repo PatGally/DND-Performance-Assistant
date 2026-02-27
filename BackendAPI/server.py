@@ -7,7 +7,6 @@ import uuid
 
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import Field
 
 from logs.loggingConfig import setupLogging
 from BackendAPI.models import ActionRequest, Monster, Player, Encounter, Spell, Weapon, MonAction
@@ -94,7 +93,6 @@ def getCreature(eid : str, cid : str):
         creatureIdx = cids.index(cid)
     except:
         raise ValueError(f"{cid} not a recognized creature.")
-    print(creatures)
     return creatures[creatureIdx]
 @app.post("/encounter/{eid}/creature")
 def addtoEncounter(eid : str, creature : Union[AnyPlayer, Player, Monster]):
@@ -291,7 +289,6 @@ def postPlayerToPlayerList(player : Union[AnyPlayer, Player]):
             playerObj.setSaveProf("WIS", playerObj.getSaveProf("WIS") + playerObj.getProfBonus())
     playerJSON = player.model_dump(mode="json", by_alias=True)
     playerObj = main.getPlayerStats(playerJSON)
-    print(playerObj.getClass())
     main.getSavedWeapons(playerObj, playerJSON["weapons"])
     main.getSavedSpells(playerObj, playerJSON["spells"])
     addClassPassives()

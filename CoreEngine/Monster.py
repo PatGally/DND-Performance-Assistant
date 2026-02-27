@@ -171,7 +171,7 @@ class Monster(Stats):
             "statArray": {stat : str(self.getStat(stat)) for stat in
                           ["STR", "DEX", "CON", "INT", "WIS", "CHA"]},
             "hp" : str(self.getHP()),
-            "maxHP" : str(self.getMaxHP()),
+            "maxhp" : str(self.getMaxHP()),
             "cid" : str(self.getCID()),
             "position" : self.getPosition(),
             "ac" : str(self.__ac),
