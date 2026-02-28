@@ -18,3 +18,6 @@ Project-specific folders
 shelf/
 .venv/
 .env
+
+CoreEngine/data/refresh_store.json
+CoreEngine/data/user_list.json
