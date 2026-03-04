@@ -2,7 +2,7 @@ from .Action import Action
 
 class Spell(Action):
     def __init__(self, name, lvl, selfTarget,
-                 numTarget, rollType, saveType, halfSave, damageMod, diceNum, diceType,
+                 numTarget, actionRange, rollType, saveType, halfSave, damageMod, diceNum, diceType,
                  damType, conditions, statusEffects, lingEffects, extraEffect, lingSaves,
                  scaling, actionCost, specialNotes):
         super().__init__()
@@ -10,6 +10,7 @@ class Spell(Action):
         self.__lvl = lvl
         self.__selfTarget = selfTarget
         self.__numTarget = numTarget
+        self.__actionRange = actionRange
         self.__rollType = rollType
         self.__saveType = saveType
         self.__halfSave = halfSave
@@ -131,3 +132,6 @@ class Spell(Action):
 
     def getActionCost(self):
         return self.__actionCost
+
+    def getActionRange(self):
+        return self.__actionRange

@@ -307,7 +307,7 @@ def postPlayerToPlayerList(player : Union[AnyPlayer, Player]):
     def addClassPassives():
         #List of classes with relevant passives:
         #Barbarian, Bard, Fighter, Monk, Paladin, Ranger, Rogue
-            #List of add and forget passives (here):
+            #List of add and forget passives (DONE HERE):
                 #(B)Magic Secrets, (Ro) Slippery Mind
             #Rest are on playerTurn() logic
         if playerObj.getClass().lower() == "bard":

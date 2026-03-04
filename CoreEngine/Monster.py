@@ -163,7 +163,13 @@ class Monster(Stats):
         return {}
 
     def toDict(self):
+        def stripSpellData(p_spellInfo):
+            for i, spell in enumerate(p_spellInfo["spells"]):
+                if "spellData" in spell:
+                    del p_spellInfo["spells"][i]["spellData"]
+            return p_spellInfo
         actions = [action.toDict() for action in self.__actions]
+        spellInfo = stripSpellData(self.__spellInfo)
         return {
             "name" : self.__name,
             "cr" : self.__cr,
@@ -189,7 +195,7 @@ class Monster(Stats):
             "enemy": self.__enemy,
             "actions" : actions,
             "legActions" : self.__legActions,
-            "spellInfo" : self.__spellInfo,
+            "spellInfo" : spellInfo,
             "movement" : self.__movement,
             "size" : self.__size
         }

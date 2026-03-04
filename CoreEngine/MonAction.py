@@ -152,3 +152,8 @@ class MonAction(Action):
 
     def getActionCost(self):
         return self.__actionCost
+
+    def getActionRange(self):
+        return self.__actionRange
+    def setActionRange(self, ar):
+        self.__actionRange = ar

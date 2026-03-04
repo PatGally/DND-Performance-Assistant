@@ -1,9 +1,11 @@
 from CoreEngine import Player
 class Sorcerer(Player):
     def __init__(self, name, stats, saveProfs, ac, hp, class_type, level, conImmunities, damImmunes, damResists,
-                 damVulns, activeStatusEffects, activeConditions, cid, position, sPoints = -1, chosenMMag = None):
-        super().__init__(name, stats, saveProfs, ac, hp, class_type, level, conImmunities, damImmunes, damResists,
-                         damVulns, activeStatusEffects, activeConditions, cid, position)
+                 damVulns, activeStatusEffects, activeConditions, cid, position, spellSlots, sPoints = -1, chosenMMag = None):
+        super().__init__(name, stats, saveProfs, ac, hp, class_type,
+                         level, conImmunities, damImmunes, damResists,
+                         damVulns, activeStatusEffects, activeConditions,
+                         cid, position, spellSlots)
         self.__sorceryPoints = sPoints if sPoints != -1 else self.setPoints()
         self.__className = "Sorcerer"
         self.setPoints()

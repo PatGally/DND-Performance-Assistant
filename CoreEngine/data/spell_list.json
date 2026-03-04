@@ -27,7 +27,8 @@
                 "lingSave": {},
                 "scaling": "1d6",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -60,7 +61,8 @@
                 "lingSave": {},
                 "scaling": "1d8",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "120"
             }
         ]
     },
@@ -91,7 +93,8 @@
                 "lingSave": {},
                 "scaling": "extraTarget",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "120"
             }
         ]
     },
@@ -123,7 +126,8 @@
                 "lingSave": {},
                 "scaling": "1d10",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "120"
             }
         ]
     },
@@ -158,7 +162,8 @@
                 "lingSave": {},
                 "scaling": "1d8",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "10"
             }
         ]
     },
@@ -189,7 +194,8 @@
                 "lingSave": {},
                 "scaling": "1d8",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "30"
             }
         ]
     },
@@ -224,7 +230,8 @@
                 "lingSave": {},
                 "scaling": "1d8",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -257,7 +264,8 @@
                 "lingSave": {},
                 "scaling": "1d8",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -293,7 +301,8 @@
                 "lingSave": {},
                 "scaling": "1d8",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "5"
             }
         ]
     },
@@ -326,7 +335,8 @@
                 "lingSave": {},
                 "scaling": "1d6",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "30"
             }
         ]
     },
@@ -377,7 +387,8 @@
                 "specialNotes": [
                     "1Turn"
                 ],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "30"
             }
         ]
     },
@@ -417,7 +428,8 @@
                 "specialNotes": [
                     "1Turn"
                 ],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -449,7 +461,8 @@
                 "lingSave": {},
                 "scaling": "1d6",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "10"
             }
         ]
     },
@@ -499,7 +512,8 @@
                 "lingSave": {},
                 "scaling": "extraTarget",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "30"
             }
         ]
     },
@@ -547,7 +561,8 @@
                 "lingSave": {},
                 "scaling": "extraTarget",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "30"
             }
         ]
     },
@@ -585,7 +600,8 @@
                 "lingSave": {},
                 "scaling": "1d6",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "0"
             }
         ]
     },
@@ -626,7 +642,8 @@
                 "lingSave": {},
                 "scaling": "extraTarget",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "30"
             }
         ]
     },
@@ -666,7 +683,8 @@
                 "lingSave": {},
                 "scaling": "1d8",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "90"
             }
         ]
     },
@@ -703,7 +721,8 @@
                 "lingSave": {},
                 "scaling": "1d8",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "5"
             }
         ]
     },
@@ -736,7 +755,8 @@
                 "lingSave": {},
                 "scaling": "1d6",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -777,7 +797,8 @@
                 },
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "120"
             }
         ]
     },
@@ -838,7 +859,8 @@
                 },
                 "scaling": "1d6",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "W"
             }
         ]
     },
@@ -886,7 +908,8 @@
                 "lingSave": {},
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -931,7 +954,8 @@
                 "specialNotes": [
                     "1Turn"
                 ],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "120"
             }
         ]
     },
@@ -974,7 +998,8 @@
                 "lingSave": {},
                 "scaling": "1d10",
                 "specialNotes": [],
-                "actionCost": "bonus action"
+                "actionCost": "bonus action",
+                "range": "W"
             }
         ]
     },
@@ -1009,7 +1034,8 @@
                 "lingSave": {},
                 "scaling": "1d4",
                 "specialNotes": [],
-                "actionCost": "bonus action"
+                "actionCost": "bonus action",
+                "range": "60"
             }
         ]
     },
@@ -1047,7 +1073,8 @@
                 "lingSave": {},
                 "scaling": "1d6",
                 "specialNotes": [],
-                "actionCost": "bonus action"
+                "actionCost": "bonus action",
+                "range": "W"
             }
         ]
     },
@@ -1086,7 +1113,8 @@
                 "lingSave": {},
                 "scaling": "1d6",
                 "specialNotes": [],
-                "actionCost": "bonus action"
+                "actionCost": "bonus action",
+                "range": "90"
             }
         ]
     },
@@ -1119,7 +1147,8 @@
                 "lingSave": {},
                 "scaling": "1d10",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "5"
             }
         ]
     },
@@ -1155,7 +1184,8 @@
                 "lingSave": {},
                 "scaling": "extraTarget",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "120"
             }
         ]
     },
@@ -1205,7 +1235,8 @@
                 "lingSave": {},
                 "scaling": "1d8",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -1251,7 +1282,8 @@
                 "lingSave": {},
                 "scaling": "1d6",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "W"
             }
         ]
     },
@@ -1295,7 +1327,8 @@
                 "lingSave": {},
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "bonus action"
+                "actionCost": "bonus action",
+                "range": "60"
             }
         ]
     },
@@ -1340,7 +1373,8 @@
                 },
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "30"
             }
         ]
     },
@@ -1384,7 +1418,8 @@
                 "lingSave": {},
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "W"
             }
         ]
     },
@@ -1423,7 +1458,8 @@
                 "lingSave": {},
                 "scaling": "1d8",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "0"
             }
         ]
     },
@@ -1472,7 +1508,8 @@
                 "lingSave": {},
                 "scaling": "1d12",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "30"
             }
         ]
     },
@@ -1524,7 +1561,8 @@
                 },
                 "scaling": "1d6",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "W"
             }
         ]
     },
@@ -1560,7 +1598,8 @@
                 "lingSave": {},
                 "scaling": "5",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -1610,7 +1649,8 @@
                 },
                 "scaling": "extraTarget",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "30"
             }
         ]
     },
@@ -1659,7 +1699,8 @@
                 "lingSave": {},
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "0"
             }
         ]
     },
@@ -1694,7 +1735,8 @@
                 "specialNotes": [
                     "endsInvisibility"
                 ],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "0"
             }
         ]
     },
@@ -1737,7 +1779,8 @@
                 "lingSave": {},
                 "scaling": "2d4",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -1768,7 +1811,8 @@
                 "lingSave": {},
                 "scaling": "extraTarget2",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "5"
             }
         ]
     },
@@ -1812,7 +1856,8 @@
                 "lingSave": {},
                 "scaling": "1d6",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -1859,7 +1904,8 @@
                 "lingSave": {},
                 "scaling": "1d8",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -1909,7 +1955,8 @@
                 "specialNotes": [
                     "humanoidOnly"
                 ],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -1955,7 +2002,8 @@
                 "lingSave": {},
                 "scaling": "extraTarget",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "5"
             }
         ]
     },
@@ -1999,7 +2047,8 @@
                 "lingSave": {},
                 "scaling": "2d4",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "90"
             }
         ]
     },
@@ -2046,7 +2095,8 @@
                 "specialNotes": [
                     "3Turn"
                 ],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "0"
             }
         ]
     },
@@ -2087,7 +2137,8 @@
                 "specialNotes": [
                     "ShapeChangerDisadvantage"
                 ],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "120"
             }
         ]
     },
@@ -2124,7 +2175,8 @@
                 "lingSave": {},
                 "scaling": "extraTarget",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "120"
             }
         ]
     },
@@ -2161,7 +2213,8 @@
                 "lingSave": {},
                 "scaling": "1d8",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -2203,7 +2256,8 @@
                 "lingSave": {},
                 "scaling": "1d8 PER2",
                 "specialNotes": [],
-                "actionCost": "bonus action"
+                "actionCost": "bonus action",
+                "range": "60"
             }
         ]
     },
@@ -2248,7 +2302,8 @@
                 },
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -2307,7 +2362,8 @@
                 "lingSave": {},
                 "scaling": "extraTarget2",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "5"
             }
         ]
     },
@@ -2324,7 +2380,7 @@
         "targeting": [
             {
                 "self": false,
-                "number": -1,
+                "number": -2,
                 "rolls": {
                     "rollType": "autoHit",
                     "saveType": "none",
@@ -2348,7 +2404,8 @@
                 "lingSave": {},
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "30"
             }
         ]
     },
@@ -2398,7 +2455,8 @@
                 },
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "W"
             }
         ]
     },
@@ -2436,7 +2494,8 @@
                 "lingSave": {},
                 "scaling": "1d10",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "100"
             }
         ]
     },
@@ -2510,7 +2569,8 @@
                 "lingSave": {},
                 "scaling": "mult PER2",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -2541,7 +2601,8 @@
                 "lingSave": {},
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -2585,7 +2646,8 @@
                 },
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "0"
             }
         ]
     },
@@ -2621,7 +2683,8 @@
                 "lingSave": {},
                 "scaling": "1d6",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "120"
             }
         ]
     },
@@ -2662,7 +2725,8 @@
                 "lingSave": {},
                 "scaling": "1d8",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "5"
             }
         ]
     },
@@ -2713,7 +2777,8 @@
                 "lingSave": {},
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "150"
             }
         ]
     },
@@ -2761,7 +2826,8 @@
                 },
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "120"
             }
         ]
     },
@@ -2809,7 +2875,8 @@
                 "lingSave": {},
                 "scaling": "1d8",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "W"
             }
         ]
     },
@@ -2846,7 +2913,8 @@
                 "lingSave": {},
                 "scaling": "1d6",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "0"
             }
         ]
     },
@@ -2882,7 +2950,8 @@
                     "undeadImmune",
                     "constructImmune"
                 ],
-                "actionCost": "bonus action"
+                "actionCost": "bonus action",
+                "range": "60"
             }
         ]
     },
@@ -2938,7 +3007,8 @@
                 "lingSave": {},
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "5"
             }
         ]
     },
@@ -2994,7 +3064,8 @@
                 "lingSave": {},
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "120"
             }
         ]
     },
@@ -3051,7 +3122,8 @@
                 },
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "120"
             }
         ]
     },
@@ -3092,7 +3164,8 @@
                 "lingSave": {},
                 "scaling": "1d8",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "0"
             }
         ]
     },
@@ -3148,7 +3221,8 @@
                 },
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "120"
             }
         ]
     },
@@ -3187,7 +3261,8 @@
                 "lingSave": {},
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "120"
             }
         ]
     },
@@ -3204,7 +3279,7 @@
         "targeting": [
             {
                 "self": false,
-                "number": -1,
+                "number": -2,
                 "rolls": {
                     "rollType": "autoHit",
                     "saveType": "none",
@@ -3233,7 +3308,8 @@
                 "lingSave": {},
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "30"
             }
         ]
     },
@@ -3277,7 +3353,8 @@
                 "lingSave": {},
                 "scaling": "extraTarget",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -3320,7 +3397,8 @@
                     "constructImmune",
                     "plantVulnerable"
                 ],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "30"
             }
         ]
     },
@@ -3394,7 +3472,8 @@
                 "lingSave": {},
                 "scaling": "mult PER2",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -3466,7 +3545,8 @@
                 "lingSave": {},
                 "scaling": "mult PER2",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -3520,7 +3600,8 @@
                 "specialNotes": [
                     "BeastOnly"
                 ],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -3566,7 +3647,8 @@
                 },
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "90"
             }
         ]
     },
@@ -3638,7 +3720,8 @@
                 "lingSave": {},
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "30"
             }
         ]
     },
@@ -3685,7 +3768,8 @@
                 "lingSave": {},
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "5"
             }
         ]
     },
@@ -3720,7 +3804,8 @@
                 "specialNotes": [
                     "3Turn"
                 ],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "30"
             }
         ]
     },
@@ -3760,7 +3845,8 @@
                 "lingSave": {},
                 "scaling": "1d6",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "300"
             }
         ]
     },
@@ -3803,7 +3889,8 @@
                 "lingSave": {},
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "30"
             }
         ]
     },
@@ -3863,7 +3950,8 @@
                 },
                 "scaling": "1d10",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "120"
             }
         ]
     },
@@ -3922,7 +4010,8 @@
                 "specialNotes": [
                     "1Turn"
                 ],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "W"
             }
         ]
     },
@@ -3977,7 +4066,8 @@
                 "lingSave": {},
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "5"
             }
         ]
     },
@@ -4022,7 +4112,8 @@
                 "lingSave": {},
                 "scaling": "1d8",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "120"
             }
         ]
     },
@@ -4096,7 +4187,8 @@
                 "lingSave": {},
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "120"
             }
         ]
     },
@@ -4145,7 +4237,8 @@
                 "lingSave": {},
                 "scaling": "1d10",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "W"
             }
         ]
     },
@@ -4162,6 +4255,7 @@
                 "targetType": "Bigby's Hand ATTACK",
                 "self": false,
                 "number": 1,
+                "range": "120",
                 "rolls": {
                     "rollType": "toHit",
                     "saveType": "none",
@@ -4192,6 +4286,7 @@
                 "targetType": "Bigby's Hand GRAPPLE",
                 "self": false,
                 "number": 1,
+                "range": "120",
                 "rolls": {
                     "rollType": "save",
                     "saveType": "STR",
@@ -4232,7 +4327,7 @@
         "targeting": [
             {
                 "self": false,
-                "number": -1,
+                "number": -2,
                 "rolls": {
                     "rollType": "autoHit",
                     "saveType": "none",
@@ -4261,7 +4356,8 @@
                 "lingSave": {},
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "30"
             }
         ]
     },
@@ -4318,7 +4414,8 @@
                 "lingSave": {},
                 "scaling": "1d8",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "120"
             }
         ]
     },
@@ -4353,7 +4450,8 @@
                 "lingSave": {},
                 "scaling": "1d8",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "0"
             }
         ]
     },
@@ -4399,7 +4497,8 @@
                 "lingSave": {},
                 "scaling": "1CR",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -4430,7 +4529,8 @@
                 "lingSave": {},
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "150"
             }
         ]
     },
@@ -4444,7 +4544,7 @@
         "targeting": [
             {
                 "self": false,
-                "number": -1,
+                "number": -2,
                 "rolls": {
                     "rollType": "save",
                     "saveType": "CON",
@@ -4468,7 +4568,8 @@
                 "specialNotes": [
                     "1Turn"
                 ],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "30"
             }
         ]
     },
@@ -4523,7 +4624,8 @@
                 "specialNotes": [
                     "HumanoidOnly"
                 ],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -4560,7 +4662,8 @@
                 "lingSave": {},
                 "scaling": "1d6",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -4604,7 +4707,8 @@
                 "specialNotes": [
                     "undeadImmune"
                 ],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -4645,7 +4749,8 @@
                 "lingSave": {},
                 "scaling": "1d10",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "300"
             }
         ]
     },
@@ -4687,7 +4792,8 @@
                 },
                 "scaling": "1d6",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "90"
             }
         ]
     },
@@ -4722,7 +4828,8 @@
                 "lingSave": {},
                 "scaling": "1d8",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -4763,7 +4870,8 @@
                 "lingSave": {},
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "120"
             }
         ]
     },
@@ -4802,7 +4910,8 @@
                 "lingSave": {},
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "120"
             }
         ]
     },
@@ -4841,7 +4950,8 @@
                 "lingSave": {},
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "120"
             }
         ]
     },
@@ -4874,7 +4984,8 @@
                 "lingSave": {},
                 "scaling": "extraTarget",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "120"
             }
         ]
     },
@@ -4929,7 +5040,8 @@
                 "lingSave": {},
                 "scaling": "1CR",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -4973,7 +5085,8 @@
                 "lingSave": {},
                 "scaling": "extraSummon1",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "30"
             }
         ]
     },
@@ -5007,7 +5120,8 @@
                 "lingSave": {},
                 "scaling": "2d6",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "120"
             }
         ]
     },
@@ -5040,7 +5154,8 @@
                 "lingSave": {},
                 "scaling": "3d6",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -5059,6 +5174,7 @@
                 "targetType": "Eyebite UNCONSCIOUS",
                 "self": false,
                 "number": 1,
+                "range" : "60",
                 "rolls": {
                     "rollType": "save",
                     "saveType": "WIS",
@@ -5091,6 +5207,7 @@
                 "targetType": "Eyebite FRIGHTEN",
                 "self": false,
                 "number": 1,
+                "range" : "60",
                 "rolls": {
                     "rollType": "save",
                     "saveType": "WIS",
@@ -5123,6 +5240,7 @@
                 "targetType": "Eyebite DISADVANTAGE",
                 "self": false,
                 "number": 1,
+                "range" : "60",
                 "rolls": {
                     "rollType": "save",
                     "saveType": "WIS",
@@ -5188,7 +5306,8 @@
                 "lingSave": {},
                 "scaling": "1d6",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -5225,7 +5344,8 @@
                     "constructImmune",
                     "undeadImmune"
                 ],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -5258,7 +5378,8 @@
                 "lingSave": {},
                 "scaling": "1d6",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "300"
             }
         ]
     },
@@ -5315,7 +5436,8 @@
                 },
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "30"
             }
         ]
     },
@@ -5362,7 +5484,8 @@
                     "undeadVulnerable",
                     "oozeVulnerable"
                 ],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "0"
             }
         ]
     },
@@ -5408,7 +5531,8 @@
                 "lingSave": {},
                 "scaling": "2d6",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "120"
             }
         ]
     },
@@ -5453,7 +5577,8 @@
                 "lingSave": {},
                 "scaling": "1d8",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "120"
             }
         ]
     },
@@ -5498,7 +5623,8 @@
                 "lingSave": {},
                 "scaling": "1CR PER2",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "90"
             }
         ]
     },
@@ -5535,7 +5661,8 @@
                 "lingSave": {},
                 "scaling": "1d6",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "120"
             }
         ]
     },
@@ -5551,6 +5678,7 @@
                 "targetType": "Divine Word 40",
                 "self": false,
                 "number": -1,
+                "range" : "30",
                 "rolls": {
                     "rollType": "save",
                     "saveType": "CHA",
@@ -5577,6 +5705,7 @@
                 "targetType": "Divine Word 30",
                 "self": false,
                 "number": -1,
+                "range" : "30",
                 "rolls": {
                     "rollType": "save",
                     "saveType": "CHA",
@@ -5604,6 +5733,7 @@
                 "targetType": "Divine Word 20",
                 "self": false,
                 "number": -1,
+                "range" : "30",
                 "rolls": {
                     "rollType": "save",
                     "saveType": "CHA",
@@ -5668,7 +5798,8 @@
                 "lingSave": {},
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "0"
             }
         ]
     },
@@ -5703,7 +5834,8 @@
                 "specialNotes": [
                     "summonZombieOnKill"
                 ],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -5735,7 +5867,8 @@
                 "lingSave": {},
                 "scaling": "1d10",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "120"
             }
         ]
     },
@@ -5770,7 +5903,8 @@
                 "lingSave": {},
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "100"
             }
         ]
     },
@@ -5809,7 +5943,8 @@
                 "lingSave": {},
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -5861,7 +5996,8 @@
                 },
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -5903,7 +6039,8 @@
                 "specialNotes": [
                     ""
                 ],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "500"
             }
         ]
     },
@@ -5917,7 +6054,7 @@
         "targeting": [
             {
                 "self": false,
-                "number": -1,
+                "number": -2,
                 "rolls": {
                     "rollType": "autoHit",
                     "saveType": "none",
@@ -5953,7 +6090,8 @@
                 "lingSave": {},
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "0"
             }
         ]
     },
@@ -6006,7 +6144,8 @@
                 "lingSave": {},
                 "scaling": "1d8",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "120"
             }
         ]
     },
@@ -6046,7 +6185,8 @@
                 },
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -6093,7 +6233,8 @@
                 "lingSave": {},
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "5"
             }
         ]
     },
@@ -6133,7 +6274,8 @@
                 "specialNotes": [
                     "hpCap150"
                 ],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -6172,7 +6314,8 @@
                     "undeadDisadvantage",
                     "oozeDisadvantage"
                 ],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "120"
             }
         ]
     },
@@ -6206,7 +6349,8 @@
                 "specialNotes": [
                     "endBlindness"
                 ],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -6241,7 +6385,8 @@
                 "lingSave": {},
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "1 mile"
             }
         ]
     },
@@ -6277,7 +6422,8 @@
                     "fullHeal",
                     "endCondition"
                 ],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "5"
             }
         ]
     },
@@ -6316,7 +6462,8 @@
                 "specialNotes": [
                     "hpCap100"
                 ],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "60"
             }
         ]
     },
@@ -6334,6 +6481,7 @@
                 "targetType": "True Polymorph OBJECT INTO CREATURE",
                 "self": false,
                 "number": 0,
+                "range" : "30",
                 "rolls": {
                     "rollType": "autoHit",
                     "saveType": "none",
@@ -6371,6 +6519,7 @@
                 "targetType": "True Polymorph CREATURE INTO OBJECT",
                 "self": false,
                 "number": 1,
+                "range" : "30",
                 "rolls": {
                     "rollType": "save",
                     "saveType": "WIS",
@@ -6437,7 +6586,8 @@
                 },
                 "scaling": "",
                 "specialNotes": [],
-                "actionCost": "action"
+                "actionCost": "action",
+                "range": "120"
             }
         ]
     }
