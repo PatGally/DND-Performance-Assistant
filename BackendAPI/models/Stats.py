@@ -63,6 +63,8 @@ def _coerce_int(value: Any, default: int = 0) -> int:
         return int(s)
     return int(value)
 
+class Position(BaseModel):
+    position : List[int] = Field(min_length=2, max_length=2, default=[0, 0])
 
 class Stats(BaseModel):
     """
@@ -90,7 +92,7 @@ class Stats(BaseModel):
     # --- HP (JSON strings ok; internal ints) ---
     hp: int = Field(default=0, alias="hp")
     max_hp: int = Field(default=0, alias="maxHP")
-    position : List[int] = Field(min_length=2, max_length=2, default=[0, 0], alias="position")
+    position : List[Position] = Field(min_length=1, alias="position")
     cid : str = Field(alias="cid")
 
     @computed_field
