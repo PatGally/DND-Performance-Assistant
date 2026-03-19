@@ -262,6 +262,7 @@ def getEncounterMiniData(eid : str):
     logger.info(monsters)
     p_packet = [{"name" : player.get("stats").get("name"), "level" : player.get("stats").get("level"),
                "characterClass" : player.get("stats").get("characterClass")} for player in players]
+    #TODO: Add type
     m_packet = [{"name" : monster.get("name"), "cr" : monster.get("cr"), "size" : monster.get("size")} for monster in monsters]
     return {"players" : p_packet, "monsters" : m_packet}
 @app.get("/dashboard/players")
@@ -443,7 +444,6 @@ def find_user_by_google_sub(db: dict, google_sub: str) -> Optional[UserInDB]:
             return UserInDB(**user_data)
     return None
 def create_google_user(db: dict, *, google_sub: str, email: str | None, full_name: str | None) -> UserInDB:
-    # TODO: Refine this later; for now use "g_<sub_prefix>"
     base_username = f"g_{google_sub[:12]}"
     username = base_username
     i = 1

@@ -12,6 +12,7 @@ class MonAction(Action):
         self.__numTarget = numTarget
         self.__actionRange = actionRange
         self.__shape = shape
+        self.__actionRadius = actionRange
         self.__rollType = rollType
         self.__saveType = saveType
         self.__saveDC = saveDC
@@ -74,6 +75,9 @@ class MonAction(Action):
         return self.__name
     def setName(self, value):
         self.__name = value
+
+    def getShape(self):
+        return self.__shape
 
     def getSelfTarget(self):
         return self.__selfTarget
@@ -157,3 +161,8 @@ class MonAction(Action):
         return self.__actionRange
     def setActionRange(self, ar):
         self.__actionRange = ar
+
+    def getActionRadius(self):
+        return self.__actionRadius
+    def setActionRadius(self, value):
+        self.__actionRadius = value

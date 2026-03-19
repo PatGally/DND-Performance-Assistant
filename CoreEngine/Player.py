@@ -71,11 +71,11 @@ class Player(Stats):
     def addSpell(self, name, lvl, selfTarget,
                  numTarget, spellRange, rollType, saveType, halfSave, damageMod, diceNum, diceType,
                  damType, conditions, statusEffects, lingEffects, extraEffect, lingSaves,
-                 scaling, actionCost, specialNotes):
+                 scaling, actionCost, specialNotes, shape="", radius=0):
         self.__spells.append(Spell(name, lvl, selfTarget,
                  numTarget, spellRange, rollType, saveType, halfSave, damageMod, diceNum, diceType,
                  damType, conditions, statusEffects, lingEffects, extraEffect, lingSaves,
-                 scaling, actionCost, specialNotes))
+                 scaling, actionCost, specialNotes, shape, radius))
     def removeSpell(self, name):
         for spell in self.__spells:
             if name == spell.getName():
