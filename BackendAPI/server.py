@@ -247,7 +247,13 @@ def getInitiative(eid : str):
     return enc.get("initiative", [])
 @app.post("/encounter")
 def postEncounter(encounter : Encounter):
-    ENCOUNTER_LIST.append(encounter.model_dump(mode="json", by_alias=True))
+    encounterJSON = encounter.model_dump(mode="json", by_alias=True)
+    for i, player in enumerate(encounterJSON["players"]):
+        if player["stats"]["characterClass"].lower() != "sorcerer" and "metamagics" in player:
+            del encounterJSON["players"][i]["metamagics"]
+            del encounterJSON["players"][i]["chosenMetaMagics"]
+            del encounterJSON["players"][i]["sorceryPoints"]
+    ENCOUNTER_LIST.append(encounterJSON)
     with open("CoreEngine/data/encounter_list.json", "w") as wf:
         json.dump(ENCOUNTER_LIST, wf, indent=4)
     refresh()
@@ -262,9 +268,15 @@ def getEncounterMiniData(eid : str):
     logger.info(monsters)
     p_packet = [{"name" : player.get("stats").get("name"), "level" : player.get("stats").get("level"),
                "characterClass" : player.get("stats").get("characterClass")} for player in players]
-    #TODO: Add type
-    m_packet = [{"name" : monster.get("name"), "cr" : monster.get("cr"), "size" : monster.get("size")} for monster in monsters]
+    m_packet = [{"name" : monster.get("name"), "cr" : monster.get("cr"), "size" : monster.get("size"),
+                 "type" : monster.get("creatureType")} for monster in monsters]
     return {"players" : p_packet, "monsters" : m_packet}
+
+@app.get("/dashboard/monsters")
+def getMonsters():
+    with open("CoreEngine/data/monster_list.json", "r") as pf:
+        monster_list = json.load(pf)
+    return monster_list
 @app.get("/dashboard/players")
 def getPlayers():
     with open("CoreEngine/data/player_list.json", "r") as pf:
@@ -319,6 +331,10 @@ def postPlayerToPlayerList(player : Union[AnyPlayer, Player]):
         elif playerObj.getClass().lower() == "rogue":
             playerObj.setSaveProf("WIS", playerObj.getSaveProf("WIS") + playerObj.getProfBonus())
     playerJSON = player.model_dump(mode="json", by_alias=True)
+    if playerJSON["stats"]["characterClass"].lower() != "sorcerer" and "metamagics" in playerJSON:
+        del playerJSON["metamagics"]
+        del playerJSON["chosenMetaMagics"]
+        del playerJSON["sorceryPoints"]
     playerObj = main.getPlayerStats(playerJSON)
     main.getSavedWeapons(playerObj, playerJSON["weapons"])
     main.getSavedSpells(playerObj, playerJSON["spells"])
@@ -479,7 +495,7 @@ async def issueAccessAuth(user, response):
         key=REFRESH_COOKIE_NAME,
         value=refresh,
         httponly=True,
-        secure=COOKIE_SECURE,  # ✅ correct
+        secure=COOKIE_SECURE,
         samesite=COOKIE_SAMESITE,
         path=REFRESH_COOKIE_PATH,
         max_age=60 * 60 * 24 * REFRESH_TOKEN_EXPIRE_DAYS,

@@ -79,6 +79,18 @@ class Monster(Stats):
     def isEnemy(self):
         return self.__enemy
 
+    def getSpellMod(self):
+        if self.isCaster():
+            statType = self.__spellInfo["type"]
+            if statType:
+                mod = self.getMod(statType)
+                pB = self.getProfBonus()
+                return mod + pB
+            else:
+                return 0
+        else:
+            return 0
+
     def isCaster(self):
         return self.__caster
     def getSpellInfo(self):

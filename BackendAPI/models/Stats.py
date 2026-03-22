@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union, Annotated
+from uuid import uuid4
 
 from pydantic import BaseModel, Field, ConfigDict, computed_field, field_validator, model_validator
 
@@ -63,9 +64,6 @@ def _coerce_int(value: Any, default: int = 0) -> int:
         return int(s)
     return int(value)
 
-class Position(BaseModel):
-    position : List[int] = Field(min_length=2, max_length=2, default=[0, 0])
-
 class Stats(BaseModel):
     """
     Base Stats model: Player/Monster can inherit.
@@ -92,8 +90,8 @@ class Stats(BaseModel):
     # --- HP (JSON strings ok; internal ints) ---
     hp: int = Field(default=0, alias="hp")
     max_hp: int = Field(default=0, alias="maxHP")
-    position : List[Position] = Field(min_length=1, alias="position")
-    cid : str = Field(alias="cid")
+    position : List[List[int]] = Field(min_length=1, alias="position")
+    cid: str = Field(default_factory=lambda: str(uuid4()), alias="cid")
 
     @computed_field
     @property

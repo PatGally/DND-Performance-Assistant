@@ -52,7 +52,7 @@
                 "lingEffect": {},
                 "extraEffect": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "14",
                     "damage": "",
@@ -65,7 +65,7 @@
                     ]
                 },
                 "lingSave": {
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "saveDC": "14"
                 },
                 "actionCost": "action",
@@ -115,7 +115,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "14",
                     "damage": "",
@@ -130,7 +130,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "saveDC": "14"
                 },
                 "actionCost": "action",
@@ -256,7 +256,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "wisdom",
+            "type": "WIS",
             "DC": "12",
             "attackRoll": "4",
             "spells": [
@@ -418,7 +418,7 @@
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "16",
                     "damage": "",
@@ -433,7 +433,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "saveDC": "16"
                 },
                 "actionCost": "action",
@@ -449,7 +449,7 @@
                 "shape": "line that is 5 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "18",
                     "damage": "12d8",
@@ -663,7 +663,7 @@
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "17",
                     "damage": "",
@@ -678,7 +678,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "saveDC": "17"
                 },
                 "actionCost": "action",
@@ -694,7 +694,7 @@
                 "shape": "line that is 5 ft. wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "19",
                     "damage": "12d10",
@@ -902,7 +902,7 @@
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "16",
                     "damage": "",
@@ -917,7 +917,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "saveDC": "16"
                 },
                 "actionCost": "action",
@@ -933,7 +933,7 @@
                 "shape": "line that is 5 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "18",
                     "damage": "13d6",
@@ -961,7 +961,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "18",
                     "damage": "",
@@ -976,7 +976,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "saveDC": "18"
                 },
                 "actionCost": "action",
@@ -1172,7 +1172,7 @@
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "17",
                     "damage": "",
@@ -1187,7 +1187,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "saveDC": "17"
                 },
                 "actionCost": "action",
@@ -1203,7 +1203,7 @@
                 "shape": "line that is 5 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "19",
                     "damage": "12d10",
@@ -1231,7 +1231,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "STR",
+                    "saveType": "STR",
                     "halfSave": false,
                     "saveDC": "19",
                     "damage": "",
@@ -1244,7 +1244,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "STR",
+                    "saveType": "STR",
                     "saveDC": "19"
                 },
                 "actionCost": "action",
@@ -1466,7 +1466,7 @@
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "16",
                     "damage": "",
@@ -1481,7 +1481,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "saveDC": "16"
                 },
                 "actionCost": "action",
@@ -1497,7 +1497,7 @@
                 "shape": "line that is 5 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "18",
                     "damage": "12d8",
@@ -1525,7 +1525,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "18",
                     "damage": "",
@@ -1538,7 +1538,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "saveDC": "18"
                 },
                 "actionCost": "action",
@@ -1734,7 +1734,7 @@
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "21",
                     "damage": "",
@@ -1749,7 +1749,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "saveDC": "21"
                 },
                 "actionCost": "action",
@@ -1765,7 +1765,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "21",
                     "damage": "12d10",
@@ -1793,7 +1793,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "STR",
+                    "saveType": "STR",
                     "halfSave": false,
                     "saveDC": "21",
                     "damage": "",
@@ -1806,7 +1806,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "STR",
+                    "saveType": "STR",
                     "saveDC": "21"
                 },
                 "actionCost": "action",
@@ -2034,7 +2034,7 @@
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "16",
                     "damage": "",
@@ -2049,7 +2049,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "saveDC": "16"
                 },
                 "actionCost": "action",
@@ -2065,7 +2065,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "18",
                     "damage": "16d6",
@@ -2279,7 +2279,7 @@
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "19",
                     "damage": "",
@@ -2294,7 +2294,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "saveDC": "19"
                 },
                 "actionCost": "action",
@@ -2310,7 +2310,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "21",
                     "damage": "18d6",
@@ -2518,7 +2518,7 @@
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "18",
                     "damage": "",
@@ -2533,7 +2533,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "saveDC": "18"
                 },
                 "actionCost": "action",
@@ -2549,7 +2549,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "20",
                     "damage": "13d8",
@@ -2577,7 +2577,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "20",
                     "damage": "",
@@ -2592,7 +2592,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "saveDC": "20"
                 },
                 "actionCost": "action",
@@ -2820,7 +2820,7 @@
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "14",
                     "damage": "",
@@ -2835,7 +2835,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "saveDC": "14"
                 },
                 "actionCost": "action",
@@ -2851,7 +2851,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "19",
                     "damage": "12d8",
@@ -3170,7 +3170,7 @@
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "19",
                     "damage": "",
@@ -3185,7 +3185,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "saveDC": "19",
                     "timing": "end_of_turn"
                 },
@@ -3202,7 +3202,7 @@
                 "shape": "line that is 10 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "22",
                     "damage": "15d8",
@@ -3419,7 +3419,7 @@
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "19",
                     "damage": "",
@@ -3434,7 +3434,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "saveDC": "19",
                     "timing": "end_of_turn"
                 },
@@ -3451,7 +3451,7 @@
                 "shape": "line that is 10 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "22",
                     "damage": "15d8",
@@ -3662,7 +3662,7 @@
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "18",
                     "damage": "",
@@ -3677,7 +3677,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "saveDC": "18",
                     "timing": "end_of_turn"
                 },
@@ -3694,7 +3694,7 @@
                 "shape": "line that is 10 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "21",
                     "damage": "16d6",
@@ -3725,7 +3725,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "21",
                     "damage": "",
@@ -3966,7 +3966,7 @@
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "20",
                     "damage": "",
@@ -3981,7 +3981,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "saveDC": "20",
                     "timing": "end_of_turn"
                 },
@@ -3998,7 +3998,7 @@
                 "shape": "line that is 10 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "23",
                     "damage": "16d10",
@@ -4029,7 +4029,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "STR",
+                    "saveType": "STR",
                     "halfSave": false,
                     "saveDC": "23",
                     "damage": "",
@@ -4270,7 +4270,7 @@
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "19",
                     "damage": "",
@@ -4287,7 +4287,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "saveDC": "19",
                     "timing": "end_of_turn"
                 },
@@ -4304,7 +4304,7 @@
                 "shape": "line that is 10 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "22",
                     "damage": "14d8",
@@ -4337,7 +4337,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "22",
                     "damage": "",
@@ -4355,7 +4355,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": false,
                         "saveDC": "22",
                         "damage": "",
@@ -4371,7 +4371,7 @@
                     "statusEffect": []
                 },
                 "lingSave": {
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "saveDC": "22",
                     "timing": "end_of_turn"
                 },
@@ -4607,7 +4607,7 @@
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "24",
                     "damage": "",
@@ -4624,7 +4624,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "saveDC": "24",
                     "timing": "end_of_turn"
                 },
@@ -4641,7 +4641,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "24",
                     "damage": "13d10",
@@ -4674,7 +4674,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "STR",
+                    "saveType": "STR",
                     "halfSave": false,
                     "saveDC": "24",
                     "damage": "",
@@ -4692,7 +4692,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "STR",
+                        "saveType": "STR",
                         "halfSave": false,
                         "saveDC": "24",
                         "damage": "",
@@ -4708,7 +4708,7 @@
                     "statusEffect": []
                 },
                 "lingSave": {
-                    "saveType" : "STR",
+                    "saveType": "STR",
                     "saveDC": "24",
                     "timing": "end_of_turn"
                 },
@@ -4949,7 +4949,7 @@
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "19",
                     "damage": "",
@@ -4966,7 +4966,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "saveDC": "19",
                     "timing": "end_of_turn"
                 },
@@ -4983,7 +4983,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "22",
                     "damage": "22d6",
@@ -5207,7 +5207,7 @@
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "21",
                     "damage": "",
@@ -5224,7 +5224,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "saveDC": "21",
                     "timing": "end_of_turn"
                 },
@@ -5241,7 +5241,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "24",
                     "damage": "26d6",
@@ -5460,7 +5460,7 @@
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "21",
                     "damage": "",
@@ -5477,7 +5477,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "saveDC": "21",
                     "timing": "end_of_turn"
                 },
@@ -5494,7 +5494,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "24",
                     "damage": "15d8",
@@ -5749,7 +5749,7 @@
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "16",
                     "damage": "",
@@ -5766,7 +5766,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "saveDC": "16",
                     "timing": "end_of_turn"
                 },
@@ -5783,7 +5783,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "22",
                     "damage": "16d8",
@@ -5986,7 +5986,7 @@
             }
         ],
         "spellInfo": {
-            "type": "wisdom",
+            "type": "WIS",
             "DC": "18",
             "attackRoll": "10",
             "spells": [
@@ -6216,7 +6216,7 @@
                 "shape": "line that is 5 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "13",
                     "damage": "3d6",
@@ -6381,7 +6381,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "intelligence",
+            "type": "INT",
             "DC": "17",
             "attackRoll": "9",
             "spells": [
@@ -6556,7 +6556,7 @@
                 "lingEffect": {},
                 "extraEffect": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "15",
                     "damage": "7d6",
@@ -6601,7 +6601,7 @@
                 "lingEffect": {},
                 "extraEffect": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "15",
                     "damage": "7d6",
@@ -7069,98 +7069,116 @@
         "conImmunes": "poisoned",
         "magicResist": false,
         "lairAction": false,
-        "actions" : [
+        "actions": [
             {
-              "name": "Longsword",
-              "desc": "Melee Weapon Attack: +14 to hit, reach 10 ft., one target. Hit: 21 (3d8 + 8) slashing damage plus 13 (3d8) lightning damage. If the balor scores a critical hit, it rolls damage dice three times, instead of twice.",
-              "actionRange": "10",
-              "numTarget": 1,
-              "shape": "",
-              "rolls": {
-                "rollType": "toHit",
-                "saveType": "",
-                "halfSave": false,
-                "saveDC": "",
-                "damage": "3d8",
-                "attackBonus": 14,
-                "damMod": 8
-              },
-              "damType": ["slashing"],
-              "conditions": [""],
-              "statusEffect": [],
-              "lingEffect": {},
-              "extraEffect": {},
-              "lingSave": {},
-              "actionCost": "action",
-              "recharge": "",
-              "specialNotes": [
-              ],
-              "extraDamage": [
-                { "dice": "3d8", "mod": 0, "type": "lightning" }
-              ]
+                "name": "Longsword",
+                "desc": "Melee Weapon Attack: +14 to hit, reach 10 ft., one target. Hit: 21 (3d8 + 8) slashing damage plus 13 (3d8) lightning damage. If the balor scores a critical hit, it rolls damage dice three times, instead of twice.",
+                "actionRange": "10",
+                "numTarget": 1,
+                "shape": "",
+                "rolls": {
+                    "rollType": "toHit",
+                    "saveType": "",
+                    "halfSave": false,
+                    "saveDC": "",
+                    "damage": "3d8",
+                    "attackBonus": 14,
+                    "damMod": 8
+                },
+                "damType": [
+                    "slashing"
+                ],
+                "conditions": [
+                    ""
+                ],
+                "statusEffect": [],
+                "lingEffect": {},
+                "extraEffect": {},
+                "lingSave": {},
+                "actionCost": "action",
+                "recharge": "",
+                "specialNotes": [],
+                "extraDamage": [
+                    {
+                        "dice": "3d8",
+                        "mod": 0,
+                        "type": "lightning"
+                    }
+                ]
             },
             {
-              "name": "Whip",
-              "desc": "Melee Weapon Attack: +14 to hit, reach 30 ft., one target. Hit: 15 (2d6 + 8) slashing damage plus 10 (3d6) fire damage, and the target must succeed on a DC 20 Strength saving throw or be pulled up to 25 feet toward the balor.",
-              "actionRange": "30",
-              "numTarget": 1,
-              "shape": "",
-              "rolls": {
-                "rollType": "toHit",
-                "saveType": "",
-                "halfSave": false,
-                "saveDC": "",
-                "damage": "2d6",
-                "attackBonus": 14,
-                "damMod": 8
-              },
-              "damType": ["slashing"],
-              "conditions": [""],
-              "statusEffect": [],
-              "lingEffect": {},
-              "extraEffect": {
-                "rollType": "save",
-                "saveType" : "STR",
-                "halfSave": false,
-                "saveDC": "20",
-                "damage": "",
-                "attackBonus": 0,
-                "damMod": ""
-              },
-              "lingSave": {},
-              "actionCost": "action",
-              "recharge": "",
-              "specialNotes": [
-              ],
-              "extraDamage": [
-                { "dice": "3d6", "mod": 0, "type": "fire" }
-              ]
+                "name": "Whip",
+                "desc": "Melee Weapon Attack: +14 to hit, reach 30 ft., one target. Hit: 15 (2d6 + 8) slashing damage plus 10 (3d6) fire damage, and the target must succeed on a DC 20 Strength saving throw or be pulled up to 25 feet toward the balor.",
+                "actionRange": "30",
+                "numTarget": 1,
+                "shape": "",
+                "rolls": {
+                    "rollType": "toHit",
+                    "saveType": "",
+                    "halfSave": false,
+                    "saveDC": "",
+                    "damage": "2d6",
+                    "attackBonus": 14,
+                    "damMod": 8
+                },
+                "damType": [
+                    "slashing"
+                ],
+                "conditions": [
+                    ""
+                ],
+                "statusEffect": [],
+                "lingEffect": {},
+                "extraEffect": {
+                    "rollType": "save",
+                    "saveType": "STR",
+                    "halfSave": false,
+                    "saveDC": "20",
+                    "damage": "",
+                    "attackBonus": 0,
+                    "damMod": ""
+                },
+                "lingSave": {},
+                "actionCost": "action",
+                "recharge": "",
+                "specialNotes": [],
+                "extraDamage": [
+                    {
+                        "dice": "3d6",
+                        "mod": 0,
+                        "type": "fire"
+                    }
+                ]
             },
             {
-              "name": "Teleport",
-              "desc": "The balor magically teleports, along with any equipment it is wearing or carrying, up to 120 feet to an unoccupied space it can see.",
-              "actionRange": "120",
-              "numTarget": 1,
-              "shape": "",
-              "rolls": {
-                "rollType": "",
-                "saveType": "",
-                "halfSave": false,
-                "saveDC": "",
-                "damage": "",
-                "attackBonus": 0,
-                "damMod": ""
-              },
-              "damType": [""],
-              "conditions": [""],
-              "statusEffect": [],
-              "lingEffect": {},
-              "extraEffect": {},
-              "lingSave": {},
-              "actionCost": "action",
-              "recharge": "",
-              "specialNotes": [],
-              "extraDamage": []
+                "name": "Teleport",
+                "desc": "The balor magically teleports, along with any equipment it is wearing or carrying, up to 120 feet to an unoccupied space it can see.",
+                "actionRange": "120",
+                "numTarget": 1,
+                "shape": "",
+                "rolls": {
+                    "rollType": "",
+                    "saveType": "",
+                    "halfSave": false,
+                    "saveDC": "",
+                    "damage": "",
+                    "attackBonus": 0,
+                    "damMod": ""
+                },
+                "damType": [
+                    ""
+                ],
+                "conditions": [
+                    ""
+                ],
+                "statusEffect": [],
+                "lingEffect": {},
+                "extraEffect": {},
+                "lingSave": {},
+                "actionCost": "action",
+                "recharge": "",
+                "specialNotes": [],
+                "extraDamage": []
             }
         ],
         "legActions": [],
@@ -7309,59 +7327,67 @@
         "magicResist": false,
         "lairAction": false,
         "actions": [
-  {
-    "name": "Scimitar",
-    "desc": "Melee Weapon Attack: +5 to hit, reach 5 ft., one target. Hit: 6 (1d6 + 3) slashing damage.",
-    "actionRange": "5",
-    "numTarget": 1,
-    "shape": "",
-    "rolls": {
-      "rollType": "toHit",
-      "saveType": "",
-      "halfSave": false,
-      "saveDC": "",
-      "damage": "1d6",
-      "attackBonus": 5,
-      "damMod": 3
-    },
-    "damType": ["slashing"],
-    "conditions": [""],
-    "statusEffect": [],
-    "lingEffect": {},
-    "extraEffect": {},
-    "lingSave": {},
-    "actionCost": "action",
-    "recharge": "",
-    "specialNotes": [],
-    "extraDamage": []
-  },
-  {
-    "name": "Dagger",
-    "desc": "Melee or Ranged Weapon Attack: +5 to hit, reach 5 ft. or range 20/60 ft., one target. Hit: 5 (1d4 + 3) piercing damage.",
-    "actionRange": "60",
-    "numTarget": 1,
-    "shape": "",
-    "rolls": {
-      "rollType": "toHit",
-      "saveType": "",
-      "halfSave": false,
-      "saveDC": "",
-      "damage": "1d4",
-      "attackBonus": 5,
-      "damMod": 3
-    },
-    "damType": ["piercing"],
-    "conditions": [""],
-    "statusEffect": [],
-    "lingEffect": {},
-    "extraEffect": {},
-    "lingSave": {},
-    "actionCost": "action",
-    "recharge": "",
-    "specialNotes": [],
-    "extraDamage": []
-  }
-],
+            {
+                "name": "Scimitar",
+                "desc": "Melee Weapon Attack: +5 to hit, reach 5 ft., one target. Hit: 6 (1d6 + 3) slashing damage.",
+                "actionRange": "5",
+                "numTarget": 1,
+                "shape": "",
+                "rolls": {
+                    "rollType": "toHit",
+                    "saveType": "",
+                    "halfSave": false,
+                    "saveDC": "",
+                    "damage": "1d6",
+                    "attackBonus": 5,
+                    "damMod": 3
+                },
+                "damType": [
+                    "slashing"
+                ],
+                "conditions": [
+                    ""
+                ],
+                "statusEffect": [],
+                "lingEffect": {},
+                "extraEffect": {},
+                "lingSave": {},
+                "actionCost": "action",
+                "recharge": "",
+                "specialNotes": [],
+                "extraDamage": []
+            },
+            {
+                "name": "Dagger",
+                "desc": "Melee or Ranged Weapon Attack: +5 to hit, reach 5 ft. or range 20/60 ft., one target. Hit: 5 (1d4 + 3) piercing damage.",
+                "actionRange": "60",
+                "numTarget": 1,
+                "shape": "",
+                "rolls": {
+                    "rollType": "toHit",
+                    "saveType": "",
+                    "halfSave": false,
+                    "saveDC": "",
+                    "damage": "1d4",
+                    "attackBonus": 5,
+                    "damMod": 3
+                },
+                "damType": [
+                    "piercing"
+                ],
+                "conditions": [
+                    ""
+                ],
+                "statusEffect": [],
+                "lingEffect": {},
+                "extraEffect": {},
+                "lingSave": {},
+                "actionCost": "action",
+                "recharge": "",
+                "specialNotes": [],
+                "extraDamage": []
+            }
+        ],
         "legActions": [],
         "spellInfo": {},
         "multiattack": {
@@ -7411,85 +7437,97 @@
         "magicResist": false,
         "lairAction": false,
         "actions": [
-  {
-    "name": "Claw",
-    "desc": "Melee Weapon Attack: +6 to hit, reach 5 ft., one target. Hit: 6 (1d6 + 3) piercing damage.",
-    "actionRange": "5",
-    "numTarget": 1,
-    "shape": "",
-    "rolls": {
-      "rollType": "toHit",
-      "saveType": "",
-      "halfSave": false,
-      "saveDC": "",
-      "damage": "1d6",
-      "attackBonus": 6,
-      "damMod": 3
-    },
-    "damType": ["piercing"],
-    "conditions": [""],
-    "statusEffect": [],
-    "lingEffect": {},
-    "extraEffect": {},
-    "lingSave": {},
-    "actionCost": "action",
-    "recharge": "",
-    "specialNotes": [],
-    "extraDamage": []
-  },
-  {
-    "name": "Tail",
-    "desc": "Melee Weapon Attack: +6 to hit, reach 5 ft., one target. Hit: 10 (2d6 + 3) piercing damage.",
-    "actionRange": "5",
-    "numTarget": 1,
-    "shape": "",
-    "rolls": {
-      "rollType": "toHit",
-      "saveType": "",
-      "halfSave": false,
-      "saveDC": "",
-      "damage": "2d6",
-      "attackBonus": 6,
-      "damMod": 3
-    },
-    "damType": ["piercing"],
-    "conditions": [""],
-    "statusEffect": [],
-    "lingEffect": {},
-    "extraEffect": {},
-    "lingSave": {},
-    "actionCost": "action",
-    "recharge": "",
-    "specialNotes": [],
-    "extraDamage": []
-  },
-  {
-    "name": "Hurl Flame",
-    "desc": "Ranged Spell Attack: +5 to hit, range 150 ft., one target. Hit: 10 (3d6) fire damage. If the target is a flammable object that isn't being worn or carried, it also catches fire.",
-    "actionRange": "150",
-    "numTarget": 1,
-    "shape": "",
-    "rolls": {
-      "rollType": "toHit",
-      "saveType": "",
-      "halfSave": false,
-      "saveDC": "",
-      "damage": "3d6",
-      "attackBonus": 5,
-      "damMod": 0
-    },
-    "damType": ["fire"],
-    "conditions": [""],
-    "statusEffect": [],
-    "lingEffect": {},
-    "extraEffect": {},
-    "lingSave": {},
-    "actionCost": "action",
-    "recharge": "",
-    "specialNotes": [],
-    "extraDamage": []
-  }
-],
+            {
+                "name": "Claw",
+                "desc": "Melee Weapon Attack: +6 to hit, reach 5 ft., one target. Hit: 6 (1d6 + 3) piercing damage.",
+                "actionRange": "5",
+                "numTarget": 1,
+                "shape": "",
+                "rolls": {
+                    "rollType": "toHit",
+                    "saveType": "",
+                    "halfSave": false,
+                    "saveDC": "",
+                    "damage": "1d6",
+                    "attackBonus": 6,
+                    "damMod": 3
+                },
+                "damType": [
+                    "piercing"
+                ],
+                "conditions": [
+                    ""
+                ],
+                "statusEffect": [],
+                "lingEffect": {},
+                "extraEffect": {},
+                "lingSave": {},
+                "actionCost": "action",
+                "recharge": "",
+                "specialNotes": [],
+                "extraDamage": []
+            },
+            {
+                "name": "Tail",
+                "desc": "Melee Weapon Attack: +6 to hit, reach 5 ft., one target. Hit: 10 (2d6 + 3) piercing damage.",
+                "actionRange": "5",
+                "numTarget": 1,
+                "shape": "",
+                "rolls": {
+                    "rollType": "toHit",
+                    "saveType": "",
+                    "halfSave": false,
+                    "saveDC": "",
+                    "damage": "2d6",
+                    "attackBonus": 6,
+                    "damMod": 3
+                },
+                "damType": [
+                    "piercing"
+                ],
+                "conditions": [
+                    ""
+                ],
+                "statusEffect": [],
+                "lingEffect": {},
+                "extraEffect": {},
+                "lingSave": {},
+                "actionCost": "action",
+                "recharge": "",
+                "specialNotes": [],
+                "extraDamage": []
+            },
+            {
+                "name": "Hurl Flame",
+                "desc": "Ranged Spell Attack: +5 to hit, range 150 ft., one target. Hit: 10 (3d6) fire damage. If the target is a flammable object that isn't being worn or carried, it also catches fire.",
+                "actionRange": "150",
+                "numTarget": 1,
+                "shape": "",
+                "rolls": {
+                    "rollType": "toHit",
+                    "saveType": "",
+                    "halfSave": false,
+                    "saveDC": "",
+                    "damage": "3d6",
+                    "attackBonus": 5,
+                    "damMod": 0
+                },
+                "damType": [
+                    "fire"
+                ],
+                "conditions": [
+                    ""
+                ],
+                "statusEffect": [],
+                "lingEffect": {},
+                "extraEffect": {},
+                "lingSave": {},
+                "actionCost": "action",
+                "recharge": "",
+                "specialNotes": [],
+                "extraDamage": []
+            }
+        ],
         "legActions": [],
         "spellInfo": {},
         "multiattack": {
@@ -7679,84 +7717,94 @@
         "magicResist": false,
         "lairAction": false,
         "actions": [
-  {
-    "name": "Beard",
-    "desc": "Melee Weapon Attack: +5 to hit, reach 5 ft., one creature. Hit: 6 (1d8 + 2) piercing damage, and the target must succeed on a DC 12 Constitution saving throw or be poisoned for 1 minute. While poisoned in this way, the target can't regain hit points. The target can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success.",
-    "actionRange": "5",
-    "numTarget": 1,
-    "shape": "",
-    "rolls": {
-      "rollType": "toHit",
-      "saveType": "",
-      "halfSave": false,
-      "saveDC": "",
-      "damage": "1d8",
-      "attackBonus": 5,
-      "damMod": 2
-    },
-    "damType": ["piercing"],
-    "conditions": ["poisoned"],
-    "statusEffect": [],
-    "lingEffect": {},
-    "extraEffect": {
-      "rollType": "save",
-      "saveType" : "CON",
-      "halfSave": false,
-      "saveDC": "12",
-      "damage": "",
-      "attackBonus": 0,
-      "damMod": 0,
-      "damType": [],
-      "conditions": ["poisoned"],
-      "statusEffect": []
-    },
-    "lingSave": {
-      "saveType" : "CON",
-      "saveDC": "12"
-    },
-    "actionCost": "action",
-    "recharge": "",
-    "specialNotes": [],
-    "extraDamage": []
-  },
-  {
-    "name": "Glaive",
-    "desc": "Melee Weapon Attack: +5 to hit, reach 10 ft., one target. Hit: 8 (1d10 + 3) slashing damage. If the target is a creature other than an undead or a construct, it must succeed on a DC 12 Constitution saving throw or lose 5 (1d10) hit points at the start of each of its turns due to an infernal wound.",
-    "actionRange": "10",
-    "numTarget": 1,
-    "shape": "",
-    "rolls": {
-      "rollType": "toHit",
-      "saveType": "",
-      "halfSave": false,
-      "saveDC": "",
-      "damage": "1d10",
-      "attackBonus": 5,
-      "damMod": 3
-    },
-    "damType": ["slashing"],
-    "conditions": [],
-    "statusEffect": [],
-    "lingEffect": {},
-    "extraEffect": {
-      "rollType": "save",
-      "saveType" : "CON",
-      "halfSave": false,
-      "saveDC": "12",
-      "damage": "1d10",
-      "attackBonus": 0,
-      "damMod": 6,
-      "damType": ["fire"],
-      "conditions": [],
-      "statusEffect": []
-    },
-    "lingSave": {},
-    "actionCost": "action",
-    "recharge": "",
-    "specialNotes": [],
-    "extraDamage": []
-  }
-],
+            {
+                "name": "Beard",
+                "desc": "Melee Weapon Attack: +5 to hit, reach 5 ft., one creature. Hit: 6 (1d8 + 2) piercing damage, and the target must succeed on a DC 12 Constitution saving throw or be poisoned for 1 minute. While poisoned in this way, the target can't regain hit points. The target can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success.",
+                "actionRange": "5",
+                "numTarget": 1,
+                "shape": "",
+                "rolls": {
+                    "rollType": "toHit",
+                    "saveType": "",
+                    "halfSave": false,
+                    "saveDC": "",
+                    "damage": "1d8",
+                    "attackBonus": 5,
+                    "damMod": 2
+                },
+                "damType": [
+                    "piercing"
+                ],
+                "conditions": [
+                    "poisoned"
+                ],
+                "statusEffect": [],
+                "lingEffect": {},
+                "extraEffect": {
+                    "rollType": "save",
+                    "saveType": "CON",
+                    "halfSave": false,
+                    "saveDC": "12",
+                    "damage": "",
+                    "attackBonus": 0,
+                    "damMod": 0,
+                    "damType": [],
+                    "conditions": [
+                        "poisoned"
+                    ],
+                    "statusEffect": []
+                },
+                "lingSave": {
+                    "saveType": "CON",
+                    "saveDC": "12"
+                },
+                "actionCost": "action",
+                "recharge": "",
+                "specialNotes": [],
+                "extraDamage": []
+            },
+            {
+                "name": "Glaive",
+                "desc": "Melee Weapon Attack: +5 to hit, reach 10 ft., one target. Hit: 8 (1d10 + 3) slashing damage. If the target is a creature other than an undead or a construct, it must succeed on a DC 12 Constitution saving throw or lose 5 (1d10) hit points at the start of each of its turns due to an infernal wound.",
+                "actionRange": "10",
+                "numTarget": 1,
+                "shape": "",
+                "rolls": {
+                    "rollType": "toHit",
+                    "saveType": "",
+                    "halfSave": false,
+                    "saveDC": "",
+                    "damage": "1d10",
+                    "attackBonus": 5,
+                    "damMod": 3
+                },
+                "damType": [
+                    "slashing"
+                ],
+                "conditions": [],
+                "statusEffect": [],
+                "lingEffect": {},
+                "extraEffect": {
+                    "rollType": "save",
+                    "saveType": "CON",
+                    "halfSave": false,
+                    "saveDC": "12",
+                    "damage": "1d10",
+                    "attackBonus": 0,
+                    "damMod": 6,
+                    "damType": [
+                        "fire"
+                    ],
+                    "conditions": [],
+                    "statusEffect": []
+                },
+                "lingSave": {},
+                "actionCost": "action",
+                "recharge": "",
+                "specialNotes": [],
+                "extraDamage": []
+            }
+        ],
         "legActions": [],
         "spellInfo": {},
         "multiattack": {
@@ -7869,7 +7917,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "14",
                     "damage": "6d6",
@@ -8128,7 +8176,7 @@
                 "shape": "line that is 5 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "11",
                     "damage": "5d8",
@@ -8474,7 +8522,7 @@
                 "shape": "line that is 5 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "12",
                     "damage": "4d10",
@@ -8629,7 +8677,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": false,
                         "saveDC": "14",
                         "damage": "0",
@@ -8749,7 +8797,7 @@
                 "shape": "line that is 5 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "11",
                     "damage": "4d6",
@@ -8849,7 +8897,7 @@
                 "shape": "line that is 5 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "12",
                     "damage": "3d10",
@@ -9126,7 +9174,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": false,
                     "saveDC": "or",
                     "damage": "3d6",
@@ -9566,7 +9614,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "15",
                     "damage": "7d8",
@@ -9653,7 +9701,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "13",
                     "damage": "",
@@ -9670,7 +9718,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "saveDC": "13",
                     "timing": "end_of_turn"
                 },
@@ -9728,7 +9776,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": false,
                     "saveDC": "on",
                     "damage": "",
@@ -9832,7 +9880,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "13",
                     "damage": "",
@@ -9969,7 +10017,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "charisma.",
+            "type": "CHA",
             "DC": "",
             "attackRoll": "0",
             "spells": [
@@ -10075,7 +10123,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "11",
                         "damage": "0",
@@ -10340,7 +10388,7 @@
                 "shape": "line that is 5 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "11",
                     "damage": "4d8",
@@ -10357,7 +10405,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "saveDC": "11",
                     "timing": "end_of_turn"
                 },
@@ -10432,7 +10480,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": false,
                         "saveDC": "13",
                         "damage": "0",
@@ -10517,7 +10565,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "charisma",
+            "type": "CHA",
             "DC": "14",
             "attackRoll": "0",
             "spells": [
@@ -10745,7 +10793,7 @@
         "actions": [],
         "legActions": [],
         "spellInfo": {
-            "type": "wisdom",
+            "type": "WIS",
             "DC": "11",
             "attackRoll": "3",
             "spells": [
@@ -11083,7 +11131,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": false,
                         "saveDC": "12",
                         "damage": "0",
@@ -11112,7 +11160,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "intelligence",
+            "type": "INT",
             "DC": "11",
             "attackRoll": "0",
             "spells": [
@@ -11298,7 +11346,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "charisma",
+            "type": "CHA",
             "DC": "17",
             "attackRoll": "0",
             "spells": [
@@ -11380,7 +11428,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "STR",
+                        "saveType": "STR",
                         "halfSave": false,
                         "saveDC": "13",
                         "damage": "0",
@@ -11447,7 +11495,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "STR",
+                    "saveType": "STR",
                     "halfSave": false,
                     "saveDC": "18",
                     "damage": "",
@@ -11472,7 +11520,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "charisma",
+            "type": "CHA",
             "DC": "17",
             "attackRoll": "9",
             "spells": [
@@ -11758,7 +11806,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "STR",
+                        "saveType": "STR",
                         "halfSave": false,
                         "saveDC": "20",
                         "damage": "0",
@@ -11788,7 +11836,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "18",
                     "damage": "15d6",
@@ -11901,7 +11949,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "11",
                     "damage": "",
@@ -12045,7 +12093,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "wisdom",
+            "type": "WIS",
             "DC": "13",
             "attackRoll": "0",
             "spells": [
@@ -12157,7 +12205,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": false,
                         "saveDC": "13",
                         "damage": "0",
@@ -12182,7 +12230,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "charisma",
+            "type": "CHA",
             "DC": "11",
             "attackRoll": "0",
             "spells": [
@@ -12267,7 +12315,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "wisdom",
+            "type": "WIS",
             "DC": "12",
             "attackRoll": "4",
             "spells": [
@@ -12382,7 +12430,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "14",
                     "damage": "",
@@ -12399,7 +12447,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "saveDC": "14",
                     "timing": ""
                 },
@@ -12411,7 +12459,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "charisma",
+            "type": "CHA",
             "DC": "14",
             "attackRoll": "0",
             "spells": [
@@ -12483,7 +12531,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "STR",
+                    "saveType": "STR",
                     "halfSave": false,
                     "saveDC": "and",
                     "damage": "",
@@ -12672,7 +12720,7 @@
                 "shape": "cone of blinding dust",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": false,
                     "saveDC": "10",
                     "damage": "",
@@ -12689,7 +12737,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "saveDC": "10",
                     "timing": "end_of_turn"
                 },
@@ -12907,7 +12955,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "charisma",
+            "type": "CHA",
             "DC": "15",
             "attackRoll": "7",
             "spells": [
@@ -13207,7 +13255,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": false,
                         "saveDC": "14",
                         "damage": "0",
@@ -14045,7 +14093,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": false,
                     "saveDC": "12",
                     "damage": "3d6",
@@ -14166,7 +14214,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": false,
                         "saveDC": "10",
                         "damage": "0",
@@ -14297,7 +14345,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "13",
                     "damage": "1d4",
@@ -14314,7 +14362,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "saveDC": "13",
                     "timing": "end_of_turn"
                 },
@@ -14331,7 +14379,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "CHA",
+                    "saveType": "CHA",
                     "halfSave": false,
                     "saveDC": "13",
                     "damage": "",
@@ -14430,7 +14478,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "10",
                     "damage": "2d4",
@@ -14447,7 +14495,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "saveDC": "10",
                     "timing": "end_of_turn"
                 },
@@ -14804,7 +14852,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "11",
                         "damage": "0",
@@ -15053,7 +15101,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "STR",
+                        "saveType": "STR",
                         "halfSave": false,
                         "saveDC": "16",
                         "damage": "0",
@@ -15859,7 +15907,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "11",
                         "damage": "10",
@@ -16011,7 +16059,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "10",
                         "damage": "0",
@@ -16126,7 +16174,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "12",
                         "damage": "22",
@@ -16358,7 +16406,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "11",
                         "damage": "9",
@@ -16659,7 +16707,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "11",
                         "damage": "10",
@@ -16811,7 +16859,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "11",
                         "damage": "7",
@@ -16878,7 +16926,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": false,
                     "saveDC": "13",
                     "damage": "",
@@ -17007,7 +17055,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "intelligence",
+            "type": "INT",
             "DC": "16",
             "attackRoll": "0",
             "spells": [
@@ -17110,7 +17158,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "STR",
+                        "saveType": "STR",
                         "halfSave": false,
                         "saveDC": "15",
                         "damage": "0",
@@ -17502,7 +17550,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "13",
                     "damage": "4d10",
@@ -17519,7 +17567,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "saveDC": "13",
                     "timing": "end_of_turn"
                 },
@@ -17636,7 +17684,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "13",
                     "damage": "",
@@ -17653,7 +17701,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "saveDC": "13",
                     "timing": ""
                 },
@@ -17819,7 +17867,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "11",
                     "damage": "6d6",
@@ -17974,7 +18022,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "charisma",
+            "type": "CHA",
             "DC": "12",
             "attackRoll": "0",
             "spells": [
@@ -18343,7 +18391,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "15",
                         "damage": "45",
@@ -18391,7 +18439,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "15",
                         "damage": "45",
@@ -18416,7 +18464,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "wisdom",
+            "type": "WIS",
             "DC": "16",
             "attackRoll": "8",
             "spells": [
@@ -18575,7 +18623,7 @@
             }
         ],
         "spellInfo": {
-            "type": "intelligence",
+            "type": "INT",
             "DC": "16",
             "attackRoll": "8",
             "spells": [
@@ -18754,7 +18802,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "15",
                     "damage": "7d6",
@@ -18858,7 +18906,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "11",
                     "damage": "",
@@ -18875,7 +18923,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "saveDC": "11",
                     "timing": "end_of_turn"
                 },
@@ -19045,7 +19093,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "12",
                     "damage": "6d6",
@@ -19491,7 +19539,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": false,
                         "saveDC": "10",
                         "damage": "0",
@@ -19576,7 +19624,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "17",
                         "damage": "0",
@@ -20047,7 +20095,7 @@
                 "shape": "cone of cold air",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "10",
                     "damage": "2d4",
@@ -20164,7 +20212,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "11",
                         "damage": "10",
@@ -20331,7 +20379,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "19",
                     "damage": "10d8",
@@ -20769,7 +20817,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": false,
                     "saveDC": "18",
                     "damage": "1d6",
@@ -20799,7 +20847,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "23",
                     "damage": "4d10",
@@ -20869,7 +20917,7 @@
                     "shape": "",
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "DEX",
+                        "saveType": "DEX",
                         "halfSave": true,
                         "saveDC": "23",
                         "damage": "4d10",
@@ -20976,7 +21024,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "on",
                     "damage": "",
@@ -21001,7 +21049,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "charisma",
+            "type": "CHA",
             "DC": "13",
             "attackRoll": "0",
             "spells": [
@@ -21171,7 +21219,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": false,
                         "saveDC": "18",
                         "damage": "0",
@@ -21233,7 +21281,7 @@
                     "extraEffect": {
                         "rolls": {
                             "rollType": "save",
-                            "saveType" : "CON",
+                            "saveType": "CON",
                             "halfSave": false,
                             "saveDC": "18",
                             "damage": "0",
@@ -21273,7 +21321,7 @@
             }
         ],
         "spellInfo": {
-            "type": "intelligence",
+            "type": "INT",
             "DC": "20",
             "attackRoll": "12",
             "spells": [
@@ -21757,7 +21805,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "intelligence",
+            "type": "INT",
             "DC": "14",
             "attackRoll": "6",
             "spells": [
@@ -21911,7 +21959,7 @@
                 "shape": "cone of fire",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "11",
                     "damage": "2d6",
@@ -22444,7 +22492,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "STR",
+                        "saveType": "STR",
                         "halfSave": false,
                         "saveDC": "11",
                         "damage": "0",
@@ -23160,7 +23208,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "11",
                     "damage": "",
@@ -23231,7 +23279,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "16",
                     "damage": "",
@@ -23266,7 +23314,7 @@
                     "shape": "",
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "WIS",
+                        "saveType": "WIS",
                         "halfSave": false,
                         "saveDC": "16",
                         "damage": "",
@@ -23312,7 +23360,7 @@
             }
         ],
         "spellInfo": {
-            "type": "wisdom",
+            "type": "WIS",
             "DC": "17",
             "attackRoll": "9",
             "spells": [
@@ -23465,7 +23513,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "15",
                     "damage": "",
@@ -23482,7 +23530,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "saveDC": "15",
                     "timing": "end_of_turn"
                 },
@@ -23727,7 +23775,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "charisma",
+            "type": "CHA",
             "DC": "14",
             "attackRoll": "6",
             "spells": [
@@ -24356,7 +24404,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "charisma",
+            "type": "CHA",
             "DC": "13",
             "attackRoll": "0",
             "spells": [
@@ -24565,7 +24613,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "14",
                     "damage": "2d6",
@@ -24970,7 +25018,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "11",
                         "damage": "18",
@@ -25128,7 +25176,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "charisma",
+            "type": "CHA",
             "DC": "21",
             "attackRoll": "0",
             "spells": [
@@ -25238,7 +25286,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "charisma",
+            "type": "CHA",
             "DC": "20",
             "attackRoll": "0",
             "spells": [
@@ -25411,7 +25459,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "10",
                         "damage": "5",
@@ -25650,7 +25698,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "wisdom",
+            "type": "WIS",
             "DC": "13",
             "attackRoll": "5",
             "spells": [
@@ -25790,7 +25838,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": false,
                         "saveDC": "11",
                         "damage": "0",
@@ -25875,7 +25923,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "19",
                         "damage": "42",
@@ -25969,7 +26017,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "10",
                         "damage": "0",
@@ -26003,7 +26051,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "10",
                     "damage": "",
@@ -26020,7 +26068,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "saveDC": "10",
                     "timing": "end_of_turn"
                 },
@@ -26165,7 +26213,7 @@
         "actions": [],
         "legActions": [],
         "spellInfo": {
-            "type": "charisma",
+            "type": "CHA",
             "DC": "18",
             "attackRoll": "10",
             "spells": [
@@ -26439,7 +26487,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "13",
                     "damage": "7d6",
@@ -26612,7 +26660,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "15",
                     "damage": "6d6",
@@ -26911,7 +26959,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "STR",
+                        "saveType": "STR",
                         "halfSave": true,
                         "saveDC": "and",
                         "damage": "0",
@@ -27109,7 +27157,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": false,
                     "saveDC": "11",
                     "damage": "",
@@ -27640,7 +27688,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "9",
                         "damage": "4",
@@ -27808,7 +27856,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "11",
                     "damage": "",
@@ -28008,7 +28056,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "14",
                     "damage": "2d8",
@@ -28216,7 +28264,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "13",
                     "damage": "4d8",
@@ -28233,7 +28281,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "saveDC": "13",
                     "timing": "end_of_turn"
                 },
@@ -28405,7 +28453,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "15",
                         "damage": "0",
@@ -28512,7 +28560,7 @@
             }
         ],
         "spellInfo": {
-            "type": "charisma",
+            "type": "CHA",
             "DC": "25",
             "attackRoll": "0",
             "spells": [
@@ -28610,7 +28658,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "10",
                         "damage": "0",
@@ -28695,7 +28743,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "9",
                         "damage": "0",
@@ -28780,7 +28828,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "13",
                         "damage": "31",
@@ -28805,7 +28853,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "intelligence",
+            "type": "INT",
             "DC": "14",
             "attackRoll": "6",
             "spells": [
@@ -28962,7 +29010,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": false,
                         "saveDC": "10",
                         "damage": "0",
@@ -28992,7 +29040,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "CHA",
+                    "saveType": "CHA",
                     "halfSave": false,
                     "saveDC": "10",
                     "damage": "",
@@ -29196,7 +29244,7 @@
                 "shape": "cone of scalding steam",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "10",
                     "damage": "1d8",
@@ -29380,7 +29428,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "STR",
+                        "saveType": "STR",
                         "halfSave": false,
                         "saveDC": "17",
                         "damage": "0",
@@ -29451,7 +29499,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "17",
                     "damage": "",
@@ -29468,7 +29516,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "saveDC": "17",
                     "timing": "end_of_turn"
                 },
@@ -29559,7 +29607,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "17",
                     "damage": "12d8",
@@ -29587,7 +29635,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "charisma",
+            "type": "CHA",
             "DC": "17",
             "attackRoll": "0",
             "spells": [
@@ -29693,7 +29741,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "15",
                     "damage": "",
@@ -29710,7 +29758,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "saveDC": "15",
                     "timing": ""
                 },
@@ -29727,7 +29775,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "15",
                     "damage": "",
@@ -30110,7 +30158,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "10",
                         "damage": "14",
@@ -30590,7 +30638,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "STR",
+                        "saveType": "STR",
                         "halfSave": false,
                         "saveDC": "20",
                         "damage": "0",
@@ -30620,7 +30668,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "17",
                     "damage": "",
@@ -30637,7 +30685,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "saveDC": "17",
                     "timing": "end_of_turn"
                 },
@@ -30654,7 +30702,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "20",
                     "damage": "16d6",
@@ -31542,7 +31590,7 @@
             }
         ],
         "spellInfo": {
-            "type": "charisma",
+            "type": "CHA",
             "DC": "14",
             "attackRoll": "0",
             "spells": [
@@ -31723,7 +31771,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "17",
                     "damage": "",
@@ -31740,7 +31788,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "WIS",
+                    "saveType": "WIS",
                     "saveDC": "17",
                     "timing": ""
                 },
@@ -32148,7 +32196,7 @@
                 "shape": "-radius cloud of toxic spores extends out from the vrock. the spores spread around corners",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "14",
                     "damage": "1d10",
@@ -32171,7 +32219,7 @@
                 },
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "saveDC": "14",
                     "timing": "end_of_turn"
                 },
@@ -32190,7 +32238,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "14",
                     "damage": "",
@@ -32813,7 +32861,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": false,
                         "saveDC": "12",
                         "damage": "0",
@@ -32928,7 +32976,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": false,
                         "saveDC": "11",
                         "damage": "0",
@@ -33103,7 +33151,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": false,
                         "saveDC": "13",
                         "damage": "0",
@@ -33434,7 +33482,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "12",
                     "damage": "5d8",
@@ -33720,7 +33768,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "STR",
+                        "saveType": "STR",
                         "halfSave": false,
                         "saveDC": "14",
                         "damage": "0",
@@ -33750,7 +33798,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "12",
                     "damage": "4d8",
@@ -33838,7 +33886,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "STR",
+                        "saveType": "STR",
                         "halfSave": false,
                         "saveDC": "11",
                         "damage": "0",
@@ -33923,7 +33971,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "STR",
+                        "saveType": "STR",
                         "halfSave": false,
                         "saveDC": "13",
                         "damage": "0",
@@ -34008,7 +34056,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "14",
                         "damage": "0",
@@ -34153,7 +34201,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType" : "CON",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "15",
                         "damage": "24",
@@ -34334,7 +34382,7 @@
                 "shape": "line that is 5 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "14",
                     "damage": "11d8",
@@ -34447,7 +34495,7 @@
                 "shape": "line that is 5 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "16",
                     "damage": "10d10",
@@ -34560,7 +34608,7 @@
                 "shape": "line that is 5 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "14",
                     "damage": "12d6",
@@ -34673,7 +34721,7 @@
                 "shape": "line that is 5 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "15",
                     "damage": "10d10",
@@ -34786,7 +34834,7 @@
                 "shape": "line that is 5 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "14",
                     "damage": "9d8",
@@ -34803,7 +34851,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "saveDC": "14",
                     "timing": "end_of_turn"
                 },
@@ -34903,7 +34951,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "17",
                     "damage": "10d10",
@@ -34920,7 +34968,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "saveDC": "17",
                     "timing": "end_of_turn"
                 },
@@ -35020,7 +35068,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "14",
                     "damage": "12d6",
@@ -35133,7 +35181,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "DEX",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "17",
                     "damage": "16d6",
@@ -35246,7 +35294,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "17",
                     "damage": "12d8",
@@ -35263,7 +35311,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "saveDC": "17",
                     "timing": "end_of_turn"
                 },
@@ -35363,7 +35411,7 @@
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType" : "CON",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "15",
                     "damage": "10d8",

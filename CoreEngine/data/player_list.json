@@ -123,5 +123,321 @@
             "battleaxe ONEHAND",
             "battleaxe TWOHAND"
         ]
+    },
+    {
+        "stats": {
+            "name": "Test Fighter",
+            "level": "11",
+            "ac": "16",
+            "hp": "103",
+            "maxhp": "112",
+            "cid": "20694a3d-59fe-4b10-a1e6-ee383e3d6531",
+            "position": [
+                [
+                    0,
+                    0
+                ]
+            ],
+            "characterClass": "fighter",
+            "conImmunes": [],
+            "activeStatusEffects": [],
+            "activeConditions": [],
+            "saveProfs": {
+                "STR": "0",
+                "DEX": "4",
+                "CON": "2",
+                "INT": "-1",
+                "WIS": "5",
+                "CHA": "2"
+            },
+            "damImmunes": [],
+            "damResists": [],
+            "damVulns": [],
+            "statArray": {
+                "STR": "20",
+                "DEX": "18",
+                "CON": "16",
+                "INT": "14",
+                "WIS": "12",
+                "CHA": "10"
+            },
+            "spellSlots": []
+        },
+        "spells": [],
+        "weapons": [
+            "warhammer",
+            "warhammer"
+        ],
+        "secondWindCharges": 0,
+        "actionSurgeCharges": 0,
+        "extraAttackAmt": 0
+    },
+    {
+        "stats": {
+            "name": "Test Warlock",
+            "level": "3",
+            "ac": "12",
+            "hp": "21",
+            "maxhp": "27",
+            "cid": "cdaad449-bd27-467b-95fd-415c37d33c3c",
+            "position": [
+                [
+                    0,
+                    0
+                ]
+            ],
+            "characterClass": "warlock",
+            "conImmunes": [],
+            "activeStatusEffects": [],
+            "activeConditions": [],
+            "saveProfs": {
+                "STR": "0",
+                "DEX": "4",
+                "CON": "2",
+                "INT": "-1",
+                "WIS": "5",
+                "CHA": "2"
+            },
+            "damImmunes": [],
+            "damResists": [],
+            "damVulns": [],
+            "statArray": {
+                "STR": "12",
+                "DEX": "12",
+                "CON": "12",
+                "INT": "12",
+                "WIS": "12",
+                "CHA": "12"
+            },
+            "spellSlots": [
+                [
+                    0,
+                    0
+                ],
+                [
+                    2,
+                    2
+                ],
+                [
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0
+                ]
+            ]
+        },
+        "spells": [
+            "bane",
+            "burning hands",
+            "witchbolt",
+            "wrathful smite",
+            "cloud of daggers",
+            "hold person",
+            "invisibility",
+            "mirror image",
+            "shatter"
+        ],
+        "weapons": []
+    },
+    {
+        "stats": {
+            "name": "Corr3ct",
+            "level": "12",
+            "ac": "10",
+            "hp": "88",
+            "maxhp": "95",
+            "cid": "56d4035c-57d0-4e34-b68f-74ff8b83daac",
+            "position": [
+                [
+                    0,
+                    0
+                ]
+            ],
+            "characterClass": "ranger",
+            "conImmunes": [],
+            "activeStatusEffects": [],
+            "activeConditions": [],
+            "saveProfs": {
+                "STR": "0",
+                "DEX": "4",
+                "CON": "2",
+                "INT": "-1",
+                "WIS": "5",
+                "CHA": "2"
+            },
+            "damImmunes": [],
+            "damResists": [],
+            "damVulns": [],
+            "statArray": {
+                "STR": "12",
+                "DEX": "12",
+                "CON": "12",
+                "INT": "12",
+                "WIS": "12",
+                "CHA": "12"
+            },
+            "spellSlots": [
+                [
+                    4,
+                    4
+                ],
+                [
+                    3,
+                    3
+                ],
+                [
+                    3,
+                    3
+                ],
+                [
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0
+                ]
+            ]
+        },
+        "spells": [
+            "charm person"
+        ],
+        "weapons": [
+            "dagger",
+            "quarterstaff",
+            "quarterstaff",
+            "spear",
+            "spear"
+        ]
+    },
+    {
+        "stats": {
+            "name": "Gerald",
+            "level": "9",
+            "ac": "12",
+            "hp": "66",
+            "maxhp": "73",
+            "cid": "5ecebd31-f47a-436a-bb0b-3b2cec18470f",
+            "position": [
+                [
+                    0,
+                    0
+                ]
+            ],
+            "characterClass": "bard",
+            "conImmunes": [],
+            "activeStatusEffects": [],
+            "activeConditions": [],
+            "saveProfs": {
+                "STR": "0",
+                "DEX": "4",
+                "CON": "2",
+                "INT": "-1",
+                "WIS": "5",
+                "CHA": "2"
+            },
+            "damImmunes": [],
+            "damResists": [],
+            "damVulns": [],
+            "statArray": {
+                "STR": "18",
+                "DEX": "16",
+                "CON": "14",
+                "INT": "12",
+                "WIS": "3",
+                "CHA": "10"
+            },
+            "spellSlots": [
+                [
+                    4,
+                    4
+                ],
+                [
+                    3,
+                    3
+                ],
+                [
+                    3,
+                    3
+                ],
+                [
+                    3,
+                    3
+                ],
+                [
+                    1,
+                    1
+                ],
+                [
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0
+                ]
+            ]
+        },
+        "spells": [
+            "true strike",
+            "dissonant whispers",
+            "heat metal",
+            "fear",
+            "glyph of warding",
+            "hypnotic pattern",
+            "mass cure wounds"
+        ],
+        "weapons": [
+            "flail"
+        ],
+        "bardicCharges": 0,
+        "bardicDieType": 0,
+        "magicalSecrets": []
     }
 ]
