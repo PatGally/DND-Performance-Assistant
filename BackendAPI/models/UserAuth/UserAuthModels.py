@@ -12,14 +12,14 @@ class UserPublic(BaseModel):
     uid : str
     username: str
     email: EmailStr | None = None
-    full_name: str | None = None
     disabled: bool = False
+    encounter_ids: list[str] = []
+    player_ids: list[str] = []
 class UserCreate(BaseModel):
     # what you accept on signup
     username: str = Field(..., min_length=1, max_length=50)
     password: str = Field(..., min_length=1, max_length=128)
     email: EmailStr | None = None
-    full_name: Optional[str | None] = None
 class UserInDB(UserPublic):
     #local account only
     hashed_password: Optional[str | None] = None
