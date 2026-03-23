@@ -6,7 +6,7 @@ import uuid
 from fastapi.middleware.cors import CORSMiddleware
 
 from logs.loggingConfig import setupLogging
-from BackendAPI.models import ActionRequest, Monster, Player, Encounter, Spell, Weapon, MonAction
+from BackendAPI.models import Monster, Player, Encounter, MonAction
 from BackendAPI.models.DNDClasses import Barbarian, Bard, Cleric, Druid, Fighter, Paladin, Sorcerer
 
 from dotenv import load_dotenv
@@ -22,7 +22,7 @@ from passlib.context import CryptContext
 from google.oauth2 import id_token as google_id_token
 from google.auth.transport import requests as google_requests
 from pathlib import Path
-from .models.UserAuth import (Token, TokenData, UserCreate,
+from .models.UserAuth import (TokenData, UserCreate,
                              UserInDB, UserPublic, ChangePasswordRequest, SetDisabledRequest, GoogleAuthRequest)
 
 setupLogging()
@@ -39,7 +39,7 @@ COOKIE_SECURE = os.getenv("COOKIE_SECURE", "false").lower() == "true"
 COOKIE_SAMESITE = os.getenv("COOKIE_SAMESITE", "lax")
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 REFRESH_COOKIE_NAME = "refresh_token"
-REFRESH_COOKIE_PATH = "/auth/refresh"
+REFRESH_COOKIE_PATH = "/auth"
 USERS_PATH = Path("CoreEngine/data/user_list.json")
 REFRESH_STORE_PATH = Path("CoreEngine/data/refresh_store.json")
 ORIGINS = [os.getenv("ORIGIN1"), os.getenv("ORIGIN2")]
@@ -418,18 +418,64 @@ def saveRefreshStore(store: dict[str, Any]) -> None:
     tmp = REFRESH_STORE_PATH.with_suffix(".tmp")
     tmp.write_text(json.dumps(store, indent=2), encoding="utf-8")
     tmp.replace(REFRESH_STORE_PATH)
-
-def setActiveRefreshJti(username: str, jti: str, expTs: int) -> None:
+def addRefreshSession(username: str, jti: str, exp: int) -> None:
     store = loadRefreshStore()
-    store[username] = {"jti": jti, "exp": expTs}
+    userEntry = store.setdefault(username, {})
+    sessions = userEntry.setdefault("sessions", {})
+    sessions[jti] = {"exp": exp}
     saveRefreshStore(store)
-def getActiveRefreshJti(username: str) -> dict[str, Any] | None:
+def hasRefreshSession(username: str, jti: str) -> bool:
     store = loadRefreshStore()
-    return store.get(username)
-def clearActiveRefreshJti(username: str) -> None:
+    userEntry = store.get(username, {})
+    sessions = userEntry.get("sessions", {})
+    return jti in sessions
+def replaceRefreshSession(username: str, oldJti: str, newJti: str, newExp: int) -> bool:
+    store = loadRefreshStore()
+    userEntry = store.get(username, {})
+    sessions = userEntry.get("sessions", {})
+
+    if oldJti not in sessions:
+        return False
+
+    del sessions[oldJti]
+    sessions[newJti] = {"exp": newExp}
+    saveRefreshStore(store)
+    return True
+def revokeRefreshSession(username: str, jti: str) -> None:
+    store = loadRefreshStore()
+    userEntry = store.get(username, {})
+    sessions = userEntry.get("sessions", {})
+
+    if jti in sessions:
+        del sessions[jti]
+
+    if not sessions and username in store:
+        del store[username]
+
+    saveRefreshStore(store)
+def revokeAllRefreshSessions(username: str) -> None:
     store = loadRefreshStore()
     if username in store:
         del store[username]
+        saveRefreshStore(store)
+def cleanupExpiredRefreshSessions() -> None:
+    nowTs = int(datetime.now(timezone.utc).timestamp())
+    store = loadRefreshStore()
+    dirty = False
+
+    for username in list(store.keys()):
+        sessions = store[username].get("sessions", {})
+        expiredJtis = [jti for jti, meta in sessions.items() if meta.get("exp", 0) <= nowTs]
+
+        for jti in expiredJtis:
+            del sessions[jti]
+            dirty = True
+
+        if not sessions:
+            del store[username]
+            dirty = True
+
+    if dirty:
         saveRefreshStore(store)
 
 def createAccessToken(*, subject: str, expiresMinutes: int = ACCESS_TOKEN_EXPIRE_MINUTES) -> str:
@@ -544,7 +590,7 @@ async def issueAccessAuth(user, response):
     refresh, jti = createRefreshToken(subject=user.username)
 
     refreshPayload = jwt.decode(refresh, REFRESH_SECRET_KEY, algorithms=[ALGORITHM])
-    setActiveRefreshJti(user.username, jti, refreshPayload["exp"])
+    addRefreshSession(user.username, jti, refreshPayload["exp"])
 
     response.set_cookie(
         key=REFRESH_COOKIE_NAME,
@@ -568,13 +614,17 @@ async def signup(userIn: UserCreate):
     return userToPublic(uDb)
 @app.post("/auth/login")
 async def login(response: Response, formData: OAuth2PasswordRequestForm = Depends()):
+    cleanupExpiredRefreshSessions()
     user = authenticateUser(userDb, formData.username, formData.password)
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password")
-
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password"
+        )
     return await issueAccessAuth(user, response)
 @app.post("/auth/google")
 async def authGoogle(body: GoogleAuthRequest, response: Response):
+    #Does both signin and signup logic for google accounts.
     if not GOOGLE_CLIENT_ID:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -609,35 +659,56 @@ async def authGoogle(body: GoogleAuthRequest, response: Response):
 
     return await issueAccessAuth(user, response)
 @app.post("/auth/refresh")
-async def refreshToken(response: Response, refreshToken: str | None = Cookie(default=None, alias=REFRESH_COOKIE_NAME)):
+async def refreshToken(
+    response: Response,
+    refreshToken: str | None = Cookie(default=None, alias=REFRESH_COOKIE_NAME)
+):
     if not refreshToken:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing refresh token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing refresh token"
+        )
 
     try:
         payload = jwt.decode(refreshToken, REFRESH_SECRET_KEY, algorithms=[ALGORITHM])
     except Exception:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token"
+        )
 
     if payload.get("type") != "refresh":
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Wrong token type")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Wrong token type"
+        )
 
     username = payload.get("sub")
-    jti = payload.get("jti")
-    if not username or not jti:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Malformed refresh token")
+    oldJti = payload.get("jti")
 
-    # server-side check (revocation/rotation)
-    active = getActiveRefreshJti(username)
-    if not active or active.get("jti") != jti:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token revoked")
+    if not username or not oldJti:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Malformed refresh token"
+        )
 
-    # issue new access token
+    if not hasRefreshSession(username, oldJti):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token revoked"
+        )
+
     access = createAccessToken(subject=username)
 
-    # ROTATE refresh token
     newRefresh, newJti = createRefreshToken(subject=username)
     newPayload = jwt.decode(newRefresh, REFRESH_SECRET_KEY, algorithms=[ALGORITHM])
-    setActiveRefreshJti(username, newJti, newPayload["exp"])
+
+    replaced = replaceRefreshSession(username, oldJti, newJti, newPayload["exp"])
+    if not replaced:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token revoked"
+        )
 
     response.set_cookie(
         key=REFRESH_COOKIE_NAME,
@@ -651,16 +722,23 @@ async def refreshToken(response: Response, refreshToken: str | None = Cookie(def
 
     return {"access_token": access, "token_type": "bearer"}
 @app.post("/auth/logout")
-async def logout(response: Response, refreshToken: str | None = Cookie(default=None, alias=REFRESH_COOKIE_NAME)):
+async def logout(
+    response: Response,
+    refreshToken: str | None = Cookie(default=None, alias=REFRESH_COOKIE_NAME)
+):
     if refreshToken:
         try:
             payload = jwt.decode(refreshToken, REFRESH_SECRET_KEY, algorithms=[ALGORITHM])
-            if payload.get("type") == "refresh" and payload.get("sub"):
-                clearActiveRefreshJti(payload["sub"])
+            if payload.get("type") == "refresh" and payload.get("sub") and payload.get("jti"):
+                revokeRefreshSession(payload["sub"], payload["jti"])
         except Exception:
             pass
 
-    response.delete_cookie(key=REFRESH_COOKIE_NAME, path=REFRESH_COOKIE_PATH)
+    response.delete_cookie(
+        key=REFRESH_COOKIE_NAME,
+        path=REFRESH_COOKIE_PATH
+    )
+
     return {"detail": "logged out"}
 @app.post("/auth/change-password", status_code=status.HTTP_204_NO_CONTENT)
 async def changePassword(body: ChangePasswordRequest, currentUser: UserInDB = Depends(getCurrentActiveUser)):
