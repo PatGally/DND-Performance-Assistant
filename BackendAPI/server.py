@@ -27,7 +27,14 @@ from .models.UserAuth import (TokenData, UserCreate,
 
 setupLogging()
 logger = logging.getLogger("backend")
-load_dotenv()
+
+load_dotenv(".env")
+
+env = os.getenv("ENV", "development")
+if env == "production":
+    load_dotenv(".env.production", override=True)
+else:
+    load_dotenv(".env.development", override=True)
 
 #USER VALIDATION
 ACCESS_SECRET_KEY = os.getenv("ACCESS_SECRET_KEY")
@@ -42,7 +49,7 @@ REFRESH_COOKIE_NAME = "refresh_token"
 REFRESH_COOKIE_PATH = "/auth"
 USERS_PATH = Path("CoreEngine/data/user_list.json")
 REFRESH_STORE_PATH = Path("CoreEngine/data/refresh_store.json")
-ORIGINS = [os.getenv("ORIGIN1"), os.getenv("ORIGIN2")]
+ORIGINS = [origin for origin in [os.getenv("ORIGIN1"), os.getenv("ORIGIN2")] if origin]
 
 def loadUserDb() -> dict:
     if not USERS_PATH.exists():
