@@ -3756,7 +3756,7 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
                     spellProb["probSuccess"] = 0 if spellProb["probSuccess"] < 0 else spellProb["probSuccess"]
                     spellProb["probSuccess"] = 1 if spellProb["probSuccess"] > 1 else spellProb["probSuccess"]
                     probToStr = f"{spellProb['probSuccess']}" if spellProb['probSuccess'] else f"0.0"
-                    probToStr += f" - {spellProb["probLingEffect"]}LE" if spellProb['probLingEffect'] else ""
+                    probToStr += f" - {spellProb['probLingEffect']}LE" if spellProb['probLingEffect'] else ""
                     probToStr += f" - {spellProb['probExtraEffect']}EE" if spellProb['probExtraEffect'] else ""
                     probToStr += f" - {spellProb['probLingSaves']}LS" if spellProb['probLingSaves'] else ""
                     probTargets = spellProb["target"] if spellProb["probSuccess"] != 0 else ""
