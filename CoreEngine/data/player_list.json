@@ -1,1084 +1,443 @@
 [
     {
         "stats": {
-            "statArray": {
-                "STR": 20,
-                "DEX": 18,
-                "CON": 16,
-                "INT": 14,
-                "WIS": 12,
-                "CHA": 10
-            },
-            "saveProfs": {
-                "STR": 20,
-                "DEX": 18,
-                "CON": 16,
-                "INT": 14,
-                "WIS": 12,
-                "CHA": 10
-            },
-            "damResists": [],
-            "damImmunes": [],
-            "damVulns": [],
-            "conImmunes": [],
-            "activeConditions": [],
-            "activeStatusEffects": [],
-            "hp": 155,
-            "maxHP": 0,
-            "position": [
-                0,
-                0
-            ],
-            "cid": "p149f",
-            "name": "William",
-            "level": 18,
-            "ac": 15,
-            "characterClass": "cleric",
-            "spellSlots": [
-                [
-                    4,
-                    4
-                ],
-                [
-                    3,
-                    3
-                ],
-                [
-                    3,
-                    3
-                ],
-                [
-                    3,
-                    3
-                ],
-                [
-                    3,
-                    3
-                ],
-                [
-                    1,
-                    1
-                ],
-                [
-                    1,
-                    1
-                ],
-                [
-                    1,
-                    1
-                ],
-                [
-                    1,
-                    1
-                ]
-            ],
-            "modifiers": {
-                "STR": 5,
-                "DEX": 4,
-                "CON": 3,
-                "INT": 2,
-                "WIS": 1,
-                "CHA": 0
-            }
-        },
-        "spells": [
-            {
-                "spellname": "Conjure Animals",
-                "level": 3,
-                "targeting": [
-                    {
-                        "self": false,
-                        "number": 0,
-                        "rolls": {
-                            "rollType": "autoHit",
-                            "saveType": "none",
-                            "halfSave": false,
-                            "damage": ""
-                        },
-                        "damType": [
-                            "none"
-                        ],
-                        "conditions": [],
-                        "statusEffect": [
-                            {
-                                "name": "Summon",
-                                "effect": {
-                                    "type": "Beast",
-                                    "monsterName": "",
-                                    "crCap": "2",
-                                    "numSummons": "1"
-                                }
-                            },
-                            {
-                                "name": "Summon",
-                                "effect": {
-                                    "type": "Beast",
-                                    "monsterName": "",
-                                    "crCap": "1",
-                                    "numSummons": "2"
-                                }
-                            },
-                            {
-                                "name": "Summon",
-                                "effect": {
-                                    "type": "Beast",
-                                    "monsterName": "",
-                                    "crCap": "1/2",
-                                    "numSummons": "4"
-                                }
-                            },
-                            {
-                                "name": "Summon",
-                                "effect": {
-                                    "type": "Beast",
-                                    "monsterName": "",
-                                    "crCap": "1/4",
-                                    "numSummons": "8"
-                                }
-                            },
-                            {
-                                "name": "Concentration",
-                                "effect": {
-                                    "value": "T/F"
-                                }
-                            }
-                        ],
-                        "lingEffect": {},
-                        "extraEffect": {},
-                        "lingSave": {},
-                        "scaling": "mult PER2",
-                        "specialNotes": [],
-                        "actionCost": "action"
-                    }
-                ]
-            },
-            {
-                "spellname": "Harm",
-                "level": 6,
-                "targeting": [
-                    {
-                        "targetType": null,
-                        "self": false,
-                        "number": 1,
-                        "rolls": {
-                            "rollType": "save",
-                            "saveType": "CON",
-                            "halfSave": false,
-                            "damage": "14d6",
-                            "damageMod": "0"
-                        },
-                        "damType": [
-                            "necrotic"
-                        ],
-                        "conditions": [],
-                        "statusEffect": [],
-                        "lingEffect": {},
-                        "extraEffect": {},
-                        "lingSave": {},
-                        "scaling": "1d6",
-                        "specialNotes": [],
-                        "actionCost": "action"
-                    }
-                ]
-            }
-        ],
-        "weapons": [
-            {
-                "name": "whip",
-                "properties": {
-                    "damage": "1d4",
-                    "damageType": "slashing",
-                    "weaponStat": "STR"
-                }
-            }
-        ],
-        "sorceryPoints": 18,
-        "chosenMetaMagics": []
-    },
-    {
-        "stats": {
-            "statArray": {
-                "STR": 20,
-                "DEX": 16,
-                "CON": 18,
-                "INT": 8,
-                "WIS": 15,
-                "CHA": 11
-            },
-            "saveProfs": {
-                "STR": 5,
-                "DEX": 3,
-                "CON": 4,
-                "INT": -1,
-                "WIS": 2,
-                "CHA": 0
-            },
-            "damResists": [],
-            "damImmunes": [],
-            "damVulns": [],
-            "conImmunes": [],
-            "activeConditions": [],
-            "activeStatusEffects": [],
-            "hp": 100,
-            "maxHP": 0,
-            "position": [
-                0,
-                0
-            ],
-            "cid": "f1",
-            "name": "Thorrin",
-            "level": 10,
-            "ac": 19,
-            "characterClass": "fighter",
-            "spellSlots": [],
-            "modifiers": {
-                "STR": 5,
-                "DEX": 3,
-                "CON": 4,
-                "INT": -1,
-                "WIS": 2,
-                "CHA": 0
-            }
-        },
-        "spells": [],
-        "weapons": [
-            {
-                "name": "longsword",
-                "properties": {
-                    "damage": "1d8",
-                    "damageType": "slashing",
-                    "weaponStat": "STR"
-                }
-            },
-            {
-                "name": "shortsword",
-                "properties": {
-                    "damage": "1d6",
-                    "damageType": "piercing",
-                    "weaponStat": "STR"
-                }
-            }
-        ],
-        "secondWindCharges": 1,
-        "actionSurgeCharges": 1,
-        "extraAttackAmt": 3
-    },
-    {
-        "stats": {
-            "statArray": {
-                "STR": 10,
-                "DEX": 18,
-                "CON": 14,
-                "INT": 9,
-                "WIS": 20,
-                "CHA": 15
-            },
-            "saveProfs": {
-                "STR": 0,
-                "DEX": 4,
-                "CON": 2,
-                "INT": -1,
-                "WIS": 5,
-                "CHA": 2
-            },
-            "damResists": [],
-            "damImmunes": [],
-            "damVulns": [],
-            "conImmunes": [],
-            "activeConditions": [],
-            "activeStatusEffects": [],
-            "hp": 70,
-            "maxHP": 0,
-            "position": [
-                0,
-                0
-            ],
-            "cid": "p1",
-            "name": "Morbius",
-            "level": 9,
-            "ac": 17,
-            "characterClass": "druid",
-            "spellSlots": [
-                [
-                    4,
-                    4
-                ],
-                [
-                    3,
-                    3
-                ],
-                [
-                    3,
-                    3
-                ],
-                [
-                    3,
-                    3
-                ],
-                [
-                    1,
-                    1
-                ],
-                [
-                    0,
-                    0
-                ],
-                [
-                    0,
-                    0
-                ],
-                [
-                    0,
-                    0
-                ],
-                [
-                    0,
-                    0
-                ]
-            ],
+            "name": "Aurora",
+            "level": "14",
+            "ac": "10",
+            "hp": "73",
             "maxhp": "73",
-            "modifiers": {
-                "STR": 0,
-                "DEX": 4,
-                "CON": 2,
-                "INT": -1,
-                "WIS": 5,
-                "CHA": 2
-            }
-        },
-        "spells": [
-            {
-                "spellname": "Slow",
-                "level": 3,
-                "targeting": [
-                    {
-                        "targetType": null,
-                        "self": false,
-                        "number": 6,
-                        "rolls": {
-                            "rollType": "save",
-                            "saveType": "WIS",
-                            "halfSave": false,
-                            "damage": "",
-                            "damageMod": "0"
-                        },
-                        "damType": [
-                            "none"
-                        ],
-                        "conditions": [],
-                        "statusEffect": [
-                            {
-                                "name": "Debuff",
-                                "effect": {
-                                    "rolls": "2",
-                                    "attribute": "AC"
-                                }
-                            },
-                            {
-                                "name": "Disadvantage",
-                                "effect": {
-                                    "rolls": "4",
-                                    "attribute": "DEX save"
-                                }
-                            },
-                            {
-                                "name": "Concentration",
-                                "effect": {}
-                            }
-                        ],
-                        "lingEffect": {},
-                        "extraEffect": {},
-                        "lingSave": {
-                            "saveType": "WIS"
-                        },
-                        "scaling": "",
-                        "specialNotes": [],
-                        "actionCost": "action"
-                    }
-                ]
-            },
-            {
-                "spellname": "Blight",
-                "level": 4,
-                "targeting": [
-                    {
-                        "targetType": null,
-                        "self": false,
-                        "number": 1,
-                        "rolls": {
-                            "rollType": "save",
-                            "saveType": "CON",
-                            "halfSave": true,
-                            "damage": "8d8",
-                            "damageMod": "0"
-                        },
-                        "damType": [
-                            "necrotic"
-                        ],
-                        "conditions": [],
-                        "statusEffect": [],
-                        "lingEffect": {},
-                        "extraEffect": {},
-                        "lingSave": {},
-                        "scaling": "1d8",
-                        "specialNotes": [
-                            "undeadImmune",
-                            "constructImmune",
-                            "plantVulnerable"
-                        ],
-                        "actionCost": "action"
-                    }
-                ]
-            }
-        ],
-        "weapons": [
-            {
-                "name": "whip",
-                "properties": {
-                    "damage": "1d4",
-                    "damageType": "slashing",
-                    "weaponStat": "STR"
-                }
-            },
-            {
-                "name": "sickle",
-                "properties": {
-                    "damage": "1d4",
-                    "damageType": "slashing",
-                    "weaponStat": "STR"
-                }
-            }
-        ],
-        "sorceryPoints": 9,
-        "chosenMetaMagics": [],
-        "metamagics": [
-            {
-                "name": "Careful Spell",
-                "cost": "1",
-                "ability": "autosuccess",
-                "numTarget": "CHA",
-                "attribute": [
-                    "ALL save"
-                ],
-                "specialNotes": []
-            },
-            {
-                "name": "Distant Spell",
-                "cost": "1",
-                "ability": "range *2",
-                "numTarget": "1",
-                "attribute": [
-                    "attack rolls for"
-                ],
-                "specialNotes": []
-            },
-            {
-                "name": "Empowered Spell",
-                "cost": "1",
-                "ability": "reroll",
-                "numTarget": "CHA",
-                "attribute": [
-                    "ALL damage"
-                ],
-                "specialNotes": []
-            },
-            {
-                "name": "Heightened Spell",
-                "cost": "3",
-                "ability": "disadvantage",
-                "numTarget": "1",
-                "attribute": [
-                    "ALL save"
-                ],
-                "specialNotes": []
-            },
-            {
-                "name": "Quickened Spell",
-                "cost": "2",
-                "ability": "action -> bonus action",
-                "numTarget": "1",
-                "attribute": [
-                    "ALL spells"
-                ],
-                "specialNotes": []
-            },
-            {
-                "name": "Seeking Spell",
-                "cost": "2",
-                "ability": "reroll",
-                "numTarget": "1",
-                "attribute": [
-                    "ALL attack rolls"
-                ],
-                "specialNotes": []
-            },
-            {
-                "name": "Transmuted Spell",
-                "cost": "1",
-                "ability": "damType -> damType",
-                "numTarget": "1",
-                "attribute": [
-                    "ALL spells"
-                ],
-                "specialNotes": []
-            },
-            {
-                "name": "Twinned Spell",
-                "cost": "spellLvl",
-                "ability": "numTarget *2",
-                "numTarget": "1",
-                "attribute": [
-                    "ALL spells"
-                ],
-                "specialNotes": [
-                    "numTarget=1 required"
-                ]
-            }
-        ]
-    },
-    {
-        "stats": {
-            "statArray": {
-                "STR": 20,
-                "DEX": 16,
-                "CON": 18,
-                "INT": 8,
-                "WIS": 15,
-                "CHA": 11
-            },
-            "saveProfs": {
-                "STR": 5,
-                "DEX": 3,
-                "CON": 4,
-                "INT": -1,
-                "WIS": 2,
-                "CHA": 0
-            },
-            "damResists": [],
-            "damImmunes": [],
-            "damVulns": [],
-            "conImmunes": [],
-            "activeConditions": [],
-            "activeStatusEffects": [],
-            "hp": 100,
-            "maxHP": 0,
+            "cid": "e624b3af-1cb8-4913-bbf2-9da12b0040fb",
             "position": [
                 0,
                 0
             ],
-            "cid": "b1",
-            "name": "Thorrin_BARBARIAN",
-            "level": 10,
-            "ac": 19,
-            "characterClass": "barbarian",
-            "spellSlots": [],
-            "modifiers": {
-                "STR": 5,
-                "DEX": 3,
-                "CON": 4,
-                "INT": -1,
-                "WIS": 2,
-                "CHA": 0
-            }
-        },
-        "spells": [],
-        "weapons": [
-            {
-                "name": "greataxe",
-                "properties": {
-                    "damage": "1d12",
-                    "damageType": "slashing",
-                    "weaponStat": "STR"
-                }
-            }
-        ],
-        "rageCharges": 2,
-        "isRaging": false
-    },
-    {
-        "stats": {
-            "statArray": {
-                "STR": 12,
-                "DEX": 16,
-                "CON": 14,
-                "INT": 10,
-                "WIS": 12,
-                "CHA": 18
-            },
-            "saveProfs": {
-                "STR": 1,
-                "DEX": 3,
-                "CON": 2,
-                "INT": 0,
-                "WIS": 1,
-                "CHA": 4
-            },
-            "damResists": [],
-            "damImmunes": [],
-            "damVulns": [],
-            "conImmunes": [],
-            "activeConditions": [],
-            "activeStatusEffects": [],
-            "hp": 75,
-            "maxHP": 0,
-            "position": [
-                0,
-                0
-            ],
-            "cid": "ba1",
-            "name": "Lyra",
-            "level": 10,
-            "ac": 16,
-            "characterClass": "bard",
-            "spellSlots": [],
-            "modifiers": {
-                "STR": 1,
-                "DEX": 3,
-                "CON": 2,
-                "INT": 0,
-                "WIS": 1,
-                "CHA": 4
-            }
-        },
-        "spells": [],
-        "weapons": [
-            {
-                "name": "rapier",
-                "properties": {
-                    "damage": "1d8",
-                    "damageType": "piercing",
-                    "weaponStat": "DEX"
-                }
-            }
-        ],
-        "bardicCharges": 3,
-        "bardicDieType": 8,
-        "magicalSecrets": []
-    },
-    {
-        "stats": {
-            "statArray": {
-                "STR": 16,
-                "DEX": 10,
-                "CON": 16,
-                "INT": 10,
-                "WIS": 18,
-                "CHA": 12
-            },
-            "saveProfs": {
-                "STR": 3,
-                "DEX": 0,
-                "CON": 3,
-                "INT": 0,
-                "WIS": 4,
-                "CHA": 1
-            },
-            "damResists": [],
-            "damImmunes": [],
-            "damVulns": [],
-            "conImmunes": [],
-            "activeConditions": [],
-            "activeStatusEffects": [],
-            "hp": 90,
-            "maxHP": 0,
-            "position": [
-                0,
-                0
-            ],
-            "cid": "c1",
-            "name": "Sister Maeve",
-            "level": 10,
-            "ac": 18,
-            "characterClass": "cleric",
-            "spellSlots": [],
-            "modifiers": {
-                "STR": 3,
-                "DEX": 0,
-                "CON": 3,
-                "INT": 0,
-                "WIS": 4,
-                "CHA": 1
-            }
-        },
-        "spells": [],
-        "weapons": [
-            {
-                "name": "mace",
-                "properties": {
-                    "damage": "1d6",
-                    "damageType": "bludgeoning",
-                    "weaponStat": "STR"
-                }
-            }
-        ],
-        "turnUndeadCharges": 1,
-        "destroyUndeadCap": 2
-    },
-    {
-        "stats": {
-            "statArray": {
-                "STR": 18,
-                "DEX": 10,
-                "CON": 16,
-                "INT": 10,
-                "WIS": 12,
-                "CHA": 16
-            },
-            "saveProfs": {
-                "STR": 4,
-                "DEX": 0,
-                "CON": 3,
-                "INT": 0,
-                "WIS": 1,
-                "CHA": 3
-            },
-            "damResists": [],
-            "damImmunes": [],
-            "damVulns": [],
-            "conImmunes": [],
-            "activeConditions": [],
-            "activeStatusEffects": [],
-            "hp": 95,
-            "maxHP": 0,
-            "position": [
-                0,
-                0
-            ],
-            "cid": "pala1",
-            "name": "Aldric",
-            "level": 10,
-            "ac": 19,
-            "characterClass": "paladin",
-            "spellSlots": [],
-            "modifiers": {
-                "STR": 4,
-                "DEX": 0,
-                "CON": 3,
-                "INT": 0,
-                "WIS": 1,
-                "CHA": 3
-            }
-        },
-        "spells": [],
-        "weapons": [
-            {
-                "name": "longsword",
-                "properties": {
-                    "damage": "1d8",
-                    "damageType": "slashing",
-                    "weaponStat": "STR"
-                }
-            }
-        ],
-        "layOnHandsPool": 50
-    },
-    {
-        "stats": {
-            "statArray": {
-                "STR": 10,
-                "DEX": 14,
-                "CON": 14,
-                "INT": 12,
-                "WIS": 18,
-                "CHA": 10
-            },
-            "saveProfs": {
-                "STR": 0,
-                "DEX": 2,
-                "CON": 2,
-                "INT": 1,
-                "WIS": 4,
-                "CHA": 0
-            },
-            "damResists": [],
-            "damImmunes": [],
-            "damVulns": [],
-            "conImmunes": [],
-            "activeConditions": [],
-            "activeStatusEffects": [],
-            "hp": 80,
-            "maxHP": 0,
-            "position": [
-                0,
-                0
-            ],
-            "cid": "d1",
-            "name": "Rowan",
-            "level": 10,
-            "ac": 15,
-            "characterClass": "druid",
-            "spellSlots": [],
-            "modifiers": {
-                "STR": 0,
-                "DEX": 2,
-                "CON": 2,
-                "INT": 1,
-                "WIS": 4,
-                "CHA": 0
-            }
-        },
-        "spells": [],
-        "weapons": [
-            {
-                "name": "quarterstaff",
-                "properties": {
-                    "damage": "1d6",
-                    "damageType": "bludgeoning",
-                    "weaponStat": "STR"
-                }
-            }
-        ],
-        "monster": {},
-        "wildShaped": false,
-        "wildShapeCharges": 2
-    },
-    {
-        "stats": {
-            "name": "Testing5001",
-            "level": "14",
-            "ac": "10",
-            "hp": "143",
-            "maxhp": "169",
-            "cid": "p5",
-            "position": [
-                0,
-                0
-            ],
-            "characterClass": "paladin",
+            "characterClass": "monk",
             "conImmunes": [],
             "activeStatusEffects": [],
             "activeConditions": [],
             "saveProfs": {
-                "STR": "0",
-                "DEX": "4",
+                "STR": "2",
+                "DEX": "2",
                 "CON": "2",
-                "INT": "-1",
-                "WIS": "5",
+                "INT": "2",
+                "WIS": "2",
                 "CHA": "2"
             },
             "damImmunes": [],
             "damResists": [],
             "damVulns": [],
             "statArray": {
-                "STR": "12",
-                "DEX": "20",
-                "CON": "20",
-                "INT": "20",
-                "WIS": "20",
-                "CHA": "12"
-            },
-            "spellSlots": [
-                [
-                    "4",
-                    "4"
-                ],
-                [
-                    "3",
-                    "3"
-                ],
-                [
-                    "3",
-                    "3"
-                ],
-                [
-                    "1",
-                    "1"
-                ],
-                [
-                    "0",
-                    "0"
-                ],
-                [
-                    "0",
-                    "0"
-                ],
-                [
-                    "0",
-                    "0"
-                ],
-                [
-                    "0",
-                    "0"
-                ],
-                [
-                    "0",
-                    "0"
-                ]
-            ]
-        },
-        "spells": [],
-        "weapons": [
-            {
-                "name": "battleaxe (1)",
-                "properties": {
-                    "damage": "1d8",
-                    "damageType": "slashing",
-                    "weaponStat": "STR"
-                }
-            },
-            {
-                "name": "battleaxe (2)",
-                "properties": {
-                    "damage": "1d10",
-                    "damageType": "slashing",
-                    "weaponStat": "STR"
-                }
-            }
-        ]
-    },
-    {
-        "stats": {
-            "name": "Testing5001",
-            "level": "14",
-            "ac": "10",
-            "hp": "143",
-            "maxhp": "169",
-            "cid": "p5",
-            "position": [
-                0,
-                0
-            ],
-            "characterClass": "paladin",
-            "conImmunes": [],
-            "activeStatusEffects": [],
-            "activeConditions": [],
-            "saveProfs": {
-                "STR": "0",
-                "DEX": "4",
-                "CON": "2",
-                "INT": "-1",
-                "WIS": "5",
-                "CHA": "2"
-            },
-            "damImmunes": [],
-            "damResists": [],
-            "damVulns": [],
-            "statArray": {
-                "STR": "12",
-                "DEX": "20",
-                "CON": "20",
-                "INT": "20",
-                "WIS": "20",
-                "CHA": "12"
-            },
-            "spellSlots": [
-                [
-                    "4",
-                    "4"
-                ],
-                [
-                    "3",
-                    "3"
-                ],
-                [
-                    "3",
-                    "3"
-                ],
-                [
-                    "1",
-                    "1"
-                ],
-                [
-                    "0",
-                    "0"
-                ],
-                [
-                    "0",
-                    "0"
-                ],
-                [
-                    "0",
-                    "0"
-                ],
-                [
-                    "0",
-                    "0"
-                ],
-                [
-                    "0",
-                    "0"
-                ]
-            ]
-        },
-        "spells": [],
-        "weapons": [
-            {
-                "name": "battleaxe (1)",
-                "properties": {
-                    "damage": "1d8",
-                    "damageType": "slashing",
-                    "weaponStat": "STR"
-                }
-            },
-            {
-                "name": "battleaxe (2)",
-                "properties": {
-                    "damage": "1d10",
-                    "damageType": "slashing",
-                    "weaponStat": "STR"
-                }
-            }
-        ],
-        "layOnHandsPool": 20
-    },
-    {
-        "stats": {
-            "name": "Testing5001",
-            "level": "14",
-            "ac": "10",
-            "hp": "143",
-            "maxhp": "169",
-            "cid": "p5",
-            "position": [
-                0,
-                0
-            ],
-            "characterClass": "fighter",
-            "conImmunes": [],
-            "activeStatusEffects": [],
-            "activeConditions": [],
-            "saveProfs": {
-                "STR": "0",
-                "DEX": "4",
-                "CON": "2",
-                "INT": "-1",
-                "WIS": "5",
-                "CHA": "2"
-            },
-            "damImmunes": [],
-            "damResists": [],
-            "damVulns": [],
-            "statArray": {
-                "STR": "12",
-                "DEX": "20",
-                "CON": "20",
-                "INT": "20",
-                "WIS": "20",
-                "CHA": "12"
+                "STR": "15",
+                "DEX": "15",
+                "CON": "15",
+                "INT": "15",
+                "WIS": "15",
+                "CHA": "15"
             },
             "spellSlots": []
         },
         "spells": [],
         "weapons": [
-            {
-                "name": "battleaxe (1)",
-                "properties": {
-                    "damage": "1d8",
-                    "damageType": "slashing",
-                    "weaponStat": "STR"
-                }
+            "club"
+        ]
+    },
+    {
+        "stats": {
+            "name": "Testing5004",
+            "level": "14",
+            "ac": "10",
+            "hp": "143",
+            "maxhp": "153",
+            "cid": "p5",
+            "position": [
+                0,
+                0
+            ],
+            "characterClass": "warlock",
+            "conImmunes": [],
+            "activeStatusEffects": [],
+            "activeConditions": [],
+            "saveProfs": {
+                "STR": "0",
+                "DEX": "4",
+                "CON": "2",
+                "INT": "-1",
+                "WIS": "5",
+                "CHA": "2"
             },
-            {
-                "name": "battleaxe (2)",
-                "properties": {
-                    "damage": "1d10",
-                    "damageType": "slashing",
-                    "weaponStat": "STR"
-                }
-            }
+            "damImmunes": [],
+            "damResists": [],
+            "damVulns": [],
+            "statArray": {
+                "STR": "12",
+                "DEX": "20",
+                "CON": "20",
+                "INT": "20",
+                "WIS": "20",
+                "CHA": "12"
+            },
+            "spellSlots": [
+                [
+                    "0",
+                    "0"
+                ],
+                [
+                    "0",
+                    "0"
+                ],
+                [
+                    "0",
+                    "0"
+                ],
+                [
+                    "0",
+                    "0"
+                ],
+                [
+                    "3",
+                    "3"
+                ],
+                [
+                    "0",
+                    "0"
+                ],
+                [
+                    "0",
+                    "0"
+                ],
+                [
+                    "0",
+                    "0"
+                ],
+                [
+                    "0",
+                    "0"
+                ]
+            ]
+        },
+        "spells": [
+            "chill touch",
+            "eldritch blast"
         ],
-        "secondWindCharges": 1,
-        "actionSurgeCharges": 1,
-        "extraAttackAmt": 3
+        "weapons": [
+            "battleaxe ONEHAND",
+            "battleaxe TWOHAND"
+        ]
+    },
+    {
+        "stats": {
+            "name": "Test Fighter",
+            "level": "11",
+            "ac": "16",
+            "hp": "103",
+            "maxhp": "112",
+            "cid": "20694a3d-59fe-4b10-a1e6-ee383e3d6531",
+            "position": [
+                [
+                    0,
+                    0
+                ]
+            ],
+            "characterClass": "fighter",
+            "conImmunes": [],
+            "activeStatusEffects": [],
+            "activeConditions": [],
+            "saveProfs": {
+                "STR": "0",
+                "DEX": "4",
+                "CON": "2",
+                "INT": "-1",
+                "WIS": "5",
+                "CHA": "2"
+            },
+            "damImmunes": [],
+            "damResists": [],
+            "damVulns": [],
+            "statArray": {
+                "STR": "20",
+                "DEX": "18",
+                "CON": "16",
+                "INT": "14",
+                "WIS": "12",
+                "CHA": "10"
+            },
+            "spellSlots": []
+        },
+        "spells": [],
+        "weapons": [
+            "warhammer",
+            "warhammer"
+        ],
+        "secondWindCharges": 0,
+        "actionSurgeCharges": 0,
+        "extraAttackAmt": 0
+    },
+    {
+        "stats": {
+            "name": "Test Warlock",
+            "level": "3",
+            "ac": "12",
+            "hp": "21",
+            "maxhp": "27",
+            "cid": "cdaad449-bd27-467b-95fd-415c37d33c3c",
+            "position": [
+                [
+                    0,
+                    0
+                ]
+            ],
+            "characterClass": "warlock",
+            "conImmunes": [],
+            "activeStatusEffects": [],
+            "activeConditions": [],
+            "saveProfs": {
+                "STR": "0",
+                "DEX": "4",
+                "CON": "2",
+                "INT": "-1",
+                "WIS": "5",
+                "CHA": "2"
+            },
+            "damImmunes": [],
+            "damResists": [],
+            "damVulns": [],
+            "statArray": {
+                "STR": "12",
+                "DEX": "12",
+                "CON": "12",
+                "INT": "12",
+                "WIS": "12",
+                "CHA": "12"
+            },
+            "spellSlots": [
+                [
+                    0,
+                    0
+                ],
+                [
+                    2,
+                    2
+                ],
+                [
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0
+                ]
+            ]
+        },
+        "spells": [
+            "bane",
+            "burning hands",
+            "witchbolt",
+            "wrathful smite",
+            "cloud of daggers",
+            "hold person",
+            "invisibility",
+            "mirror image",
+            "shatter"
+        ],
+        "weapons": []
+    },
+    {
+        "stats": {
+            "name": "Corr3ct",
+            "level": "12",
+            "ac": "10",
+            "hp": "88",
+            "maxhp": "95",
+            "cid": "56d4035c-57d0-4e34-b68f-74ff8b83daac",
+            "position": [
+                [
+                    0,
+                    0
+                ]
+            ],
+            "characterClass": "ranger",
+            "conImmunes": [],
+            "activeStatusEffects": [],
+            "activeConditions": [],
+            "saveProfs": {
+                "STR": "0",
+                "DEX": "4",
+                "CON": "2",
+                "INT": "-1",
+                "WIS": "5",
+                "CHA": "2"
+            },
+            "damImmunes": [],
+            "damResists": [],
+            "damVulns": [],
+            "statArray": {
+                "STR": "12",
+                "DEX": "12",
+                "CON": "12",
+                "INT": "12",
+                "WIS": "12",
+                "CHA": "12"
+            },
+            "spellSlots": [
+                [
+                    4,
+                    4
+                ],
+                [
+                    3,
+                    3
+                ],
+                [
+                    3,
+                    3
+                ],
+                [
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0
+                ]
+            ]
+        },
+        "spells": [
+            "charm person"
+        ],
+        "weapons": [
+            "dagger",
+            "quarterstaff",
+            "quarterstaff",
+            "spear",
+            "spear"
+        ]
+    },
+    {
+        "stats": {
+            "name": "Gerald",
+            "level": "9",
+            "ac": "12",
+            "hp": "66",
+            "maxhp": "73",
+            "cid": "5ecebd31-f47a-436a-bb0b-3b2cec18470f",
+            "position": [
+                [
+                    0,
+                    0
+                ]
+            ],
+            "characterClass": "bard",
+            "conImmunes": [],
+            "activeStatusEffects": [],
+            "activeConditions": [],
+            "saveProfs": {
+                "STR": "0",
+                "DEX": "4",
+                "CON": "2",
+                "INT": "-1",
+                "WIS": "5",
+                "CHA": "2"
+            },
+            "damImmunes": [],
+            "damResists": [],
+            "damVulns": [],
+            "statArray": {
+                "STR": "18",
+                "DEX": "16",
+                "CON": "14",
+                "INT": "12",
+                "WIS": "3",
+                "CHA": "10"
+            },
+            "spellSlots": [
+                [
+                    4,
+                    4
+                ],
+                [
+                    3,
+                    3
+                ],
+                [
+                    3,
+                    3
+                ],
+                [
+                    3,
+                    3
+                ],
+                [
+                    1,
+                    1
+                ],
+                [
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0
+                ]
+            ]
+        },
+        "spells": [
+            "true strike",
+            "dissonant whispers",
+            "heat metal",
+            "fear",
+            "glyph of warding",
+            "hypnotic pattern",
+            "mass cure wounds"
+        ],
+        "weapons": [
+            "flail"
+        ],
+        "bardicCharges": 0,
+        "bardicDieType": 0,
+        "magicalSecrets": []
     }
 ]

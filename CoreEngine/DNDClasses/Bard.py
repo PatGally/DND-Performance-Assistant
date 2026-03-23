@@ -9,9 +9,11 @@ SPELL_LIST_FILE = os.path.join(BASE_DIR, "..", "data", "spell_list_NEW.json")
 
 class Bard(Player):
     def __init__(self, name, stats, saveProfs, ac, hp, class_type, level, conImmunities, damImmunes, damResists,
-                 damVulns, activeStatusEffects, activeConditions, cid, position, bardicCharges=-1, bardicDieType=-1, magicalSecrets=[]):
-        super().__init__(name, stats, saveProfs, ac, hp, class_type, level, conImmunities, damImmunes, damResists,
-                         damVulns, activeStatusEffects, activeConditions, cid, position)
+                 damVulns, activeStatusEffects, activeConditions, cid, position, spellSlots, bardicCharges=-1, bardicDieType=-1, magicalSecrets=[]):
+        super().__init__(name, stats, saveProfs, ac, hp,
+                         class_type, level, conImmunities, damImmunes, damResists,
+                         damVulns, activeStatusEffects, activeConditions,
+                         cid, position, spellSlots)
         self.__bardicCharges = self.setBardicCharges() if bardicCharges == -1 else bardicCharges
         self.__bardicDieType = self.setDieType() if bardicDieType == -1 else bardicDieType
         self.__magicalSecrets = [] if not magicalSecrets else magicalSecrets

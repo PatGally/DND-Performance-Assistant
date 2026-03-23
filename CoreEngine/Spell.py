@@ -2,14 +2,17 @@ from .Action import Action
 
 class Spell(Action):
     def __init__(self, name, lvl, selfTarget,
-                 numTarget, rollType, saveType, halfSave, damageMod, diceNum, diceType,
+                 numTarget, actionRange, rollType, saveType, halfSave, damageMod, diceNum, diceType,
                  damType, conditions, statusEffects, lingEffects, extraEffect, lingSaves,
-                 scaling, actionCost, specialNotes):
+                 scaling, actionCost, specialNotes, shape="", actionRadius=0):
         super().__init__()
         self.__name = name
         self.__lvl = lvl
         self.__selfTarget = selfTarget
         self.__numTarget = numTarget
+        self.__actionRange = actionRange
+        self.__shape = shape
+        self.__actionRadius = actionRadius
         self.__rollType = rollType
         self.__saveType = saveType
         self.__halfSave = halfSave
@@ -35,6 +38,9 @@ class Spell(Action):
             "targeting" : [{
                 "self" : self.__selfTarget,
                 "number" : str(self.__numTarget),
+                "shape" : str(self.__shape),
+                "actionRange" : str(self.__actionRange),
+                "radius" : str(self.__actionRadius),
                 "rolls" : {
                     "rollType" : self.__rollType,
                     "saveType" : self.__saveType,
@@ -131,3 +137,20 @@ class Spell(Action):
 
     def getActionCost(self):
         return self.__actionCost
+    def setActionCost(self, value):
+        self.__actionCost = value
+
+    def getActionRange(self):
+        return self.__actionRange
+    def setActionRange(self, value):
+        self.__actionRange = value
+
+    def getActionRadius(self):
+        return self.__actionRadius
+    def setActionRadius(self, value):
+        self.__actionRadius = value
+
+    def getShape(self):
+        return self.__shape
+    def setShape(self, value):
+        self.__shape = value

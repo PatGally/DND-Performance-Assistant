@@ -7,7 +7,7 @@ from .Weapon import Weapon
 
 class Player(Stats):
     def __init__(self, name, stats, saveProfs, ac, hp, class_type, level, conImmunities,
-                 damImmunes, damResists, damVulns, activeStatusEffects, activeConditions, cid, position):
+                 damImmunes, damResists, damVulns, activeStatusEffects, activeConditions, cid, position, spellSlots=None):
         super().__init__(stats, saveProfs, damImmunes,
                          damResists, damVulns, conImmunities,
                          activeStatusEffects, activeConditions, cid, position)
@@ -26,7 +26,7 @@ class Player(Stats):
         self.__ac = ac
         self.__weapons = []
         self.__spells = []
-        self.__spellSlots = self.calcSpellSlots()
+        self.__spellSlots = self.calcSpellSlots() if spellSlots is None else spellSlots
 
     def __calcHP(self):
         hitDieType = self.__calcHitDie()
@@ -69,13 +69,13 @@ class Player(Stats):
         return len(self.__weapons)
 
     def addSpell(self, name, lvl, selfTarget,
-                 numTarget, rollType, saveType, halfSave, damageMod, diceNum, diceType,
+                 numTarget, spellRange, rollType, saveType, halfSave, damageMod, diceNum, diceType,
                  damType, conditions, statusEffects, lingEffects, extraEffect, lingSaves,
-                 scaling, actionCost, specialNotes):
+                 scaling, actionCost, specialNotes, shape="", radius=0):
         self.__spells.append(Spell(name, lvl, selfTarget,
-                 numTarget, rollType, saveType, halfSave, damageMod, diceNum, diceType,
+                 numTarget, spellRange, rollType, saveType, halfSave, damageMod, diceNum, diceType,
                  damType, conditions, statusEffects, lingEffects, extraEffect, lingSaves,
-                 scaling, actionCost, specialNotes))
+                 scaling, actionCost, specialNotes, shape, radius))
     def removeSpell(self, name):
         for spell in self.__spells:
             if name == spell.getName():

@@ -1,5 +1,4 @@
 from pydantic import Field
-
 from BackendAPI.models import Player
 
 class Barbarian(Player):

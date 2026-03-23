@@ -52,7 +52,7 @@
                 "lingEffect": {},
                 "extraEffect": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "14",
                     "damage": "",
@@ -65,7 +65,7 @@
                     ]
                 },
                 "lingSave": {
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "saveDC": "14"
                 },
                 "actionCost": "action",
@@ -115,7 +115,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "14",
                     "damage": "",
@@ -130,7 +130,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "saveDC": "14"
                 },
                 "actionCost": "action",
@@ -256,7 +256,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "wisdom",
+            "type": "WIS",
             "DC": "12",
             "attackRoll": "4",
             "spells": [
@@ -414,11 +414,11 @@
                 "name": "Frightful Presence",
                 "desc": "Each creature of the dragon's choice that is within 120 feet of the dragon and aware of it must succeed on a DC 16 Wisdom saving throw or become frightened for 1 minute. A creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success. If a creature's saving throw is successful or the effect ends for it, the creature is immune to the dragon's Frightful Presence for the next 24 hours.",
                 "actionRange": "120",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "16",
                     "damage": "",
@@ -433,7 +433,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "saveDC": "16"
                 },
                 "actionCost": "action",
@@ -445,11 +445,11 @@
                 "name": "Acid Breath (Recharge 5-6)",
                 "desc": "The dragon exhales acid in a 60-foot line that is 5 feet wide. Each creature in that line must make a DC 18 Dexterity saving throw, taking 54 (12d8) acid damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "60",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "line that is 5 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "18",
                     "damage": "12d8",
@@ -659,11 +659,11 @@
                 "name": "Frightful Presence",
                 "desc": "Each creature of the dragon's choice that is within 120 ft. of the dragon and aware of it must succeed on a DC 17 Wisdom saving throw or become frightened for 1 minute. A creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success. If a creature's saving throw is successful or the effect ends for it, the creature is immune to the dragon's Frightful Presence for the next 24 hours.",
                 "actionRange": "120",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "17",
                     "damage": "",
@@ -678,7 +678,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "saveDC": "17"
                 },
                 "actionCost": "action",
@@ -690,11 +690,11 @@
                 "name": "Lightning Breath (Recharge 5-6)",
                 "desc": "The dragon exhales lightning in a 90-foot line that is 5 ft. wide. Each creature in that line must make a DC 19 Dexterity saving throw, taking 66 (12d10) lightning damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "90",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "line that is 5 ft. wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "19",
                     "damage": "12d10",
@@ -898,11 +898,11 @@
                 "name": "Frightful Presence",
                 "desc": "Each creature of the dragon's choice that is within 120 feet of the dragon and aware of it must succeed on a DC 16 Wisdom saving throw or become frightened for 1 minute. A creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success. If a creature's saving throw is successful or the effect ends for it, the creature is immune to the dragon's Frightful Presence for the next 24 hours.",
                 "actionRange": "120",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "16",
                     "damage": "",
@@ -917,7 +917,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "saveDC": "16"
                 },
                 "actionCost": "action",
@@ -929,11 +929,11 @@
                 "name": "Fire Breath (Recharge 5-6)",
                 "desc": "The dragon exhales fire in an 60-foot line that is 5 feet wide. Each creature in that line must make a DC 18 Dexterity saving throw, taking 45 (13d6) fire damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "60",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "line that is 5 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "18",
                     "damage": "13d6",
@@ -957,11 +957,11 @@
                 "name": "Sleep Breath (Recharge 5-6)",
                 "desc": "The dragon exhales sleep gas in a 60-foot cone. Each creature in that area must succeed on a DC 18 Constitution saving throw or fall unconscious for 10 minutes. This effect ends for a creature if the creature takes damage or someone uses an action to wake it.",
                 "actionRange": "60",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "18",
                     "damage": "",
@@ -976,7 +976,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "saveDC": "18"
                 },
                 "actionCost": "action",
@@ -1168,11 +1168,11 @@
                 "name": "Frightful Presence",
                 "desc": "Each creature of the dragon's choice that is within 120 feet of the dragon and aware of it must succeed on a DC 17 Wisdom saving throw or become frightened for 1 minute. A creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success. If a creature's saving throw is successful or the effect ends for it, the creature is immune to the dragon's Frightful Presence for the next 24 hours.",
                 "actionRange": "120",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "17",
                     "damage": "",
@@ -1187,7 +1187,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "saveDC": "17"
                 },
                 "actionCost": "action",
@@ -1199,11 +1199,11 @@
                 "name": "Lightning Breath (Recharge 5-6)",
                 "desc": "The dragon exhales lightning in a 90-foot line that is 5 feet wide. Each creature in that line must make a DC 19 Dexterity saving throw, taking 66 (12d10) lightning damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "90",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "line that is 5 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "19",
                     "damage": "12d10",
@@ -1227,11 +1227,11 @@
                 "name": "Repulsion Breath (Recharge 5-6)",
                 "desc": "The dragon exhales repulsion energy in a 30-foot cone. Each creature in that area must succeed on a DC 19 Strength saving throw. On a failed save, the creature is pushed 60 feet away from the dragon.",
                 "actionRange": "30",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "strength",
+                    "saveType": "STR",
                     "halfSave": false,
                     "saveDC": "19",
                     "damage": "",
@@ -1244,7 +1244,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "strength",
+                    "saveType": "STR",
                     "saveDC": "19"
                 },
                 "actionCost": "action",
@@ -1462,11 +1462,11 @@
                 "name": "Frightful Presence",
                 "desc": "Each creature of the dragon's choice that is within 120 feet of the dragon and aware of it must succeed on a DC 16 Wisdom saving throw or become frightened for 1 minute. A creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success. If a creature's saving throw is successful or the effect ends for it, the creature is immune to the dragon's Frightful Presence for the next 24 hours.",
                 "actionRange": "120",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "16",
                     "damage": "",
@@ -1481,7 +1481,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "saveDC": "16"
                 },
                 "actionCost": "action",
@@ -1493,11 +1493,11 @@
                 "name": "Acid Breath (Recharge 5-6)",
                 "desc": "The dragon exhales acid in an 60-foot line that is 5 feet wide. Each creature in that line must make a DC 18 Dexterity saving throw, taking 54 (12d8) acid damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "60",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "line that is 5 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "18",
                     "damage": "12d8",
@@ -1521,11 +1521,11 @@
                 "name": "Slowing Breath (Recharge 5-6)",
                 "desc": "The dragon exhales gas in a 60-foot cone. Each creature in that area must succeed on a DC 18 Constitution saving throw. On a failed save, the creature can't use reactions, its speed is halved, and it can't make more than one attack on its turn. In addition, the creature can use either an action or a bonus action on its turn, but not both. These effects last for 1 minute. The creature can repeat the saving throw at the end of each of its turns, ending the effect on itself with a successful save.",
                 "actionRange": "60",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "18",
                     "damage": "",
@@ -1538,7 +1538,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "saveDC": "18"
                 },
                 "actionCost": "action",
@@ -1730,11 +1730,11 @@
                 "name": "Frightful Presence",
                 "desc": "Each creature of the dragon's choice that is within 120 feet of the dragon and aware of it must succeed on a DC 21 Wisdom saving throw or become frightened for 1 minute. A creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success. If a creature's saving throw is successful or the effect ends for it, the creature is immune to the dragon's Frightful Presence for the next 24 hours.",
                 "actionRange": "120",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "21",
                     "damage": "",
@@ -1749,7 +1749,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "saveDC": "21"
                 },
                 "actionCost": "action",
@@ -1761,11 +1761,11 @@
                 "name": "Fire Breath (Recharge 5-6)",
                 "desc": "The dragon exhales fire in a 60-foot cone. Each creature in that area must make a DC 21 Dexterity saving throw, taking 66 (12d10) fire damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "60",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "21",
                     "damage": "12d10",
@@ -1789,11 +1789,11 @@
                 "name": "Weakening Breath (Recharge 5-6)",
                 "desc": "The dragon exhales gas in a 60-foot cone. Each creature in that area must succeed on a DC 21 Strength saving throw or have disadvantage on Strength-based attack rolls, Strength checks, and Strength saving throws for 1 minute. A creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success.",
                 "actionRange": "60",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "strength",
+                    "saveType": "STR",
                     "halfSave": false,
                     "saveDC": "21",
                     "damage": "",
@@ -1806,7 +1806,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "strength",
+                    "saveType": "STR",
                     "saveDC": "21"
                 },
                 "actionCost": "action",
@@ -2030,11 +2030,11 @@
                 "name": "Frightful Presence",
                 "desc": "Each creature of the dragon's choice that is within 120 feet of the dragon and aware of it must succeed on a DC 16 Wisdom saving throw or become frightened for 1 minute. A creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success. If a creature's saving throw is successful or the effect ends for it, the creature is immune to the dragon's Frightful Presence for the next 24 hours.",
                 "actionRange": "120",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "16",
                     "damage": "",
@@ -2049,7 +2049,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "saveDC": "16"
                 },
                 "actionCost": "action",
@@ -2061,11 +2061,11 @@
                 "name": "Poison Breath (Recharge 5-6)",
                 "desc": "The dragon exhales poisonous gas in a 60-foot cone. Each creature in that area must make a DC 18 Constitution saving throw, taking 56 (16d6) poison damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "60",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "18",
                     "damage": "16d6",
@@ -2275,11 +2275,11 @@
                 "name": "Frightful Presence",
                 "desc": "Each creature of the dragon's choice that is within 120 ft. of the dragon and aware of it must succeed on a DC 19 Wisdom saving throw or become frightened for 1 minute. A creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success. If a creature's saving throw is successful or the effect ends for it, the creature is immune to the dragon's Frightful Presence for the next 24 hours.",
                 "actionRange": "120",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "19",
                     "damage": "",
@@ -2294,7 +2294,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "saveDC": "19"
                 },
                 "actionCost": "action",
@@ -2306,11 +2306,11 @@
                 "name": "Fire Breath (Recharge 5-6)",
                 "desc": "The dragon exhales fire in a 60-foot cone. Each creature in that area must make a DC 21 Dexterity saving throw, taking 63 (18d6) fire damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "60",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "21",
                     "damage": "18d6",
@@ -2514,11 +2514,11 @@
                 "name": "Frightful Presence",
                 "desc": "Each creature of the dragon's choice that is within 120 feet of the dragon and aware of it must succeed on a DC 18 Wisdom saving throw or become frightened for 1 minute. A creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success. If a creature's saving throw is successful or the effect ends for it, the creature is immune to the dragon's Frightful Presence for the next 24 hours.",
                 "actionRange": "120",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "18",
                     "damage": "",
@@ -2533,7 +2533,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "saveDC": "18"
                 },
                 "actionCost": "action",
@@ -2545,11 +2545,11 @@
                 "name": "Cold Breath (Recharge 5-6)",
                 "desc": "The dragon exhales an icy blast in a 60-foot cone. Each creature in that area must make a DC 20 Constitution saving throw, taking 58 (13d8) cold damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "60",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "20",
                     "damage": "13d8",
@@ -2573,11 +2573,11 @@
                 "name": "Paralyzing Breath (Recharge 5-6)",
                 "desc": "The dragon exhales paralyzing gas in a 60-foot cone. Each creature in that area must succeed on a DC 20 Constitution saving throw or be paralyzed for 1 minute. A creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success.",
                 "actionRange": "60",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "20",
                     "damage": "",
@@ -2592,7 +2592,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "saveDC": "20"
                 },
                 "actionCost": "action",
@@ -2816,11 +2816,11 @@
                 "name": "Frightful Presence",
                 "desc": "Each creature of the dragon's choice that is within 120 ft. of the dragon and aware of it must succeed on a DC 14 Wisdom saving throw or become frightened for 1 minute. A creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success. If a creature's saving throw is successful or the effect ends for it, the creature is immune to the dragon's Frightful Presence for the next 24 hours.",
                 "actionRange": "120",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "14",
                     "damage": "",
@@ -2835,7 +2835,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "saveDC": "14"
                 },
                 "actionCost": "action",
@@ -2847,11 +2847,11 @@
                 "name": "Cold Breath (Recharge 5-6)",
                 "desc": "The dragon exhales an icy blast in a 60-foot cone. Each creature in that area must make a DC 19 Constitution saving throw, taking 54 (12d8) cold damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "60",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "19",
                     "damage": "12d8",
@@ -2998,12 +2998,12 @@
             {
                 "name": "Whirlwind (Recharge 4-6)",
                 "desc": "Each creature in the elemental's space must make a DC 13 Strength saving throw. On a failure, a target takes 15 (3d8 + 2) bludgeoning damage and is flung up 20 feet away from the elemental in a random direction and knocked prone. If a thrown target strikes an object, such as a wall or floor, the target takes 3 (1d6) bludgeoning damage for every 10 feet it was thrown. If the target is thrown at another creature, that creature must succeed on a DC 13 Dexterity saving throw or take the same damage and be knocked prone.\nIf the saving throw is successful, the target takes half the bludgeoning damage and isn't flung away or knocked prone.",
-                "actionRange": "0",
-                "numTarget": -1,
-                "shape": "self_space",
+                "actionRange": "5",
+                "numTarget": -2,
+                "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "strength",
+                    "saveType": "STR",
                     "halfSave": true,
                     "saveDC": "13",
                     "damage": "3d8",
@@ -3166,11 +3166,11 @@
                 "name": "Frightful Presence",
                 "desc": "Each creature of the dragon's choice that is within 120 feet of the dragon and aware of it must succeed on a DC 19 Wisdom saving throw or become frightened for 1 minute. A creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success. If a creature's saving throw is successful or the effect ends for it, the creature is immune to the dragon's Frightful Presence for the next 24 hours.",
                 "actionRange": "120",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "19",
                     "damage": "",
@@ -3185,7 +3185,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "saveDC": "19",
                     "timing": "end_of_turn"
                 },
@@ -3198,11 +3198,11 @@
                 "name": "Acid Breath (Recharge 5-6)",
                 "desc": "The dragon exhales acid in a 90-foot line that is 10 feet wide. Each creature in that line must make a DC 22 Dexterity saving throw, taking 67 (15d8) acid damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "90",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "line that is 10 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "22",
                     "damage": "15d8",
@@ -3415,11 +3415,11 @@
                 "name": "Frightful Presence",
                 "desc": "Each creature of the dragon's choice that is within 120 feet of the dragon and aware of it must succeed on a DC 19 Wisdom saving throw or become frightened for 1 minute. A creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success. If a creature's saving throw is successful or the effect ends for it, the creature is immune to the dragon's Frightful Presence for the next 24 hours.",
                 "actionRange": "120",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "19",
                     "damage": "",
@@ -3434,7 +3434,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "saveDC": "19",
                     "timing": "end_of_turn"
                 },
@@ -3447,11 +3447,11 @@
                 "name": "Acid Breath (Recharge 5-6)",
                 "desc": "The dragon exhales acid in a 90-foot line that is 10 feet wide. Each creature in that line must make a DC 22 Dexterity saving throw, taking 67 (15d8) acid damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "90",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "line that is 10 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "22",
                     "damage": "15d8",
@@ -3658,11 +3658,11 @@
                 "name": "Frightful Presence",
                 "desc": "Each creature of the dragon's choice that is within 120 feet of the dragon and aware of it must succeed on a DC 18 Wisdom saving throw or become frightened for 1 minute. A creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success. If a creature's saving throw is successful or the effect ends for it, the creature is immune to the dragon's Frightful Presence for the next 24 hours.",
                 "actionRange": "120",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "18",
                     "damage": "",
@@ -3677,7 +3677,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "saveDC": "18",
                     "timing": "end_of_turn"
                 },
@@ -3690,11 +3690,11 @@
                 "name": "Fire Breath (Recharge 5-6)",
                 "desc": "The dragon exhales fire in a 90-foot line that is 10 feet wide. Each creature in that line must make a DC 21 Dexterity saving throw, taking 56 (16d6) fire damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "90",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "line that is 10 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "21",
                     "damage": "16d6",
@@ -3721,11 +3721,11 @@
                 "name": "Sleep Breath (Recharge 5-6)",
                 "desc": "The dragon exhales sleep gas in a 90-foot cone. Each creature in that area must succeed on a DC 21 Constitution saving throw or fall unconscious for 10 minutes. This effect ends for a creature if the creature takes damage or someone uses an action to wake it.",
                 "actionRange": "90",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "21",
                     "damage": "",
@@ -3962,11 +3962,11 @@
                 "name": "Frightful Presence",
                 "desc": "Each creature of the dragon's choice that is within 120 feet of the dragon and aware of it must succeed on a DC 20 Wisdom saving throw or become frightened for 1 minute. A creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success. If a creature's saving throw is successful or the effect ends for it, the creature is immune to the dragon's Frightful Presence for the next 24 hours.",
                 "actionRange": "120",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "20",
                     "damage": "",
@@ -3981,7 +3981,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "saveDC": "20",
                     "timing": "end_of_turn"
                 },
@@ -3994,11 +3994,11 @@
                 "name": "Lightning Breath (Recharge 5-6)",
                 "desc": "The dragon exhales lightning in a 120-foot line that is 10 feet wide. Each creature in that line must make a DC 23 Dexterity saving throw, taking 88 (16d10) lightning damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "120",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "line that is 10 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "23",
                     "damage": "16d10",
@@ -4025,11 +4025,11 @@
                 "name": "Repulsion Breath (Recharge 5-6)",
                 "desc": "The dragon exhales repulsion energy in a 30-foot cone. Each creature in that area must succeed on a DC 23 Strength saving throw. On a failed save, the creature is pushed 60 feet away from the dragon.",
                 "actionRange": "30",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "strength",
+                    "saveType": "STR",
                     "halfSave": false,
                     "saveDC": "23",
                     "damage": "",
@@ -4266,11 +4266,11 @@
                 "name": "Frightful Presence",
                 "desc": "Each creature of the dragon's choice that is within 120 feet of the dragon and aware of it must succeed on a DC 19 Wisdom saving throw or become frightened for 1 minute. A creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success. If a creature's saving throw is successful or the effect ends for it, the creature is immune to the dragon's Frightful Presence for the next 24 hours.",
                 "actionRange": "120",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "19",
                     "damage": "",
@@ -4287,7 +4287,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "saveDC": "19",
                     "timing": "end_of_turn"
                 },
@@ -4300,11 +4300,11 @@
                 "name": "Acid Breath (Recharge 5-6)",
                 "desc": "The dragon exhales acid in an 90-foot line that is 10 feet wide. Each creature in that line must make a DC 22 Dexterity saving throw, taking 63 (14d8) acid damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "90",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "line that is 10 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "22",
                     "damage": "14d8",
@@ -4333,11 +4333,11 @@
                 "name": "Slowing Breath (Recharge 5-6)",
                 "desc": "The dragon exhales gas in a 90-foot cone. Each creature in that area must succeed on a DC 22 Constitution saving throw. On a failed save, the creature can't use reactions, its speed is halved, and it can't make more than one attack on its turn. In addition, the creature can use either an action or a bonus action on its turn, but not both. These effects last for 1 minute. The creature can repeat the saving throw at the end of each of its turns, ending the effect on itself with a successful save.",
                 "actionRange": "90",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "22",
                     "damage": "",
@@ -4355,7 +4355,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": false,
                         "saveDC": "22",
                         "damage": "",
@@ -4371,7 +4371,7 @@
                     "statusEffect": []
                 },
                 "lingSave": {
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "saveDC": "22",
                     "timing": "end_of_turn"
                 },
@@ -4603,11 +4603,11 @@
                 "name": "Frightful Presence",
                 "desc": "Each creature of the dragon's choice that is within 120 feet of the dragon and aware of it must succeed on a DC 24 Wisdom saving throw or become frightened for 1 minute. A creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success. If a creature's saving throw is successful or the effect ends for it, the creature is immune to the dragon's Frightful Presence for the next 24 hours.",
                 "actionRange": "120",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "24",
                     "damage": "",
@@ -4624,7 +4624,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "saveDC": "24",
                     "timing": "end_of_turn"
                 },
@@ -4637,11 +4637,11 @@
                 "name": "Fire Breath (Recharge 5-6)",
                 "desc": "The dragon exhales fire in a 90-foot cone. Each creature in that area must make a DC 24 Dexterity saving throw, taking 71 (13d10) fire damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "90",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "24",
                     "damage": "13d10",
@@ -4670,11 +4670,11 @@
                 "name": "Weakening Breath (Recharge 5-6)",
                 "desc": "The dragon exhales gas in a 90-foot cone. Each creature in that area must succeed on a DC 24 Strength saving throw or have disadvantage on Strength-based attack rolls, Strength checks, and Strength saving throws for 1 minute. A creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success.",
                 "actionRange": "90",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "strength",
+                    "saveType": "STR",
                     "halfSave": false,
                     "saveDC": "24",
                     "damage": "",
@@ -4692,7 +4692,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "strength",
+                        "saveType": "STR",
                         "halfSave": false,
                         "saveDC": "24",
                         "damage": "",
@@ -4708,7 +4708,7 @@
                     "statusEffect": []
                 },
                 "lingSave": {
-                    "saveType": "strength",
+                    "saveType": "STR",
                     "saveDC": "24",
                     "timing": "end_of_turn"
                 },
@@ -4945,11 +4945,11 @@
                 "name": "Frightful Presence",
                 "desc": "Each creature of the dragon's choice that is within 120 feet of the dragon and aware of it must succeed on a DC 19 Wisdom saving throw or become frightened for 1 minute. A creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success. If a creature's saving throw is successful or the effect ends for it, the creature is immune to the dragon's Frightful Presence for the next 24 hours.",
                 "actionRange": "120",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "19",
                     "damage": "",
@@ -4966,7 +4966,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "saveDC": "19",
                     "timing": "end_of_turn"
                 },
@@ -4979,11 +4979,11 @@
                 "name": "Poison Breath (Recharge 5-6)",
                 "desc": "The dragon exhales poisonous gas in a 90-foot cone. Each creature in that area must make a DC 22 Constitution saving throw, taking 77 (22d6) poison damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "90",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "22",
                     "damage": "22d6",
@@ -5203,11 +5203,11 @@
                 "name": "Frightful Presence",
                 "desc": "Each creature of the dragon's choice that is within 120 feet of the dragon and aware of it must succeed on a DC 21 Wisdom saving throw or become frightened for 1 minute. A creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success. If a creature's saving throw is successful or the effect ends for it, the creature is immune to the dragon's Frightful Presence for the next 24 hours.",
                 "actionRange": "120",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "21",
                     "damage": "",
@@ -5224,7 +5224,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "saveDC": "21",
                     "timing": "end_of_turn"
                 },
@@ -5237,11 +5237,11 @@
                 "name": "Fire Breath (Recharge 5-6)",
                 "desc": "The dragon exhales fire in a 90-foot cone. Each creature in that area must make a DC 24 Dexterity saving throw, taking 91 (26d6) fire damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "90",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "24",
                     "damage": "26d6",
@@ -5456,11 +5456,11 @@
                 "name": "Frightful Presence",
                 "desc": "Each creature of the dragon's choice that is within 120 feet of the dragon and aware of it must succeed on a DC 21 Wisdom saving throw or become frightened for 1 minute. A creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success. If a creature's saving throw is successful or the effect ends for it, the creature is immune to the dragon's Frightful Presence for the next 24 hours.",
                 "actionRange": "120",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "21",
                     "damage": "",
@@ -5477,7 +5477,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "saveDC": "21",
                     "timing": "end_of_turn"
                 },
@@ -5490,11 +5490,11 @@
                 "name": "Breath Weapons (Recharge 5-6)",
                 "desc": "The dragon uses one of the following breath weapons.\n\n**Cold Breath.** The dragon exhales an icy blast in a 90-foot cone. Each creature in that area must make a DC 24 Constitution saving throw, taking 67 (15d8) cold damage on a failed save, or half as much damage on a successful one.\n\n **Paralyzing Breath.** The dragon exhales paralyzing gas in a 90- foot cone. Each creature in that area must succeed on a DC 24 Constitution saving throw or be paralyzed for 1 minute. A creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success.",
                 "actionRange": "90",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "24",
                     "damage": "15d8",
@@ -5745,11 +5745,11 @@
                 "name": "Frightful Presence",
                 "desc": "Each creature of the dragon's choice that is within 120 feet of the dragon and aware of it must succeed on a DC 16 Wisdom saving throw or become frightened for 1 minute. A creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success. If a creature's saving throw is successful or the effect ends for it, the creature is immune to the dragon's Frightful Presence for the next 24 hours.",
                 "actionRange": "120",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "16",
                     "damage": "",
@@ -5766,7 +5766,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "saveDC": "16",
                     "timing": "end_of_turn"
                 },
@@ -5779,11 +5779,11 @@
                 "name": "Cold Breath (Recharge 5-6)",
                 "desc": "The dragon exhales an icy blast in a 90-foot cone. Each creature in that area must make a DC 22 Constitution saving throw, taking 72 (16d8) cold damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "90",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "22",
                     "damage": "16d8",
@@ -5908,7 +5908,7 @@
                 "name": "Roar (3/Day)",
                 "desc": "The sphinx emits a magical roar. Each time it roars before finishing a long rest, the roar is louder and the effect is different, as detailed below. Each creature within 500 feet of the sphinx and able to hear the roar must make a saving throw.\n**First Roar.** Each creature that fails a DC 18 Wisdom saving throw is frightened for 1 minute. A frightened creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success.\n**Second Roar.** Each creature that fails a DC 18 Wisdom saving throw is deafened and frightened for 1 minute. A frightened creature is paralyzed and can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success.\n**Third Roar.** Each creature makes a DC 18 Constitution saving throw. On a failed save, a creature takes 44 (8d10) thunder damage and is knocked prone. On a successful save, the creature takes half as much damage and isn't knocked prone.",
                 "actionRange": "500",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "circle",
                 "rolls": {
                     "rollType": "save",
@@ -5986,7 +5986,7 @@
             }
         ],
         "spellInfo": {
-            "type": "wisdom",
+            "type": "WIS",
             "DC": "18",
             "attackRoll": "10",
             "spells": [
@@ -6212,11 +6212,11 @@
                 "name": "Acid Spray (Recharge 6)",
                 "desc": "The ankheg spits acid in a line that is 30 ft. long and 5 ft. wide, provided that it has no creature grappled. Each creature in that line must make a DC 13 Dexterity saving throw, taking 10 (3d6) acid damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "30",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "line that is 5 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "13",
                     "damage": "3d6",
@@ -6381,7 +6381,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "intelligence",
+            "type": "INT",
             "DC": "17",
             "attackRoll": "9",
             "spells": [
@@ -6556,7 +6556,7 @@
                 "lingEffect": {},
                 "extraEffect": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "15",
                     "damage": "7d6",
@@ -6601,7 +6601,7 @@
                 "lingEffect": {},
                 "extraEffect": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "15",
                     "damage": "7d6",
@@ -7069,98 +7069,116 @@
         "conImmunes": "poisoned",
         "magicResist": false,
         "lairAction": false,
-        "actions" : [
+        "actions": [
             {
-              "name": "Longsword",
-              "desc": "Melee Weapon Attack: +14 to hit, reach 10 ft., one target. Hit: 21 (3d8 + 8) slashing damage plus 13 (3d8) lightning damage. If the balor scores a critical hit, it rolls damage dice three times, instead of twice.",
-              "actionRange": "10",
-              "numTarget": 1,
-              "shape": "",
-              "rolls": {
-                "rollType": "toHit",
-                "saveType": "",
-                "halfSave": false,
-                "saveDC": "",
-                "damage": "3d8",
-                "attackBonus": 14,
-                "damMod": 8
-              },
-              "damType": ["slashing"],
-              "conditions": [""],
-              "statusEffect": [],
-              "lingEffect": {},
-              "extraEffect": {},
-              "lingSave": {},
-              "actionCost": "action",
-              "recharge": "",
-              "specialNotes": [
-              ],
-              "extraDamage": [
-                { "dice": "3d8", "mod": 0, "type": "lightning" }
-              ]
+                "name": "Longsword",
+                "desc": "Melee Weapon Attack: +14 to hit, reach 10 ft., one target. Hit: 21 (3d8 + 8) slashing damage plus 13 (3d8) lightning damage. If the balor scores a critical hit, it rolls damage dice three times, instead of twice.",
+                "actionRange": "10",
+                "numTarget": 1,
+                "shape": "",
+                "rolls": {
+                    "rollType": "toHit",
+                    "saveType": "",
+                    "halfSave": false,
+                    "saveDC": "",
+                    "damage": "3d8",
+                    "attackBonus": 14,
+                    "damMod": 8
+                },
+                "damType": [
+                    "slashing"
+                ],
+                "conditions": [
+                    ""
+                ],
+                "statusEffect": [],
+                "lingEffect": {},
+                "extraEffect": {},
+                "lingSave": {},
+                "actionCost": "action",
+                "recharge": "",
+                "specialNotes": [],
+                "extraDamage": [
+                    {
+                        "dice": "3d8",
+                        "mod": 0,
+                        "type": "lightning"
+                    }
+                ]
             },
             {
-              "name": "Whip",
-              "desc": "Melee Weapon Attack: +14 to hit, reach 30 ft., one target. Hit: 15 (2d6 + 8) slashing damage plus 10 (3d6) fire damage, and the target must succeed on a DC 20 Strength saving throw or be pulled up to 25 feet toward the balor.",
-              "actionRange": "30",
-              "numTarget": 1,
-              "shape": "",
-              "rolls": {
-                "rollType": "toHit",
-                "saveType": "",
-                "halfSave": false,
-                "saveDC": "",
-                "damage": "2d6",
-                "attackBonus": 14,
-                "damMod": 8
-              },
-              "damType": ["slashing"],
-              "conditions": [""],
-              "statusEffect": [],
-              "lingEffect": {},
-              "extraEffect": {
-                "rollType": "save",
-                "saveType": "strength",
-                "halfSave": false,
-                "saveDC": "20",
-                "damage": "",
-                "attackBonus": 0,
-                "damMod": ""
-              },
-              "lingSave": {},
-              "actionCost": "action",
-              "recharge": "",
-              "specialNotes": [
-              ],
-              "extraDamage": [
-                { "dice": "3d6", "mod": 0, "type": "fire" }
-              ]
+                "name": "Whip",
+                "desc": "Melee Weapon Attack: +14 to hit, reach 30 ft., one target. Hit: 15 (2d6 + 8) slashing damage plus 10 (3d6) fire damage, and the target must succeed on a DC 20 Strength saving throw or be pulled up to 25 feet toward the balor.",
+                "actionRange": "30",
+                "numTarget": 1,
+                "shape": "",
+                "rolls": {
+                    "rollType": "toHit",
+                    "saveType": "",
+                    "halfSave": false,
+                    "saveDC": "",
+                    "damage": "2d6",
+                    "attackBonus": 14,
+                    "damMod": 8
+                },
+                "damType": [
+                    "slashing"
+                ],
+                "conditions": [
+                    ""
+                ],
+                "statusEffect": [],
+                "lingEffect": {},
+                "extraEffect": {
+                    "rollType": "save",
+                    "saveType": "STR",
+                    "halfSave": false,
+                    "saveDC": "20",
+                    "damage": "",
+                    "attackBonus": 0,
+                    "damMod": ""
+                },
+                "lingSave": {},
+                "actionCost": "action",
+                "recharge": "",
+                "specialNotes": [],
+                "extraDamage": [
+                    {
+                        "dice": "3d6",
+                        "mod": 0,
+                        "type": "fire"
+                    }
+                ]
             },
             {
-              "name": "Teleport",
-              "desc": "The balor magically teleports, along with any equipment it is wearing or carrying, up to 120 feet to an unoccupied space it can see.",
-              "actionRange": "120",
-              "numTarget": 1,
-              "shape": "",
-              "rolls": {
-                "rollType": "",
-                "saveType": "",
-                "halfSave": false,
-                "saveDC": "",
-                "damage": "",
-                "attackBonus": 0,
-                "damMod": ""
-              },
-              "damType": [""],
-              "conditions": [""],
-              "statusEffect": [],
-              "lingEffect": {},
-              "extraEffect": {},
-              "lingSave": {},
-              "actionCost": "action",
-              "recharge": "",
-              "specialNotes": [],
-              "extraDamage": []
+                "name": "Teleport",
+                "desc": "The balor magically teleports, along with any equipment it is wearing or carrying, up to 120 feet to an unoccupied space it can see.",
+                "actionRange": "120",
+                "numTarget": 1,
+                "shape": "",
+                "rolls": {
+                    "rollType": "",
+                    "saveType": "",
+                    "halfSave": false,
+                    "saveDC": "",
+                    "damage": "",
+                    "attackBonus": 0,
+                    "damMod": ""
+                },
+                "damType": [
+                    ""
+                ],
+                "conditions": [
+                    ""
+                ],
+                "statusEffect": [],
+                "lingEffect": {},
+                "extraEffect": {},
+                "lingSave": {},
+                "actionCost": "action",
+                "recharge": "",
+                "specialNotes": [],
+                "extraDamage": []
             }
         ],
         "legActions": [],
@@ -7309,59 +7327,67 @@
         "magicResist": false,
         "lairAction": false,
         "actions": [
-  {
-    "name": "Scimitar",
-    "desc": "Melee Weapon Attack: +5 to hit, reach 5 ft., one target. Hit: 6 (1d6 + 3) slashing damage.",
-    "actionRange": "5",
-    "numTarget": 1,
-    "shape": "",
-    "rolls": {
-      "rollType": "toHit",
-      "saveType": "",
-      "halfSave": false,
-      "saveDC": "",
-      "damage": "1d6",
-      "attackBonus": 5,
-      "damMod": 3
-    },
-    "damType": ["slashing"],
-    "conditions": [""],
-    "statusEffect": [],
-    "lingEffect": {},
-    "extraEffect": {},
-    "lingSave": {},
-    "actionCost": "action",
-    "recharge": "",
-    "specialNotes": [],
-    "extraDamage": []
-  },
-  {
-    "name": "Dagger",
-    "desc": "Melee or Ranged Weapon Attack: +5 to hit, reach 5 ft. or range 20/60 ft., one target. Hit: 5 (1d4 + 3) piercing damage.",
-    "actionRange": "60",
-    "numTarget": 1,
-    "shape": "",
-    "rolls": {
-      "rollType": "toHit",
-      "saveType": "",
-      "halfSave": false,
-      "saveDC": "",
-      "damage": "1d4",
-      "attackBonus": 5,
-      "damMod": 3
-    },
-    "damType": ["piercing"],
-    "conditions": [""],
-    "statusEffect": [],
-    "lingEffect": {},
-    "extraEffect": {},
-    "lingSave": {},
-    "actionCost": "action",
-    "recharge": "",
-    "specialNotes": [],
-    "extraDamage": []
-  }
-],
+            {
+                "name": "Scimitar",
+                "desc": "Melee Weapon Attack: +5 to hit, reach 5 ft., one target. Hit: 6 (1d6 + 3) slashing damage.",
+                "actionRange": "5",
+                "numTarget": 1,
+                "shape": "",
+                "rolls": {
+                    "rollType": "toHit",
+                    "saveType": "",
+                    "halfSave": false,
+                    "saveDC": "",
+                    "damage": "1d6",
+                    "attackBonus": 5,
+                    "damMod": 3
+                },
+                "damType": [
+                    "slashing"
+                ],
+                "conditions": [
+                    ""
+                ],
+                "statusEffect": [],
+                "lingEffect": {},
+                "extraEffect": {},
+                "lingSave": {},
+                "actionCost": "action",
+                "recharge": "",
+                "specialNotes": [],
+                "extraDamage": []
+            },
+            {
+                "name": "Dagger",
+                "desc": "Melee or Ranged Weapon Attack: +5 to hit, reach 5 ft. or range 20/60 ft., one target. Hit: 5 (1d4 + 3) piercing damage.",
+                "actionRange": "60",
+                "numTarget": 1,
+                "shape": "",
+                "rolls": {
+                    "rollType": "toHit",
+                    "saveType": "",
+                    "halfSave": false,
+                    "saveDC": "",
+                    "damage": "1d4",
+                    "attackBonus": 5,
+                    "damMod": 3
+                },
+                "damType": [
+                    "piercing"
+                ],
+                "conditions": [
+                    ""
+                ],
+                "statusEffect": [],
+                "lingEffect": {},
+                "extraEffect": {},
+                "lingSave": {},
+                "actionCost": "action",
+                "recharge": "",
+                "specialNotes": [],
+                "extraDamage": []
+            }
+        ],
         "legActions": [],
         "spellInfo": {},
         "multiattack": {
@@ -7411,85 +7437,97 @@
         "magicResist": false,
         "lairAction": false,
         "actions": [
-  {
-    "name": "Claw",
-    "desc": "Melee Weapon Attack: +6 to hit, reach 5 ft., one target. Hit: 6 (1d6 + 3) piercing damage.",
-    "actionRange": "5",
-    "numTarget": 1,
-    "shape": "",
-    "rolls": {
-      "rollType": "toHit",
-      "saveType": "",
-      "halfSave": false,
-      "saveDC": "",
-      "damage": "1d6",
-      "attackBonus": 6,
-      "damMod": 3
-    },
-    "damType": ["piercing"],
-    "conditions": [""],
-    "statusEffect": [],
-    "lingEffect": {},
-    "extraEffect": {},
-    "lingSave": {},
-    "actionCost": "action",
-    "recharge": "",
-    "specialNotes": [],
-    "extraDamage": []
-  },
-  {
-    "name": "Tail",
-    "desc": "Melee Weapon Attack: +6 to hit, reach 5 ft., one target. Hit: 10 (2d6 + 3) piercing damage.",
-    "actionRange": "5",
-    "numTarget": 1,
-    "shape": "",
-    "rolls": {
-      "rollType": "toHit",
-      "saveType": "",
-      "halfSave": false,
-      "saveDC": "",
-      "damage": "2d6",
-      "attackBonus": 6,
-      "damMod": 3
-    },
-    "damType": ["piercing"],
-    "conditions": [""],
-    "statusEffect": [],
-    "lingEffect": {},
-    "extraEffect": {},
-    "lingSave": {},
-    "actionCost": "action",
-    "recharge": "",
-    "specialNotes": [],
-    "extraDamage": []
-  },
-  {
-    "name": "Hurl Flame",
-    "desc": "Ranged Spell Attack: +5 to hit, range 150 ft., one target. Hit: 10 (3d6) fire damage. If the target is a flammable object that isn't being worn or carried, it also catches fire.",
-    "actionRange": "150",
-    "numTarget": 1,
-    "shape": "",
-    "rolls": {
-      "rollType": "toHit",
-      "saveType": "",
-      "halfSave": false,
-      "saveDC": "",
-      "damage": "3d6",
-      "attackBonus": 5,
-      "damMod": 0
-    },
-    "damType": ["fire"],
-    "conditions": [""],
-    "statusEffect": [],
-    "lingEffect": {},
-    "extraEffect": {},
-    "lingSave": {},
-    "actionCost": "action",
-    "recharge": "",
-    "specialNotes": [],
-    "extraDamage": []
-  }
-],
+            {
+                "name": "Claw",
+                "desc": "Melee Weapon Attack: +6 to hit, reach 5 ft., one target. Hit: 6 (1d6 + 3) piercing damage.",
+                "actionRange": "5",
+                "numTarget": 1,
+                "shape": "",
+                "rolls": {
+                    "rollType": "toHit",
+                    "saveType": "",
+                    "halfSave": false,
+                    "saveDC": "",
+                    "damage": "1d6",
+                    "attackBonus": 6,
+                    "damMod": 3
+                },
+                "damType": [
+                    "piercing"
+                ],
+                "conditions": [
+                    ""
+                ],
+                "statusEffect": [],
+                "lingEffect": {},
+                "extraEffect": {},
+                "lingSave": {},
+                "actionCost": "action",
+                "recharge": "",
+                "specialNotes": [],
+                "extraDamage": []
+            },
+            {
+                "name": "Tail",
+                "desc": "Melee Weapon Attack: +6 to hit, reach 5 ft., one target. Hit: 10 (2d6 + 3) piercing damage.",
+                "actionRange": "5",
+                "numTarget": 1,
+                "shape": "",
+                "rolls": {
+                    "rollType": "toHit",
+                    "saveType": "",
+                    "halfSave": false,
+                    "saveDC": "",
+                    "damage": "2d6",
+                    "attackBonus": 6,
+                    "damMod": 3
+                },
+                "damType": [
+                    "piercing"
+                ],
+                "conditions": [
+                    ""
+                ],
+                "statusEffect": [],
+                "lingEffect": {},
+                "extraEffect": {},
+                "lingSave": {},
+                "actionCost": "action",
+                "recharge": "",
+                "specialNotes": [],
+                "extraDamage": []
+            },
+            {
+                "name": "Hurl Flame",
+                "desc": "Ranged Spell Attack: +5 to hit, range 150 ft., one target. Hit: 10 (3d6) fire damage. If the target is a flammable object that isn't being worn or carried, it also catches fire.",
+                "actionRange": "150",
+                "numTarget": 1,
+                "shape": "",
+                "rolls": {
+                    "rollType": "toHit",
+                    "saveType": "",
+                    "halfSave": false,
+                    "saveDC": "",
+                    "damage": "3d6",
+                    "attackBonus": 5,
+                    "damMod": 0
+                },
+                "damType": [
+                    "fire"
+                ],
+                "conditions": [
+                    ""
+                ],
+                "statusEffect": [],
+                "lingEffect": {},
+                "extraEffect": {},
+                "lingSave": {},
+                "actionCost": "action",
+                "recharge": "",
+                "specialNotes": [],
+                "extraDamage": []
+            }
+        ],
         "legActions": [],
         "spellInfo": {},
         "multiattack": {
@@ -7679,84 +7717,94 @@
         "magicResist": false,
         "lairAction": false,
         "actions": [
-  {
-    "name": "Beard",
-    "desc": "Melee Weapon Attack: +5 to hit, reach 5 ft., one creature. Hit: 6 (1d8 + 2) piercing damage, and the target must succeed on a DC 12 Constitution saving throw or be poisoned for 1 minute. While poisoned in this way, the target can't regain hit points. The target can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success.",
-    "actionRange": "5",
-    "numTarget": 1,
-    "shape": "",
-    "rolls": {
-      "rollType": "toHit",
-      "saveType": "",
-      "halfSave": false,
-      "saveDC": "",
-      "damage": "1d8",
-      "attackBonus": 5,
-      "damMod": 2
-    },
-    "damType": ["piercing"],
-    "conditions": ["poisoned"],
-    "statusEffect": [],
-    "lingEffect": {},
-    "extraEffect": {
-      "rollType": "save",
-      "saveType": "constitution",
-      "halfSave": false,
-      "saveDC": "12",
-      "damage": "",
-      "attackBonus": 0,
-      "damMod": 0,
-      "damType": [],
-      "conditions": ["poisoned"],
-      "statusEffect": []
-    },
-    "lingSave": {
-      "saveType": "constitution",
-      "saveDC": "12"
-    },
-    "actionCost": "action",
-    "recharge": "",
-    "specialNotes": [],
-    "extraDamage": []
-  },
-  {
-    "name": "Glaive",
-    "desc": "Melee Weapon Attack: +5 to hit, reach 10 ft., one target. Hit: 8 (1d10 + 3) slashing damage. If the target is a creature other than an undead or a construct, it must succeed on a DC 12 Constitution saving throw or lose 5 (1d10) hit points at the start of each of its turns due to an infernal wound.",
-    "actionRange": "10",
-    "numTarget": 1,
-    "shape": "",
-    "rolls": {
-      "rollType": "toHit",
-      "saveType": "",
-      "halfSave": false,
-      "saveDC": "",
-      "damage": "1d10",
-      "attackBonus": 5,
-      "damMod": 3
-    },
-    "damType": ["slashing"],
-    "conditions": [],
-    "statusEffect": [],
-    "lingEffect": {},
-    "extraEffect": {
-      "rollType": "save",
-      "saveType": "constitution",
-      "halfSave": false,
-      "saveDC": "12",
-      "damage": "1d10",
-      "attackBonus": 0,
-      "damMod": 6,
-      "damType": ["fire"],
-      "conditions": [],
-      "statusEffect": []
-    },
-    "lingSave": {},
-    "actionCost": "action",
-    "recharge": "",
-    "specialNotes": [],
-    "extraDamage": []
-  }
-],
+            {
+                "name": "Beard",
+                "desc": "Melee Weapon Attack: +5 to hit, reach 5 ft., one creature. Hit: 6 (1d8 + 2) piercing damage, and the target must succeed on a DC 12 Constitution saving throw or be poisoned for 1 minute. While poisoned in this way, the target can't regain hit points. The target can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success.",
+                "actionRange": "5",
+                "numTarget": 1,
+                "shape": "",
+                "rolls": {
+                    "rollType": "toHit",
+                    "saveType": "",
+                    "halfSave": false,
+                    "saveDC": "",
+                    "damage": "1d8",
+                    "attackBonus": 5,
+                    "damMod": 2
+                },
+                "damType": [
+                    "piercing"
+                ],
+                "conditions": [
+                    "poisoned"
+                ],
+                "statusEffect": [],
+                "lingEffect": {},
+                "extraEffect": {
+                    "rollType": "save",
+                    "saveType": "CON",
+                    "halfSave": false,
+                    "saveDC": "12",
+                    "damage": "",
+                    "attackBonus": 0,
+                    "damMod": 0,
+                    "damType": [],
+                    "conditions": [
+                        "poisoned"
+                    ],
+                    "statusEffect": []
+                },
+                "lingSave": {
+                    "saveType": "CON",
+                    "saveDC": "12"
+                },
+                "actionCost": "action",
+                "recharge": "",
+                "specialNotes": [],
+                "extraDamage": []
+            },
+            {
+                "name": "Glaive",
+                "desc": "Melee Weapon Attack: +5 to hit, reach 10 ft., one target. Hit: 8 (1d10 + 3) slashing damage. If the target is a creature other than an undead or a construct, it must succeed on a DC 12 Constitution saving throw or lose 5 (1d10) hit points at the start of each of its turns due to an infernal wound.",
+                "actionRange": "10",
+                "numTarget": 1,
+                "shape": "",
+                "rolls": {
+                    "rollType": "toHit",
+                    "saveType": "",
+                    "halfSave": false,
+                    "saveDC": "",
+                    "damage": "1d10",
+                    "attackBonus": 5,
+                    "damMod": 3
+                },
+                "damType": [
+                    "slashing"
+                ],
+                "conditions": [],
+                "statusEffect": [],
+                "lingEffect": {},
+                "extraEffect": {
+                    "rollType": "save",
+                    "saveType": "CON",
+                    "halfSave": false,
+                    "saveDC": "12",
+                    "damage": "1d10",
+                    "attackBonus": 0,
+                    "damMod": 6,
+                    "damType": [
+                        "fire"
+                    ],
+                    "conditions": [],
+                    "statusEffect": []
+                },
+                "lingSave": {},
+                "actionCost": "action",
+                "recharge": "",
+                "specialNotes": [],
+                "extraDamage": []
+            }
+        ],
         "legActions": [],
         "spellInfo": {},
         "multiattack": {
@@ -7869,7 +7917,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "14",
                     "damage": "6d6",
@@ -8124,11 +8172,11 @@
                 "name": "Acid Breath (Recharge 5-6)",
                 "desc": "The dragon exhales acid in a 15-foot line that is 5 feet wide. Each creature in that line must make a DC 11 Dexterity saving throw, taking 22 (5d8) acid damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "15",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "line that is 5 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "11",
                     "damage": "5d8",
@@ -8470,11 +8518,11 @@
                 "name": "Lightning Breath (Recharge 5-6)",
                 "desc": "The dragon exhales lightning in a 30-foot line that is 5 feet wide. Each creature in that line must make a DC 12 Dexterity saving throw, taking 22 (4d10) lightning damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "30",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "line that is 5 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "12",
                     "damage": "4d10",
@@ -8629,7 +8677,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": false,
                         "saveDC": "14",
                         "damage": "0",
@@ -8745,11 +8793,11 @@
                 "name": "Breath Weapons (Recharge 5-6)",
                 "desc": "The dragon uses one of the following breath weapons.\n**Fire Breath.** The dragon exhales fire in an 20-foot line that is 5 feet wide. Each creature in that line must make a DC 11 Dexterity saving throw, taking 14 (4d6) fire damage on a failed save, or half as much damage on a successful one.\n**Sleep Breath.** The dragon exhales sleep gas in a 15-foot cone. Each creature in that area must succeed on a DC 11 Constitution saving throw or fall unconscious for 1 minute. This effect ends for a creature if the creature takes damage or someone uses an action to wake it.",
                 "actionRange": "20",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "line that is 5 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "11",
                     "damage": "4d6",
@@ -8845,11 +8893,11 @@
                 "name": "Breath Weapons (Recharge 5-6)",
                 "desc": "The dragon uses one of the following breath weapons.\n**Lightning Breath.** The dragon exhales lightning in a 40-foot line that is 5 feet wide. Each creature in that line must make a DC 12 Dexterity saving throw, taking 16 (3d10) lightning damage on a failed save, or half as much damage on a successful one.\n**Repulsion Breath.** The dragon exhales repulsion energy in a 30-foot cone. Each creature in that area must succeed on a DC 12 Strength saving throw. On a failed save, the creature is pushed 30 feet away from the dragon.",
                 "actionRange": "40",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "line that is 5 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "12",
                     "damage": "3d10",
@@ -9126,7 +9174,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": false,
                     "saveDC": "or",
                     "damage": "3d6",
@@ -9562,11 +9610,11 @@
                 "name": "Fire Breath (Recharge 5-6)",
                 "desc": "The dragon head exhales fire in a 15-foot cone. Each creature in that area must make a DC 15 Dexterity saving throw, taking 31 (7d8) fire damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "15",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "15",
                     "damage": "7d8",
@@ -9653,7 +9701,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "13",
                     "damage": "",
@@ -9670,7 +9718,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "saveDC": "13",
                     "timing": "end_of_turn"
                 },
@@ -9728,7 +9776,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": false,
                     "saveDC": "on",
                     "damage": "",
@@ -9832,7 +9880,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "13",
                     "damage": "",
@@ -9862,7 +9910,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "its",
+                    "saveType": "INT",
                     "halfSave": false,
                     "saveDC": "uses",
                     "damage": "",
@@ -9969,7 +10017,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "charisma.",
+            "type": "CHA",
             "DC": "",
             "attackRoll": "0",
             "spells": [
@@ -10075,7 +10123,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "11",
                         "damage": "0",
@@ -10336,11 +10384,11 @@
                 "name": "Breath Weapons (Recharge 5-6)",
                 "desc": "The dragon uses one of the following breath weapons.\n**Acid Breath.** The dragon exhales acid in an 20-foot line that is 5 feet wide. Each creature in that line must make a DC 11 Dexterity saving throw, taking 18 (4d8) acid damage on a failed save, or half as much damage on a successful one.\n**Slowing Breath.** The dragon exhales gas in a 1 5-foot cone. Each creature in that area must succeed on a DC 11 Constitution saving throw. On a failed save, the creature can't use reactions, its speed is halved, and it can't make more than one attack on its turn. In addition, the creature can use either an action or a bonus action on its turn, but not both. These effects last for 1 minute. The creature can repeat the saving throw at the end of each of its turns, ending the effect on itself with a successful save.",
                 "actionRange": "20",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "line that is 5 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "11",
                     "damage": "4d8",
@@ -10357,7 +10405,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "saveDC": "11",
                     "timing": "end_of_turn"
                 },
@@ -10432,7 +10480,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": false,
                         "saveDC": "13",
                         "damage": "0",
@@ -10517,7 +10565,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "charisma",
+            "type": "CHA",
             "DC": "14",
             "attackRoll": "0",
             "spells": [
@@ -10745,7 +10793,7 @@
         "actions": [],
         "legActions": [],
         "spellInfo": {
-            "type": "wisdom",
+            "type": "WIS",
             "DC": "11",
             "attackRoll": "3",
             "spells": [
@@ -11083,7 +11131,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": false,
                         "saveDC": "12",
                         "damage": "0",
@@ -11112,7 +11160,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "intelligence",
+            "type": "INT",
             "DC": "11",
             "attackRoll": "0",
             "spells": [
@@ -11298,7 +11346,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "charisma",
+            "type": "CHA",
             "DC": "17",
             "attackRoll": "0",
             "spells": [
@@ -11380,7 +11428,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "strength",
+                        "saveType": "STR",
                         "halfSave": false,
                         "saveDC": "13",
                         "damage": "0",
@@ -11447,7 +11495,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "strength",
+                    "saveType": "STR",
                     "halfSave": false,
                     "saveDC": "18",
                     "damage": "",
@@ -11472,7 +11520,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "charisma",
+            "type": "CHA",
             "DC": "17",
             "attackRoll": "9",
             "spells": [
@@ -11758,7 +11806,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "strength",
+                        "saveType": "STR",
                         "halfSave": false,
                         "saveDC": "20",
                         "damage": "0",
@@ -11784,11 +11832,11 @@
                 "name": "Steam Breath (Recharge 5-6)",
                 "desc": "The dragon turtle exhales scalding steam in a 60-foot cone. Each creature in that area must make a DC 18 Constitution saving throw, taking 52 (15d6) fire damage on a failed save, or half as much damage on a successful one. Being underwater doesn't grant resistance against this damage.",
                 "actionRange": "60",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "18",
                     "damage": "15d6",
@@ -11901,7 +11949,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "11",
                     "damage": "",
@@ -12045,7 +12093,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "wisdom",
+            "type": "WIS",
             "DC": "13",
             "attackRoll": "0",
             "spells": [
@@ -12157,7 +12205,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": false,
                         "saveDC": "13",
                         "damage": "0",
@@ -12182,7 +12230,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "charisma",
+            "type": "CHA",
             "DC": "11",
             "attackRoll": "0",
             "spells": [
@@ -12267,7 +12315,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "wisdom",
+            "type": "WIS",
             "DC": "12",
             "attackRoll": "4",
             "spells": [
@@ -12382,7 +12430,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "14",
                     "damage": "",
@@ -12399,7 +12447,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "saveDC": "14",
                     "timing": ""
                 },
@@ -12411,7 +12459,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "charisma",
+            "type": "CHA",
             "DC": "14",
             "attackRoll": "0",
             "spells": [
@@ -12483,7 +12531,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "strength",
+                    "saveType": "STR",
                     "halfSave": false,
                     "saveDC": "and",
                     "damage": "",
@@ -12668,11 +12716,11 @@
                 "name": "Blinding Breath (Recharge 6)",
                 "desc": "The mephit exhales a 15-foot cone of blinding dust. Each creature in that area must succeed on a DC 10 Dexterity saving throw or be blinded for 1 minute. A creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success.",
                 "actionRange": "15",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone of blinding dust",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": false,
                     "saveDC": "10",
                     "damage": "",
@@ -12689,7 +12737,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "saveDC": "10",
                     "timing": "end_of_turn"
                 },
@@ -12907,7 +12955,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "charisma",
+            "type": "CHA",
             "DC": "15",
             "attackRoll": "7",
             "spells": [
@@ -13207,7 +13255,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": false,
                         "saveDC": "14",
                         "damage": "0",
@@ -14045,7 +14093,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": false,
                     "saveDC": "12",
                     "damage": "3d6",
@@ -14166,7 +14214,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": false,
                         "saveDC": "10",
                         "damage": "0",
@@ -14297,7 +14345,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "13",
                     "damage": "1d4",
@@ -14314,7 +14362,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "saveDC": "13",
                     "timing": "end_of_turn"
                 },
@@ -14331,7 +14379,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "charisma",
+                    "saveType": "CHA",
                     "halfSave": false,
                     "saveDC": "13",
                     "damage": "",
@@ -14430,7 +14478,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "10",
                     "damage": "2d4",
@@ -14447,7 +14495,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "saveDC": "10",
                     "timing": "end_of_turn"
                 },
@@ -14804,7 +14852,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "11",
                         "damage": "0",
@@ -15053,7 +15101,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "strength",
+                        "saveType": "STR",
                         "halfSave": false,
                         "saveDC": "16",
                         "damage": "0",
@@ -15859,7 +15907,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "11",
                         "damage": "10",
@@ -16011,7 +16059,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "10",
                         "damage": "0",
@@ -16126,7 +16174,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "12",
                         "damage": "22",
@@ -16358,7 +16406,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "11",
                         "damage": "9",
@@ -16659,7 +16707,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "11",
                         "damage": "10",
@@ -16811,7 +16859,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "11",
                         "damage": "7",
@@ -16878,7 +16926,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": false,
                     "saveDC": "13",
                     "damage": "",
@@ -17007,7 +17055,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "intelligence",
+            "type": "INT",
             "DC": "16",
             "attackRoll": "0",
             "spells": [
@@ -17110,7 +17158,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "strength",
+                        "saveType": "STR",
                         "halfSave": false,
                         "saveDC": "15",
                         "damage": "0",
@@ -17498,11 +17546,11 @@
                 "name": "Breath Weapons (Recharge 5-6)",
                 "desc": "The dragon uses one of the following breath weapons.\n**Fire Breath.** The dragon exhales fire in a 15-foot cone. Each creature in that area must make a DC 13 Dexterity saving throw, taking 22 (4d10) fire damage on a failed save, or half as much damage on a successful one.\n**Weakening Breath.** The dragon exhales gas in a 15-foot cone. Each creature in that area must succeed on a DC 13 Strength saving throw or have disadvantage on Strength-based attack rolls, Strength checks, and Strength saving throws for 1 minute. A creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success.",
                 "actionRange": "15",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "13",
                     "damage": "4d10",
@@ -17519,7 +17567,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "saveDC": "13",
                     "timing": "end_of_turn"
                 },
@@ -17632,11 +17680,11 @@
                 "name": "Petrifying Breath (Recharge 5-6)",
                 "desc": "The gorgon exhales petrifying gas in a 30-foot cone. Each creature in that area must succeed on a DC 13 Constitution saving throw. On a failed save, a target begins to turn to stone and is restrained. The restrained target must repeat the saving throw at the end of its next turn. On a success, the effect ends on the target. On a failure, the target is petrified until freed by the greater restoration spell or other magic.",
                 "actionRange": "30",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "13",
                     "damage": "",
@@ -17653,7 +17701,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "saveDC": "13",
                     "timing": ""
                 },
@@ -17815,11 +17863,11 @@
                 "name": "Poison Breath (Recharge 5-6)",
                 "desc": "The dragon exhales poisonous gas in a 15-foot cone. Each creature in that area must make a DC 11 Constitution saving throw, taking 21 (6d6) poison damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "15",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "11",
                     "damage": "6d6",
@@ -17974,7 +18022,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "charisma",
+            "type": "CHA",
             "DC": "12",
             "attackRoll": "0",
             "spells": [
@@ -18343,7 +18391,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "15",
                         "damage": "45",
@@ -18391,7 +18439,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "15",
                         "damage": "45",
@@ -18416,7 +18464,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "wisdom",
+            "type": "WIS",
             "DC": "16",
             "attackRoll": "8",
             "spells": [
@@ -18575,7 +18623,7 @@
             }
         ],
         "spellInfo": {
-            "type": "intelligence",
+            "type": "INT",
             "DC": "16",
             "attackRoll": "8",
             "spells": [
@@ -18750,11 +18798,11 @@
                 "name": "Fire Breath (Recharge 5-6)",
                 "desc": "The veteran exhales fire in a 15-foot cone. Each creature in that area must make a DC 15 Dexterity saving throw, taking 24 (7d6) fire damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "15",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "15",
                     "damage": "7d6",
@@ -18858,7 +18906,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "11",
                     "damage": "",
@@ -18875,7 +18923,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "saveDC": "11",
                     "timing": "end_of_turn"
                 },
@@ -19041,11 +19089,11 @@
                 "name": "Fire Breath (Recharge 5-6)",
                 "desc": "The hound exhales fire in a 15-foot cone. Each creature in that area must make a DC 12 Dexterity saving throw, taking 21 (6d6) fire damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "15",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "12",
                     "damage": "6d6",
@@ -19491,7 +19539,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": false,
                         "saveDC": "10",
                         "damage": "0",
@@ -19576,7 +19624,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "17",
                         "damage": "0",
@@ -20043,11 +20091,11 @@
                 "name": "Frost Breath (Recharge 6)",
                 "desc": "The mephit exhales a 15-foot cone of cold air. Each creature in that area must succeed on a DC 10 Dexterity saving throw, taking 5 (2d4) cold damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "15",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone of cold air",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "10",
                     "damage": "2d4",
@@ -20164,7 +20212,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "11",
                         "damage": "10",
@@ -20327,11 +20375,11 @@
                 "name": "Poison Breath (Recharge 5-6)",
                 "desc": "The golem exhales poisonous gas in a 15-foot cone. Each creature in that area must make a DC 19 Constitution saving throw, taking 45 (10d8) poison damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "15",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "19",
                     "damage": "10d8",
@@ -20769,7 +20817,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": false,
                     "saveDC": "18",
                     "damage": "1d6",
@@ -20799,7 +20847,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "23",
                     "damage": "4d10",
@@ -20869,7 +20917,7 @@
                     "shape": "",
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "dexterity",
+                        "saveType": "DEX",
                         "halfSave": true,
                         "saveDC": "23",
                         "damage": "4d10",
@@ -20976,7 +21024,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "on",
                     "damage": "",
@@ -21001,7 +21049,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "charisma",
+            "type": "CHA",
             "DC": "13",
             "attackRoll": "0",
             "spells": [
@@ -21171,7 +21219,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": false,
                         "saveDC": "18",
                         "damage": "0",
@@ -21233,7 +21281,7 @@
                     "extraEffect": {
                         "rolls": {
                             "rollType": "save",
-                            "saveType": "constitution",
+                            "saveType": "CON",
                             "halfSave": false,
                             "saveDC": "18",
                             "damage": "0",
@@ -21273,7 +21321,7 @@
             }
         ],
         "spellInfo": {
-            "type": "intelligence",
+            "type": "INT",
             "DC": "20",
             "attackRoll": "12",
             "spells": [
@@ -21757,7 +21805,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "intelligence",
+            "type": "INT",
             "DC": "14",
             "attackRoll": "6",
             "spells": [
@@ -21907,11 +21955,11 @@
                 "name": "Fire Breath (Recharge 6)",
                 "desc": "The mephit exhales a 15-foot cone of fire. Each creature in that area must make a DC 11 Dexterity saving throw, taking 7 (2d6) fire damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "15",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone of fire",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "11",
                     "damage": "2d6",
@@ -22444,7 +22492,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "strength",
+                        "saveType": "STR",
                         "halfSave": false,
                         "saveDC": "11",
                         "damage": "0",
@@ -23160,7 +23208,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "11",
                     "damage": "",
@@ -23231,7 +23279,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "16",
                     "damage": "",
@@ -23266,7 +23314,7 @@
                     "shape": "",
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "wisdom",
+                        "saveType": "WIS",
                         "halfSave": false,
                         "saveDC": "16",
                         "damage": "",
@@ -23312,7 +23360,7 @@
             }
         ],
         "spellInfo": {
-            "type": "wisdom",
+            "type": "WIS",
             "DC": "17",
             "attackRoll": "9",
             "spells": [
@@ -23465,7 +23513,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "15",
                     "damage": "",
@@ -23482,7 +23530,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "saveDC": "15",
                     "timing": "end_of_turn"
                 },
@@ -23727,7 +23775,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "charisma",
+            "type": "CHA",
             "DC": "14",
             "attackRoll": "6",
             "spells": [
@@ -24356,7 +24404,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "charisma",
+            "type": "CHA",
             "DC": "13",
             "attackRoll": "0",
             "spells": [
@@ -24565,7 +24613,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "14",
                     "damage": "2d6",
@@ -24970,7 +25018,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "11",
                         "damage": "18",
@@ -25128,7 +25176,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "charisma",
+            "type": "CHA",
             "DC": "21",
             "attackRoll": "0",
             "spells": [
@@ -25238,7 +25286,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "charisma",
+            "type": "CHA",
             "DC": "20",
             "attackRoll": "0",
             "spells": [
@@ -25411,7 +25459,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "10",
                         "damage": "5",
@@ -25650,7 +25698,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "wisdom",
+            "type": "WIS",
             "DC": "13",
             "attackRoll": "5",
             "spells": [
@@ -25790,7 +25838,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": false,
                         "saveDC": "11",
                         "damage": "0",
@@ -25875,7 +25923,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "19",
                         "damage": "42",
@@ -25969,7 +26017,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "10",
                         "damage": "0",
@@ -26003,7 +26051,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "10",
                     "damage": "",
@@ -26020,7 +26068,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "saveDC": "10",
                     "timing": "end_of_turn"
                 },
@@ -26165,7 +26213,7 @@
         "actions": [],
         "legActions": [],
         "spellInfo": {
-            "type": "charisma",
+            "type": "CHA",
             "DC": "18",
             "attackRoll": "10",
             "spells": [
@@ -26435,11 +26483,11 @@
                 "name": "Fire Breath (Recharge 5-6)",
                 "desc": "The dragon exhales fire in a 15-foot cone. Each creature in that area must make a DC 13 Dexterity saving throw, taking 24 (7d6) fire damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "15",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "13",
                     "damage": "7d6",
@@ -26612,7 +26660,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "15",
                     "damage": "6d6",
@@ -26911,7 +26959,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "strength",
+                        "saveType": "STR",
                         "halfSave": true,
                         "saveDC": "and",
                         "damage": "0",
@@ -27109,7 +27157,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": false,
                     "saveDC": "11",
                     "damage": "",
@@ -27640,7 +27688,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "9",
                         "damage": "4",
@@ -27808,7 +27856,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "11",
                     "damage": "",
@@ -28008,7 +28056,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "14",
                     "damage": "2d8",
@@ -28212,11 +28260,11 @@
                 "name": "Breath Weapons (Recharge 5-6)",
                 "desc": "The dragon uses one of the following breath weapons.\n**Cold Breath.** The dragon exhales an icy blast in a 15-foot cone. Each creature in that area must make a DC 13 Constitution saving throw, taking 18 (4d8) cold damage on a failed save, or half as much damage on a successful one.\n**Paralyzing Breath.** The dragon exhales paralyzing gas in a 15-foot cone. Each creature in that area must succeed on a DC 13 Constitution saving throw or be paralyzed for 1 minute. A creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success.",
                 "actionRange": "15",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "13",
                     "damage": "4d8",
@@ -28233,7 +28281,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "saveDC": "13",
                     "timing": "end_of_turn"
                 },
@@ -28405,7 +28453,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "15",
                         "damage": "0",
@@ -28512,7 +28560,7 @@
             }
         ],
         "spellInfo": {
-            "type": "charisma",
+            "type": "CHA",
             "DC": "25",
             "attackRoll": "0",
             "spells": [
@@ -28610,7 +28658,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "10",
                         "damage": "0",
@@ -28695,7 +28743,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "9",
                         "damage": "0",
@@ -28780,7 +28828,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "13",
                         "damage": "31",
@@ -28805,7 +28853,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "intelligence",
+            "type": "INT",
             "DC": "14",
             "attackRoll": "6",
             "spells": [
@@ -28962,7 +29010,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": false,
                         "saveDC": "10",
                         "damage": "0",
@@ -28992,7 +29040,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "charisma",
+                    "saveType": "CHA",
                     "halfSave": false,
                     "saveDC": "10",
                     "damage": "",
@@ -29192,11 +29240,11 @@
                 "name": "Steam Breath (Recharge 6)",
                 "desc": "The mephit exhales a 15-foot cone of scalding steam. Each creature in that area must succeed on a DC 10 Dexterity saving throw, taking 4 (1d8) fire damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "15",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone of scalding steam",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "10",
                     "damage": "1d8",
@@ -29380,7 +29428,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "strength",
+                        "saveType": "STR",
                         "halfSave": false,
                         "saveDC": "17",
                         "damage": "0",
@@ -29451,7 +29499,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "17",
                     "damage": "",
@@ -29468,7 +29516,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "saveDC": "17",
                     "timing": "end_of_turn"
                 },
@@ -29559,7 +29607,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "17",
                     "damage": "12d8",
@@ -29587,7 +29635,7 @@
         ],
         "legActions": [],
         "spellInfo": {
-            "type": "charisma",
+            "type": "CHA",
             "DC": "17",
             "attackRoll": "0",
             "spells": [
@@ -29693,7 +29741,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "15",
                     "damage": "",
@@ -29710,7 +29758,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "saveDC": "15",
                     "timing": ""
                 },
@@ -29727,7 +29775,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "15",
                     "damage": "",
@@ -30110,7 +30158,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "10",
                         "damage": "14",
@@ -30590,7 +30638,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "strength",
+                        "saveType": "STR",
                         "halfSave": false,
                         "saveDC": "20",
                         "damage": "0",
@@ -30620,7 +30668,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "17",
                     "damage": "",
@@ -30637,7 +30685,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "saveDC": "17",
                     "timing": "end_of_turn"
                 },
@@ -30654,7 +30702,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "20",
                     "damage": "16d6",
@@ -31542,7 +31590,7 @@
             }
         ],
         "spellInfo": {
-            "type": "charisma",
+            "type": "CHA",
             "DC": "14",
             "attackRoll": "0",
             "spells": [
@@ -31723,7 +31771,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "halfSave": false,
                     "saveDC": "17",
                     "damage": "",
@@ -31740,7 +31788,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "wisdom",
+                    "saveType": "WIS",
                     "saveDC": "17",
                     "timing": ""
                 },
@@ -32144,11 +32192,11 @@
                 "name": "Spores (Recharge 6)",
                 "desc": "A 15-foot-radius cloud of toxic spores extends out from the vrock. The spores spread around corners. Each creature in that area must succeed on a DC 14 Constitution saving throw or become poisoned. While poisoned in this way, a target takes 5 (1d10) poison damage at the start of each of its turns. A target can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success. Emptying a vial of holy water on the target also ends the effect on it.",
                 "actionRange": "15",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "-radius cloud of toxic spores extends out from the vrock. the spores spread around corners",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "14",
                     "damage": "1d10",
@@ -32171,7 +32219,7 @@
                 },
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "saveDC": "14",
                     "timing": "end_of_turn"
                 },
@@ -32190,7 +32238,7 @@
                 "shape": "",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": false,
                     "saveDC": "14",
                     "damage": "",
@@ -32813,7 +32861,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": false,
                         "saveDC": "12",
                         "damage": "0",
@@ -32928,7 +32976,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": false,
                         "saveDC": "11",
                         "damage": "0",
@@ -33103,7 +33151,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": false,
                         "saveDC": "13",
                         "damage": "0",
@@ -33430,11 +33478,11 @@
                 "name": "Cold Breath (Recharge 5-6)",
                 "desc": "The dragon exhales an icy blast of hail in a 15-foot cone. Each creature in that area must make a DC 12 Constitution saving throw, taking 22 (5d8) cold damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "15",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "12",
                     "damage": "5d8",
@@ -33720,7 +33768,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "strength",
+                        "saveType": "STR",
                         "halfSave": false,
                         "saveDC": "14",
                         "damage": "0",
@@ -33746,11 +33794,11 @@
                 "name": "Cold Breath (Recharge 5-6)",
                 "desc": "The wolf exhales a blast of freezing wind in a 15-foot cone. Each creature in that area must make a DC 12 Dexterity saving throw, taking 18 (4d8) cold damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "15",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "12",
                     "damage": "4d8",
@@ -33838,7 +33886,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "strength",
+                        "saveType": "STR",
                         "halfSave": false,
                         "saveDC": "11",
                         "damage": "0",
@@ -33923,7 +33971,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "strength",
+                        "saveType": "STR",
                         "halfSave": false,
                         "saveDC": "13",
                         "damage": "0",
@@ -34008,7 +34056,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "14",
                         "damage": "0",
@@ -34153,7 +34201,7 @@
                 "extraEffect": {
                     "rolls": {
                         "rollType": "save",
-                        "saveType": "constitution",
+                        "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "15",
                         "damage": "24",
@@ -34330,11 +34378,11 @@
                 "name": "Acid Breath (Recharge 5-6)",
                 "desc": "The dragon exhales acid in a 30-foot line that is 5 feet wide. Each creature in that line must make a DC 14 Dexterity saving throw, taking 49 (11d8) acid damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "30",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "line that is 5 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "14",
                     "damage": "11d8",
@@ -34443,11 +34491,11 @@
                 "name": "Lightning Breath (Recharge 5-6)",
                 "desc": "The dragon exhales lightning in an 60-foot line that is 5 feet wide. Each creature in that line must make a DC 16 Dexterity saving throw, taking 55 (10d10) lightning damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "60",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "line that is 5 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "16",
                     "damage": "10d10",
@@ -34556,11 +34604,11 @@
                 "name": "Breath Weapons (Recharge 5-6)",
                 "desc": "The dragon uses one of the following breath weapons.\n**Fire Breath.** The dragon exhales fire in a 40-foot line that is 5 feet wide. Each creature in that line must make a DC 14 Dexterity saving throw, taking 42 (12d6) fire damage on a failed save, or half as much damage on a successful one.\n**Sleep Breath.** The dragon exhales sleep gas in a 30-foot cone. Each creature in that area must succeed on a DC 14 Constitution saving throw or fall unconscious for 5 minutes. This effect ends for a creature if the creature takes damage or someone uses an action to wake it.",
                 "actionRange": "40",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "line that is 5 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "14",
                     "damage": "12d6",
@@ -34669,11 +34717,11 @@
                 "name": "Breath Weapons (Recharge 5-6)",
                 "desc": "The dragon uses one of the following breath weapons.\n**Lightning Breath.** The dragon exhales lightning in a 60-foot line that is 5 feet wide. Each creature in that line must make a DC 15 Dexterity saving throw, taking 55 (10d10) lightning damage on a failed save, or half as much damage on a successful one.\n**Repulsion Breath.** The dragon exhales repulsion energy in a 30-foot cone. Each creature in that area must succeed on a DC 15 Strength saving throw. On a failed save, the creature is pushed 40 feet away from the dragon.",
                 "actionRange": "60",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "line that is 5 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "15",
                     "damage": "10d10",
@@ -34782,11 +34830,11 @@
                 "name": "Breath Weapons (Recharge 5-6)",
                 "desc": "The dragon uses one of the following breath weapons.\n**Acid Breath.** The dragon exhales acid in an 40-foot line that is 5 feet wide. Each creature in that line must make a DC 14 Dexterity saving throw, taking 40 (9d8) acid damage on a failed save, or half as much damage on a successful one.\n**Slowing Breath.** The dragon exhales gas in a 30-foot cone. Each creature in that area must succeed on a DC 14 Constitution saving throw. On a failed save, the creature can't use reactions, its speed is halved, and it can't make more than one attack on its turn. In addition, the creature can use either an action or a bonus action on its turn, but not both. These effects last for 1 minute. The creature can repeat the saving throw at the end of each of its turns, ending the effect on itself with a successful save.",
                 "actionRange": "40",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "line that is 5 feet wide",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "14",
                     "damage": "9d8",
@@ -34803,7 +34851,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "saveDC": "14",
                     "timing": "end_of_turn"
                 },
@@ -34899,11 +34947,11 @@
                 "name": "Breath Weapons (Recharge 5-6)",
                 "desc": "The dragon uses one of the following breath weapons.\n**Fire Breath.** The dragon exhales fire in a 30-foot cone. Each creature in that area must make a DC 17 Dexterity saving throw, taking 55 (10d10) fire damage on a failed save, or half as much damage on a successful one.\n**Weakening Breath.** The dragon exhales gas in a 30-foot cone. Each creature in that area must succeed on a DC 17 Strength saving throw or have disadvantage on Strength-based attack rolls, Strength checks, and Strength saving throws for 1 minute. A creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success.",
                 "actionRange": "30",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "17",
                     "damage": "10d10",
@@ -34920,7 +34968,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "saveDC": "17",
                     "timing": "end_of_turn"
                 },
@@ -35016,11 +35064,11 @@
                 "name": "Poison Breath (Recharge 5-6)",
                 "desc": "The dragon exhales poisonous gas in a 30-foot cone. Each creature in that area must make a DC 14 Constitution saving throw, taking 42 (12d6) poison damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "30",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "14",
                     "damage": "12d6",
@@ -35129,11 +35177,11 @@
                 "name": "Fire Breath (Recharge 5-6)",
                 "desc": "The dragon exhales fire in a 30-foot cone. Each creature in that area must make a DC 17 Dexterity saving throw, taking 56 (16d6) fire damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "30",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "dexterity",
+                    "saveType": "DEX",
                     "halfSave": true,
                     "saveDC": "17",
                     "damage": "16d6",
@@ -35242,11 +35290,11 @@
                 "name": "Breath Weapons (Recharge 5-6)",
                 "desc": "The dragon uses one of the following breath weapons.\n**Cold Breath.** The dragon exhales an icy blast in a 30-foot cone. Each creature in that area must make a DC 17 Constitution saving throw, taking 54 (12d8) cold damage on a failed save, or half as much damage on a successful one.\n**Paralyzing Breath.** The dragon exhales paralyzing gas in a 30-foot cone. Each creature in that area must succeed on a DC 17 Constitution saving throw or be paralyzed for 1 minute. A creature can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success.",
                 "actionRange": "30",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "17",
                     "damage": "12d8",
@@ -35263,7 +35311,7 @@
                 "lingEffect": {},
                 "extraEffect": {},
                 "lingSave": {
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "saveDC": "17",
                     "timing": "end_of_turn"
                 },
@@ -35359,11 +35407,11 @@
                 "name": "Cold Breath (Recharge 5-6)",
                 "desc": "The dragon exhales an icy blast in a 30-foot cone. Each creature in that area must make a DC 15 Constitution saving throw, taking 45 (10d8) cold damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "30",
-                "numTarget": -1,
+                "numTarget": -2,
                 "shape": "cone",
                 "rolls": {
                     "rollType": "save",
-                    "saveType": "constitution",
+                    "saveType": "CON",
                     "halfSave": true,
                     "saveDC": "15",
                     "damage": "10d8",

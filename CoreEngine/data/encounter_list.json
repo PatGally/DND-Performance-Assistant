@@ -1,8 +1,8 @@
 [
     {
-        "name": "MonstIntDB2",
-        "date": "2026-02-17",
-        "eid": "a4695c2",
+        "name": "MonstIntDB3",
+        "date": "2026-02-23",
+        "eid": "a4695c3",
         "maplink": "",
         "completed": false,
         "monsters": [
@@ -22,8 +22,22 @@
                 "maxhp": "90",
                 "cid": "m1",
                 "position": [
-                    0,
-                    0
+                    [
+                        1,
+                        3
+                    ],
+                    [
+                        1,
+                        4
+                    ],
+                    [
+                        2,
+                        3
+                    ],
+                    [
+                        2,
+                        4
+                    ]
                 ],
                 "ac": "15",
                 "saveProfs": {
@@ -62,36 +76,71 @@
                 "enemy": false,
                 "actions": [
                     {
-                        "name": "Whirlwind (Recharge 4-6)",
-                        "desc": "Each creature in the elemental's space must make a DC 13 Strength saving throw. On a failure, a target takes 15 (3d8 + 2) bludgeoning damage and is flung up 20 feet away from the elemental in a random direction and knocked prone. If a thrown target strikes an object, such as a wall or floor, the target takes 3 (1d6) bludgeoning damage for every 10 feet it was thrown. If the target is thrown at another creature, that creature must succeed on a DC 13 Dexterity saving throw or take the same damage and be knocked prone.\nIf the saving throw is successful, the target takes half the bludgeoning damage and isn't flung away or knocked prone.",
-                        "number": "0",
-                        "actionRange": "",
+                        "name": "Slam",
+                        "desc": "Melee Weapon Attack: +8 to hit, reach 5 ft., one target. Hit: 14 (2d8 + 5) bludgeoning damage.",
+                        "actionRange": "5",
+                        "numTarget": 1,
                         "shape": "",
                         "rolls": {
-                            "rollType": "",
+                            "rollType": "toHit",
                             "saveType": "",
                             "halfSave": false,
                             "saveDC": "",
-                            "damage": "",
-                            "attackBonus": "",
-                            "damageMod": "0"
+                            "damage": "2d8",
+                            "attackBonus": 8,
+                            "damMod": 5
                         },
-                        "extraDamage": [],
-                        "damType": [],
-                        "conditions": null,
-                        "statusEffect": null,
-                        "lingEffect": null,
-                        "extraEffect": null,
-                        "lingSave": null,
-                        "recharge": "4-6",
+                        "damType": [
+                            "bludgeoning"
+                        ],
+                        "conditions": [],
+                        "statusEffect": [],
+                        "lingEffect": {},
+                        "extraEffect": {},
+                        "lingSave": {},
                         "actionCost": "action",
-                        "specialNotes": []
+                        "recharge": "",
+                        "specialNotes": [],
+                        "extraDamage": []
+                    },
+                    {
+                        "name": "Whirlwind (Recharge 4-6)",
+                        "desc": "Each creature in the elemental's space must make a DC 13 Strength saving throw. On a failure, a target takes 15 (3d8 + 2) bludgeoning damage and is flung up 20 feet away from the elemental in a random direction and knocked prone. If a thrown target strikes an object, such as a wall or floor, the target takes 3 (1d6) bludgeoning damage for every 10 feet it was thrown. If the target is thrown at another creature, that creature must succeed on a DC 13 Dexterity saving throw or take the same damage and be knocked prone.\nIf the saving throw is successful, the target takes half the bludgeoning damage and isn't flung away or knocked prone.",
+                        "actionRange": "5",
+                        "numTarget": -1,
+                        "shape": "circle",
+                        "rolls": {
+                            "rollType": "save",
+                            "saveType": "STR",
+                            "halfSave": true,
+                            "saveDC": "13",
+                            "damage": "3d8",
+                            "attackBonus": 0,
+                            "damMod": 2
+                        },
+                        "damType": [
+                            "bludgeoning"
+                        ],
+                        "conditions": [
+                            "prone"
+                        ],
+                        "statusEffect": [],
+                        "lingEffect": {},
+                        "extraEffect": {},
+                        "lingSave": {},
+                        "actionCost": "action",
+                        "recharge": "4-6",
+                        "specialNotes": [],
+                        "extraDamage": [
+                            {
+                                "damage": "1d6",
+                                "damType": "bludgeoning",
+                                "damMod": 0
+                            }
+                        ]
                     }
                 ],
-                "legActions": [],
-                "spellInfo": {},
-                "movement":90,
-                "size": "medium"
+                "spellInfo": {}
             },
             {
                 "name": "Ettin",
@@ -109,8 +158,42 @@
                 "maxhp": "85",
                 "cid": "m2",
                 "position": [
-                    0,
-                    0
+                    [
+                        5,
+                        2
+                    ],
+                    [
+                        5,
+                        3
+                    ],
+                    [
+                        5,
+                        4
+                    ],
+                    [
+                        6,
+                        2
+                    ],
+                    [
+                        6,
+                        3
+                    ],
+                    [
+                        6,
+                        4
+                    ],
+                    [
+                        7,
+                        2
+                    ],
+                    [
+                        7,
+                        3
+                    ],
+                    [
+                        7,
+                        4
+                    ]
                 ],
                 "ac": "12",
                 "saveProfs": {
@@ -142,7 +225,7 @@
                             "rollType": "toHit",
                             "saveType": "",
                             "halfSave": false,
-                            "saveDC": null,
+                            "saveDC": 0,
                             "damage": "2d8",
                             "attackBonus": "7",
                             "damageMod": "5"
@@ -162,9 +245,238 @@
                     }
                 ],
                 "legActions": [],
-                "spellInfo": {},
-                "movement": 0,
-                "size": "medium"
+                "spellInfo": {
+                    "type": "",
+                    "DC": null,
+                    "attackRoll": null,
+                    "spells": [],
+                    "spellSlots": []
+                },
+                "movement": 30,
+                "size": "huge"
+            },
+            {
+                "name": "Cloud Giant",
+                "cr": "9",
+                "creatureType": "Giant",
+                "statArray": {
+                    "STR": 27,
+                    "DEX": 10,
+                    "CON": 22,
+                    "INT": 12,
+                    "WIS": 16,
+                    "CHA": 16
+                },
+                "hp": 200,
+                "maxhp": 200,
+                "cid": "m3",
+                "position": [
+                    [
+                        7,
+                        2
+                    ],
+                    [
+                        7,
+                        3
+                    ],
+                    [
+                        7,
+                        4
+                    ],
+                    [
+                        8,
+                        2
+                    ],
+                    [
+                        8,
+                        3
+                    ],
+                    [
+                        8,
+                        4
+                    ],
+                    [
+                        9,
+                        2
+                    ],
+                    [
+                        9,
+                        3
+                    ],
+                    [
+                        9,
+                        4
+                    ]
+                ],
+                "ac": 14,
+                "saveProfs": {
+                    "STR": 8,
+                    "DEX": 0,
+                    "CON": 6,
+                    "INT": 1,
+                    "WIS": 3,
+                    "CHA": 3
+                },
+                "lResists": "0",
+                "damResists": "",
+                "damImmunes": "",
+                "damVulns": "",
+                "conImmunes": "",
+                "activeCons": [],
+                "activeStatusEffects": [],
+                "magicResist": false,
+                "lairAction": false,
+                "enemy": false,
+                "actions": [
+                    {
+                        "name": "Whirlwind (Recharge 4-6)",
+                        "desc": "Each creature in the elemental's space must make a DC 13 Strength saving throw. On a failure, a target takes 15 (3d8 + 2) bludgeoning damage and is flung up 20 feet away from the elemental in a random direction and knocked prone. If a thrown target strikes an object, such as a wall or floor, the target takes 3 (1d6) bludgeoning damage for every 10 feet it was thrown. If the target is thrown at another creature, that creature must succeed on a DC 13 Dexterity saving throw or take the same damage and be knocked prone.\nIf the saving throw is successful, the target takes half the bludgeoning damage and isn't flung away or knocked prone.",
+                        "actionRange": "5",
+                        "numTarget": -1,
+                        "shape": "circle",
+                        "rolls": {
+                            "rollType": "save",
+                            "saveType": "STR",
+                            "halfSave": true,
+                            "saveDC": "13",
+                            "damage": "3d8",
+                            "attackBonus": 0,
+                            "damMod": 2
+                        },
+                        "damType": [
+                            "bludgeoning"
+                        ],
+                        "conditions": [
+                            "prone"
+                        ],
+                        "statusEffect": [],
+                        "lingEffect": {},
+                        "extraEffect": {},
+                        "lingSave": {},
+                        "actionCost": "action",
+                        "recharge": "4-6",
+                        "specialNotes": [],
+                        "extraDamage": [
+                            {
+                                "damage": "1d6",
+                                "damType": "bludgeoning",
+                                "damMod": 0
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Rock",
+                        "desc": "Ranged Weapon Attack: +12 to hit, range 60/240 ft., one target. Hit: 30 (4d10 + 8) bludgeoning damage.",
+                        "actionRange": "240",
+                        "numTarget": 1,
+                        "shape": "",
+                        "rolls": {
+                            "rollType": "toHit",
+                            "saveType": "",
+                            "halfSave": false,
+                            "saveDC": "",
+                            "damage": "4d10",
+                            "attackBonus": 12,
+                            "damMod": 8
+                        },
+                        "damType": [
+                            "bludgeoning"
+                        ],
+                        "conditions": [
+                            ""
+                        ],
+                        "statusEffect": [],
+                        "lingEffect": {},
+                        "extraEffect": {},
+                        "lingSave": {},
+                        "actionCost": "action",
+                        "recharge": "",
+                        "specialNotes": [],
+                        "extraDamage": []
+                    },
+                    {
+                        "name": "Acid Breath (Recharge 5-6)",
+                        "desc": "The dragon exhales acid in a 90-foot line that is 10 feet wide. Each creature in that line must make a DC 22 Dexterity saving throw, taking 67 (15d8) acid damage on a failed save, or half as much damage on a successful one.",
+                        "actionRange": "90",
+                        "numTarget": -1,
+                        "shape": "line that is 10 feet wide",
+                        "rolls": {
+                            "rollType": "save",
+                            "saveType": "DEX",
+                            "halfSave": true,
+                            "saveDC": "22",
+                            "damage": "15d8",
+                            "attackBonus": 0,
+                            "damMod": 0
+                        },
+                        "damType": [
+                            "acid"
+                        ],
+                        "conditions": [],
+                        "statusEffect": [],
+                        "lingEffect": {},
+                        "extraEffect": {},
+                        "lingSave": {},
+                        "actionCost": "action",
+                        "recharge": [
+                            "5",
+                            "6"
+                        ],
+                        "specialNotes": [],
+                        "extraDamage": []
+                    }
+                ],
+                "legActions": [],
+                "spellInfo": {
+                    "type": "CHA",
+                    "DC": "15",
+                    "attackRoll": "0",
+                    "spells": [
+                        {
+                            "name": " detect magic",
+                            "charges": "At Will"
+                        },
+                        {
+                            "name": " fog cloud",
+                            "charges": "At Will"
+                        },
+                        {
+                            "name": " light",
+                            "charges": "At Will"
+                        },
+                        {
+                            "name": "feather fall",
+                            "charges": "3"
+                        },
+                        {
+                            "name": "fly",
+                            "charges": "3"
+                        },
+                        {
+                            "name": "fireball",
+                            "charges": "3"
+                        },
+                        {
+                            "name": "poison spray",
+                            "charges": "3"
+                        },
+                        {
+                            "name": "control weather",
+                            "charges": "1"
+                        },
+                        {
+                            "name": "gaseous form",
+                            "charges": "1"
+                        }
+                    ]
+                },
+                "multiattack": {
+                    "name": "Multiattack",
+                    "total": 2,
+                    "split": []
+                },
+                "size": "huge",
+                "movement": 40
             }
         ],
         "players": [
@@ -175,13 +487,15 @@
                     "ac": "17",
                     "hp": "70",
                     "maxhp": "73",
-                    "cid": "p1",
+                    "cid": "p2",
                     "position": [
-                        0,
-                        0
+                        [
+                            5,
+                            1
+                        ]
                     ],
                     "characterClass": "druid",
-                    "conImmunities": [],
+                    "conImmunes": [],
                     "activeStatusEffects": [],
                     "activeConditions": [],
                     "saveProfs": {
@@ -221,7 +535,7 @@
                             "3"
                         ],
                         [
-                            "1",
+                            "0",
                             "1"
                         ],
                         [
@@ -243,109 +557,16 @@
                     ]
                 },
                 "spells": [
-                    {
-                        "spellname": "Slow",
-                        "level": "3",
-                        "targeting": [
-                            {
-                                "self": false,
-                                "number": "6",
-                                "rolls": {
-                                    "rollType": "save",
-                                    "saveType": "WIS",
-                                    "halfSave": false,
-                                    "damage": "",
-                                    "damageMod": "0"
-                                },
-                                "damType": [
-                                    "none"
-                                ],
-                                "conditions": [],
-                                "statusEffect": [
-                                    {
-                                        "name": "Debuff",
-                                        "effect": {
-                                            "rolls": "2",
-                                            "attribute": "AC"
-                                        }
-                                    },
-                                    {
-                                        "name": "Disadvantage",
-                                        "effect": {
-                                            "rolls": "4",
-                                            "attribute": "DEX save"
-                                        }
-                                    },
-                                    {
-                                        "name": "Concentration",
-                                        "effect": {}
-                                    }
-                                ],
-                                "lingEffect": {},
-                                "extraEffect": {},
-                                "lingSave": {
-                                    "saveType": "WIS"
-                                },
-                                "scaling": "",
-                                "actionCost": "action",
-                                "specialNotes": []
-                            }
-                        ]
-                    },
-                    {
-                        "spellname": "Blight",
-                        "level": "4",
-                        "targeting": [
-                            {
-                                "self": false,
-                                "number": "1",
-                                "rolls": {
-                                    "rollType": "save",
-                                    "saveType": "CON",
-                                    "halfSave": true,
-                                    "damage": "8d8",
-                                    "damageMod": "0"
-                                },
-                                "damType": [
-                                    "necrotic"
-                                ],
-                                "conditions": [],
-                                "statusEffect": [],
-                                "lingEffect": {},
-                                "extraEffect": {},
-                                "lingSave": {},
-                                "scaling": "1d8",
-                                "actionCost": "action",
-                                "specialNotes": [
-                                    "undeadImmune",
-                                    "constructImmune",
-                                    "plantVulnerable"
-                                ]
-                            }
-                        ]
-                    }
+                    "slow",
+                    "blight"
                 ],
                 "weapons": [
-                    {
-                        "name": "whip",
-                        "properties": {
-                            "damage": "1d4",
-                            "damageType": "slashing",
-                            "weaponStat": "STR"
-                        }
-                    },
-                    {
-                        "name": "sickle",
-                        "properties": {
-                            "damage": "1d4",
-                            "damageType": "slashing",
-                            "weaponStat": "STR"
-                        }
-                    }
+                    "sickle",
+                    "whip"
                 ],
                 "monster": {},
                 "wildShaped": false,
-                "wildShapeCharges": 1
+                "wildShapeCharges": 2
             },
             {
                 "stats": {
@@ -354,13 +575,15 @@
                     "ac": "15",
                     "hp": "155",
                     "maxhp": "155",
-                    "cid": "p2",
+                    "cid": "p1",
                     "position": [
-                        0,
-                        0
+                        [
+                            6,
+                            8
+                        ]
                     ],
                     "characterClass": "cleric",
-                    "conImmunities": [],
+                    "conImmunes": [],
                     "activeStatusEffects": [],
                     "activeConditions": [],
                     "saveProfs": {
@@ -404,136 +627,32 @@
                             "3"
                         ],
                         [
-                            "1",
+                            "0",
                             "1"
                         ],
                         [
-                            "1",
+                            "0",
                             "1"
                         ],
                         [
-                            "1",
+                            "0",
                             "1"
                         ],
                         [
-                            "1",
+                            "0",
                             "1"
                         ]
                     ]
                 },
                 "spells": [
-                    {
-                        "spellname": "Conjure Animals",
-                        "level": "3",
-                        "targeting": [
-                            {
-                                "self": false,
-                                "number": "0",
-                                "rolls": {
-                                    "rollType": "autoHit",
-                                    "saveType": "none",
-                                    "halfSave": false,
-                                    "damage": "",
-                                    "damageMod": "0"
-                                },
-                                "damType": [
-                                    "none"
-                                ],
-                                "conditions": [],
-                                "statusEffect": [
-                                    {
-                                        "name": "Summon",
-                                        "effect": {
-                                            "type": "Beast",
-                                            "monsterName": "",
-                                            "crCap": "2",
-                                            "numSummons": "1"
-                                        }
-                                    },
-                                    {
-                                        "name": "Summon",
-                                        "effect": {
-                                            "type": "Beast",
-                                            "monsterName": "",
-                                            "crCap": "1",
-                                            "numSummons": "2"
-                                        }
-                                    },
-                                    {
-                                        "name": "Summon",
-                                        "effect": {
-                                            "type": "Beast",
-                                            "monsterName": "",
-                                            "crCap": "1/2",
-                                            "numSummons": "4"
-                                        }
-                                    },
-                                    {
-                                        "name": "Summon",
-                                        "effect": {
-                                            "type": "Beast",
-                                            "monsterName": "",
-                                            "crCap": "1/4",
-                                            "numSummons": "8"
-                                        }
-                                    },
-                                    {
-                                        "name": "Concentration",
-                                        "effect": {
-                                            "value": "T/F"
-                                        }
-                                    }
-                                ],
-                                "lingEffect": {},
-                                "extraEffect": {},
-                                "lingSave": {},
-                                "scaling": "mult PER2",
-                                "actionCost": "action",
-                                "specialNotes": []
-                            }
-                        ]
-                    },
-                    {
-                        "spellname": "Harm",
-                        "level": "6",
-                        "targeting": [
-                            {
-                                "self": false,
-                                "number": "1",
-                                "rolls": {
-                                    "rollType": "save",
-                                    "saveType": "CON",
-                                    "halfSave": false,
-                                    "damage": "14d6",
-                                    "damageMod": "0"
-                                },
-                                "damType": [
-                                    "necrotic"
-                                ],
-                                "conditions": [],
-                                "statusEffect": [],
-                                "lingEffect": {},
-                                "extraEffect": {},
-                                "lingSave": {},
-                                "scaling": "1d6",
-                                "actionCost": "action",
-                                "specialNotes": []
-                            }
-                        ]
-                    }
+                    "conjure animals",
+                    "harm"
                 ],
                 "weapons": [
-                    {
-                        "name": "whip",
-                        "properties": {
-                            "damage": "1d4",
-                            "damageType": "slashing",
-                            "weaponStat": "STR"
-                        }
-                    }
+                    "whip"
                 ],
                 "turnUndeadCharges": 1,
-                "destroyUndeadCap": 2
+                "destroyUndeadCap": 0
             }
         ],
         "results": [
@@ -578,7 +697,8 @@
                 "turnType": "Player",
                 "currentTurn": false,
                 "actionResource": 1,
-                "bonusActionResource": 1
+                "bonusActionResource": 0,
+                "movementResource": 30
             },
             {
                 "name": "Air Elemental",
@@ -586,7 +706,8 @@
                 "turnType": "Monster",
                 "currentTurn": false,
                 "actionResource": 1,
-                "bonusActionResource": 1
+                "bonusActionResource": 1,
+                "movementResource": 50
             },
             {
                 "name": "Ettin",
@@ -594,7 +715,17 @@
                 "turnType": "Monster",
                 "currentTurn": true,
                 "actionResource": 1,
-                "bonusActionResource": 1
+                "bonusActionResource": 1,
+                "movementResource": 30
+            },
+            {
+                "name": "Cloud Giant",
+                "iValue": 7,
+                "turnType": "Monster",
+                "currentTurn": false,
+                "actionResource": 1,
+                "bonusActionResource": 1,
+                "movementResource": 30
             },
             {
                 "name": "Morbius",
@@ -602,8 +733,1852 @@
                 "turnType": "Player",
                 "currentTurn": false,
                 "actionResource": 1,
-                "bonusActionResource": 1
+                "bonusActionResource": 1,
+                "movementResource": 30
             }
         ]
+    },
+    {
+        "name": "cave battle",
+        "date": "2026-03-19T19:20:02.637Z",
+        "eid": "2d544b89-9ba0-4d5b-ad3f-fd5e80ec072d",
+        "maplink": "blob:http://localhost:5173/11f31556-bb61-4f9b-8b2f-a2a93cd174d3",
+        "completed": false,
+        "monsters": [
+            {
+                "statArray": {
+                    "STR": 21,
+                    "DEX": 9,
+                    "CON": 15,
+                    "INT": 18,
+                    "WIS": 15,
+                    "CHA": 18
+                },
+                "saveProfs": {
+                    "STR": 5,
+                    "DEX": -1,
+                    "CON": 6,
+                    "INT": 8,
+                    "WIS": 6,
+                    "CHA": 4
+                },
+                "damResists": [],
+                "damImmunes": [],
+                "damVulns": [],
+                "conImmunes": [],
+                "activeConditions": [],
+                "activeStatusEffects": [],
+                "hp": 135,
+                "maxhp": 135,
+                "position": [
+                    [
+                        0,
+                        0
+                    ]
+                ],
+                "cid": "7568c70a-688a-41f7-a598-56c1d90ec46e",
+                "name": "Aboleth",
+                "cr": "10",
+                "creatureType": "Aberration",
+                "ac": 17,
+                "lResists": 0,
+                "magicResist": false,
+                "lairAction": false,
+                "enemy": false,
+                "size": "large",
+                "movement": 10,
+                "actions": [
+                    {
+                        "name": "Tentacle",
+                        "desc": "Melee Weapon Attack: +9 to hit, reach 10 ft., one target. Hit: 12 (2d6 + 5) bludgeoning damage. If the target is a creature, it must succeed on a DC 14 Constitution saving throw or become diseased. The disease has no effect for 1 minute and can be removed by any magic that cures disease. After 1 minute, the diseased creature's skin becomes translucent and slimy, the creature can't regain hit points unless it is underwater, and the disease can be removed only by heal or another disease-curing spell of 6th level or higher. When the creature is outside a body of water, it takes 6 (1d12) acid damage every 10 minutes unless moisture is applied to the skin before 10 minutes have passed.",
+                        "actionRange": "10",
+                        "numTarget": 1,
+                        "shape": "",
+                        "rolls": {
+                            "rollType": "toHit",
+                            "saveType": "",
+                            "halfSave": false,
+                            "saveDC": 0,
+                            "damage": "2d6",
+                            "attackBonus": 9,
+                            "damMod": 5
+                        },
+                        "damType": [
+                            "bludgeoning"
+                        ],
+                        "conditions": [],
+                        "status_effect": null,
+                        "ling_effect": null,
+                        "extra_effect": null,
+                        "ling_save": null,
+                        "actionCost": "action",
+                        "recharge": "",
+                        "special_notes": null,
+                        "extraDamage": [
+                            {
+                                "dice": "1d12",
+                                "mod": 0,
+                                "type": "acid"
+                            }
+                        ],
+                        "statusEffect": [],
+                        "lingEffect": {},
+                        "extraEffect": {
+                            "rollType": "save",
+                            "saveType": "CON",
+                            "halfSave": false,
+                            "saveDC": "14",
+                            "damage": "",
+                            "attackBonus": 0,
+                            "damMod": 0,
+                            "damType": [],
+                            "extraDamage": [],
+                            "conditions": [
+                                "diseased"
+                            ]
+                        },
+                        "lingSave": {
+                            "saveType": "CON",
+                            "saveDC": "14"
+                        },
+                        "specialNotes": []
+                    },
+                    {
+                        "name": "Tail",
+                        "desc": "Melee Weapon Attack: +9 to hit, reach 10 ft., one target. Hit: 15 (3d6 + 5) bludgeoning damage.",
+                        "actionRange": "10",
+                        "numTarget": 1,
+                        "shape": "",
+                        "rolls": {
+                            "rollType": "toHit",
+                            "saveType": "",
+                            "halfSave": false,
+                            "saveDC": 0,
+                            "damage": "3d6",
+                            "attackBonus": 9,
+                            "damMod": 5
+                        },
+                        "damType": [
+                            "bludgeoning"
+                        ],
+                        "conditions": [],
+                        "status_effect": null,
+                        "ling_effect": null,
+                        "extra_effect": null,
+                        "ling_save": null,
+                        "actionCost": "action",
+                        "recharge": "",
+                        "special_notes": null,
+                        "extraDamage": [],
+                        "statusEffect": [],
+                        "lingEffect": {},
+                        "extraEffect": {},
+                        "lingSave": {},
+                        "specialNotes": []
+                    },
+                    {
+                        "name": "Enslave (3/day)",
+                        "desc": "The aboleth targets one creature it can see within 30 ft. of it. The target must succeed on a DC 14 Wisdom saving throw or be magically charmed by the aboleth until the aboleth dies or until it is on a different plane of existence from the target. The charmed target is under the aboleth's control and can't take reactions, and the aboleth and the target can communicate telepathically with each other over any distance.\nWhenever the charmed target takes damage, the target can repeat the saving throw. On a success, the effect ends. No more than once every 24 hours, the target can also repeat the saving throw when it is at least 1 mile away from the aboleth.",
+                        "actionRange": "30",
+                        "numTarget": 1,
+                        "shape": "",
+                        "rolls": {
+                            "rollType": "save",
+                            "saveType": "WIS",
+                            "halfSave": false,
+                            "saveDC": 14,
+                            "damage": "",
+                            "attackBonus": 0,
+                            "damMod": 0
+                        },
+                        "damType": [],
+                        "conditions": [
+                            "charmed"
+                        ],
+                        "status_effect": null,
+                        "ling_effect": null,
+                        "extra_effect": null,
+                        "ling_save": null,
+                        "actionCost": "action",
+                        "recharge": "",
+                        "special_notes": null,
+                        "extraDamage": [],
+                        "statusEffect": [],
+                        "lingEffect": {},
+                        "extraEffect": {},
+                        "lingSave": {
+                            "saveType": "WIS",
+                            "saveDC": "14"
+                        },
+                        "specialNotes": []
+                    }
+                ],
+                "legActions": [
+                    {
+                        "name": "Detect",
+                        "desc": "The aboleth makes a Wisdom (Perception) check.",
+                        "cost": 1,
+                        "action": null
+                    },
+                    {
+                        "name": "Tail Swipe",
+                        "desc": "The aboleth makes one tail attack.",
+                        "cost": 1,
+                        "action": {
+                            "name": "Tail",
+                            "desc": "Melee Weapon Attack: +9 to hit, reach 10 ft., one target. Hit: 15 (3d6 + 5) bludgeoning damage.",
+                            "actionRange": "10",
+                            "numTarget": 1,
+                            "shape": "",
+                            "rolls": {
+                                "rollType": "toHit",
+                                "saveType": "",
+                                "halfSave": false,
+                                "saveDC": 0,
+                                "damage": "3d6",
+                                "attackBonus": 9,
+                                "damMod": 5
+                            },
+                            "damType": [
+                                "bludgeoning"
+                            ],
+                            "conditions": [],
+                            "status_effect": null,
+                            "ling_effect": null,
+                            "extra_effect": null,
+                            "ling_save": null,
+                            "actionCost": "action",
+                            "recharge": "",
+                            "special_notes": null,
+                            "extraDamage": [],
+                            "statusEffect": [],
+                            "lingEffect": {},
+                            "extraEffect": {},
+                            "lingSave": {},
+                            "specialNotes": []
+                        }
+                    },
+                    {
+                        "name": "Psychic Drain (Costs 2 Actions)",
+                        "desc": "One creature charmed by the aboleth takes 10 (3d6) psychic damage, and the aboleth regains hit points equal to the damage the creature takes.",
+                        "cost": 2,
+                        "action": null
+                    }
+                ],
+                "spellInfo": {
+                    "type": "",
+                    "DC": null,
+                    "attackRoll": null,
+                    "spells": [],
+                    "spellSlots": []
+                },
+                "multiattack": {
+                    "name": "Multiattack",
+                    "total": 3,
+                    "split": []
+                },
+                "hit_points": 135,
+                "AC": 17,
+                "modifiers": {
+                    "STR": 5,
+                    "DEX": -1,
+                    "CON": 2,
+                    "INT": 4,
+                    "WIS": 2,
+                    "CHA": 4
+                }
+            }
+        ],
+        "players": [
+            {
+                "stats": {
+                    "statArray": {
+                        "STR": 15,
+                        "DEX": 15,
+                        "CON": 15,
+                        "INT": 15,
+                        "WIS": 15,
+                        "CHA": 15
+                    },
+                    "saveProfs": {
+                        "STR": 2,
+                        "DEX": 2,
+                        "CON": 2,
+                        "INT": 2,
+                        "WIS": 2,
+                        "CHA": 2
+                    },
+                    "damResists": [],
+                    "damImmunes": [],
+                    "damVulns": [],
+                    "conImmunes": [],
+                    "activeConditions": [],
+                    "activeStatusEffects": [],
+                    "hp": 73,
+                    "maxhp": 73,
+                    "position": [
+                        [
+                            0,
+                            0
+                        ]
+                    ],
+                    "cid": "780e4823-aea7-4417-b10b-fa016b598b18",
+                    "name": "Aurora",
+                    "level": 14,
+                    "ac": 10,
+                    "characterClass": "monk",
+                    "spellSlots": [],
+                    "modifiers": {
+                        "STR": 2,
+                        "DEX": 2,
+                        "CON": 2,
+                        "INT": 2,
+                        "WIS": 2,
+                        "CHA": 2
+                    }
+                },
+                "spells": [],
+                "weapons": [
+                    "club"
+                ]
+            }
+        ],
+        "results": [],
+        "initiative": [
+            {
+                "name": "Aurora",
+                "iValue": 1,
+                "turnType": "Player",
+                "currentTurn": false,
+                "actionResource": 1,
+                "bonusActionResource": 1,
+                "movementResource": 30
+            },
+            {
+                "name": "Aboleth",
+                "iValue": 2,
+                "turnType": "Monster",
+                "currentTurn": false,
+                "actionResource": 1,
+                "bonusActionResource": 1,
+                "movementResource": 10
+            }
+        ],
+        "gridSize": {
+            "rows": 11,
+            "cols": 11
+        }
+    },
+    {
+        "name": "TestOrange",
+        "date": "2026-03-19T20:09:05.771Z",
+        "eid": "e1d4612f-46f9-4673-8547-71f1be8a6070",
+        "maplink": "blob:http://localhost:5173/525ed887-1de4-49bd-94f3-8b064539b4e8",
+        "completed": false,
+        "monsters": [
+            {
+                "statArray": {
+                    "STR": 17,
+                    "DEX": 12,
+                    "CON": 15,
+                    "INT": 12,
+                    "WIS": 13,
+                    "CHA": 10
+                },
+                "saveProfs": {
+                    "STR": 3,
+                    "DEX": 1,
+                    "CON": 2,
+                    "INT": 1,
+                    "WIS": 1,
+                    "CHA": 0
+                },
+                "damResists": [],
+                "damImmunes": [
+                    "fire",
+                    "poison"
+                ],
+                "damVulns": [],
+                "conImmunes": [
+                    "poisoned"
+                ],
+                "activeConditions": [],
+                "activeStatusEffects": [],
+                "hp": 39,
+                "maxhp": 39,
+                "position": [
+                    [
+                        0,
+                        0
+                    ]
+                ],
+                "cid": "a2698419-829f-4f7f-b22d-d2a639f3dd2e",
+                "name": "Azer",
+                "cr": "2",
+                "creatureType": "Elemental",
+                "ac": 17,
+                "lResists": 0,
+                "magicResist": false,
+                "lairAction": false,
+                "enemy": false,
+                "size": "medium",
+                "movement": 30,
+                "actions": [
+                    {
+                        "name": "Warhammer",
+                        "desc": "Melee Weapon Attack: +5 to hit, reach 5 ft., one target. Hit: 7 (1d8 + 3) bludgeoning damage, or 8 (1d10 + 3) bludgeoning damage if used with two hands to make a melee attack, plus 3 (1d6) fire damage.",
+                        "actionRange": "5",
+                        "numTarget": 1,
+                        "shape": "",
+                        "rolls": {
+                            "rollType": "toHit",
+                            "saveType": "",
+                            "halfSave": false,
+                            "saveDC": 0,
+                            "damage": "1d8",
+                            "attackBonus": 5,
+                            "damMod": 3
+                        },
+                        "damType": [
+                            "bludgeoning"
+                        ],
+                        "conditions": [],
+                        "status_effect": null,
+                        "ling_effect": null,
+                        "extra_effect": null,
+                        "ling_save": null,
+                        "actionCost": "action",
+                        "recharge": "",
+                        "special_notes": null,
+                        "extraDamage": [
+                            {
+                                "dice": "1d6",
+                                "mod": 0,
+                                "type": "fire"
+                            }
+                        ],
+                        "statusEffect": [],
+                        "lingEffect": {},
+                        "extraEffect": {},
+                        "lingSave": {},
+                        "specialNotes": []
+                    }
+                ],
+                "legActions": [],
+                "spellInfo": {
+                    "type": "",
+                    "DC": null,
+                    "attackRoll": null,
+                    "spells": [],
+                    "spellSlots": []
+                },
+                "multiattack": {
+                    "name": "",
+                    "total": null,
+                    "split": []
+                },
+                "hit_points": 39,
+                "AC": 17,
+                "modifiers": {
+                    "STR": 3,
+                    "DEX": 1,
+                    "CON": 2,
+                    "INT": 1,
+                    "WIS": 1,
+                    "CHA": 0
+                }
+            },
+            {
+                "statArray": {
+                    "STR": 13,
+                    "DEX": 11,
+                    "CON": 12,
+                    "INT": 2,
+                    "WIS": 9,
+                    "CHA": 5
+                },
+                "saveProfs": {
+                    "STR": 1,
+                    "DEX": 0,
+                    "CON": 1,
+                    "INT": -4,
+                    "WIS": -1,
+                    "CHA": -3
+                },
+                "damResists": [],
+                "damImmunes": [],
+                "damVulns": [],
+                "conImmunes": [],
+                "activeConditions": [],
+                "activeStatusEffects": [],
+                "hp": 11,
+                "maxhp": 11,
+                "position": [
+                    [
+                        0,
+                        0
+                    ]
+                ],
+                "cid": "1ac57472-5829-4c1d-84e5-be490cd7f39f",
+                "name": "Boar",
+                "cr": "1/4",
+                "creatureType": "Beast",
+                "ac": 11,
+                "lResists": 0,
+                "magicResist": false,
+                "lairAction": false,
+                "enemy": false,
+                "size": "medium",
+                "movement": 40,
+                "actions": [
+                    {
+                        "name": "Tusk",
+                        "desc": "Melee Weapon Attack: +3 to hit, reach 5 ft., one target. Hit: 4 (1d6 + 1) slashing damage.",
+                        "actionRange": "5",
+                        "numTarget": 1,
+                        "shape": "",
+                        "rolls": {
+                            "rollType": "toHit",
+                            "saveType": "",
+                            "halfSave": false,
+                            "saveDC": 0,
+                            "damage": "1d6",
+                            "attackBonus": 3,
+                            "damMod": 1
+                        },
+                        "damType": [
+                            "slashing"
+                        ],
+                        "conditions": [],
+                        "status_effect": null,
+                        "ling_effect": null,
+                        "extra_effect": null,
+                        "ling_save": null,
+                        "actionCost": "action",
+                        "recharge": "",
+                        "special_notes": null,
+                        "extraDamage": [],
+                        "statusEffect": [],
+                        "lingEffect": {},
+                        "extraEffect": {},
+                        "lingSave": {},
+                        "specialNotes": []
+                    }
+                ],
+                "legActions": [],
+                "spellInfo": {
+                    "type": "",
+                    "DC": null,
+                    "attackRoll": null,
+                    "spells": [],
+                    "spellSlots": []
+                },
+                "multiattack": {
+                    "name": "",
+                    "total": null,
+                    "split": []
+                },
+                "hit_points": 11,
+                "AC": 11,
+                "modifiers": {
+                    "STR": 1,
+                    "DEX": 0,
+                    "CON": 1,
+                    "INT": -4,
+                    "WIS": -1,
+                    "CHA": -3
+                }
+            },
+            {
+                "statArray": {
+                    "STR": 1,
+                    "DEX": 13,
+                    "CON": 8,
+                    "INT": 1,
+                    "WIS": 8,
+                    "CHA": 3
+                },
+                "saveProfs": {
+                    "STR": -5,
+                    "DEX": 1,
+                    "CON": -1,
+                    "INT": -5,
+                    "WIS": -1,
+                    "CHA": -4
+                },
+                "damResists": [],
+                "damImmunes": [],
+                "damVulns": [],
+                "conImmunes": [],
+                "activeConditions": [],
+                "activeStatusEffects": [],
+                "hp": 1,
+                "maxhp": 1,
+                "position": [
+                    [
+                        0,
+                        0
+                    ]
+                ],
+                "cid": "b4004a57-9bc3-4bcb-9afe-bde34d033ed3",
+                "name": "Frog",
+                "cr": "0",
+                "creatureType": "Beast",
+                "ac": 11,
+                "lResists": 0,
+                "magicResist": false,
+                "lairAction": false,
+                "enemy": false,
+                "size": "tiny",
+                "movement": 20,
+                "actions": [],
+                "legActions": [],
+                "spellInfo": {
+                    "type": "",
+                    "DC": null,
+                    "attackRoll": null,
+                    "spells": [],
+                    "spellSlots": []
+                },
+                "multiattack": {
+                    "name": "",
+                    "total": null,
+                    "split": []
+                },
+                "hit_points": 1,
+                "AC": 11,
+                "modifiers": {
+                    "STR": -5,
+                    "DEX": 1,
+                    "CON": -1,
+                    "INT": -5,
+                    "WIS": -1,
+                    "CHA": -4
+                }
+            }
+        ],
+        "players": [
+            {
+                "stats": {
+                    "statArray": {
+                        "STR": 12,
+                        "DEX": 20,
+                        "CON": 20,
+                        "INT": 20,
+                        "WIS": 20,
+                        "CHA": 12
+                    },
+                    "saveProfs": {
+                        "STR": 0,
+                        "DEX": 4,
+                        "CON": 2,
+                        "INT": -1,
+                        "WIS": 5,
+                        "CHA": 2
+                    },
+                    "damResists": [],
+                    "damImmunes": [],
+                    "damVulns": [],
+                    "conImmunes": [],
+                    "activeConditions": [],
+                    "activeStatusEffects": [],
+                    "hp": 143,
+                    "maxhp": 153,
+                    "position": [
+                        [
+                            0,
+                            0
+                        ]
+                    ],
+                    "cid": "3a1cdf0c-9669-4459-95cb-2c4b65556251",
+                    "name": "Testing5004",
+                    "level": 14,
+                    "ac": 10,
+                    "characterClass": "warlock",
+                    "spellSlots": [
+                        [
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0
+                        ],
+                        [
+                            3,
+                            3
+                        ],
+                        [
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0
+                        ]
+                    ],
+                    "modifiers": {
+                        "STR": 1,
+                        "DEX": 5,
+                        "CON": 5,
+                        "INT": 5,
+                        "WIS": 5,
+                        "CHA": 1
+                    }
+                },
+                "spells": [
+                    "chill touch",
+                    "eldritch blast"
+                ],
+                "weapons": [
+                    "battleaxe ONEHAND",
+                    "battleaxe TWOHAND"
+                ]
+            },
+            {
+                "stats": {
+                    "statArray": {
+                        "STR": 15,
+                        "DEX": 15,
+                        "CON": 15,
+                        "INT": 15,
+                        "WIS": 15,
+                        "CHA": 15
+                    },
+                    "saveProfs": {
+                        "STR": 2,
+                        "DEX": 2,
+                        "CON": 2,
+                        "INT": 2,
+                        "WIS": 2,
+                        "CHA": 2
+                    },
+                    "damResists": [],
+                    "damImmunes": [],
+                    "damVulns": [],
+                    "conImmunes": [],
+                    "activeConditions": [],
+                    "activeStatusEffects": [],
+                    "hp": 73,
+                    "maxhp": 73,
+                    "position": [
+                        [
+                            0,
+                            0
+                        ]
+                    ],
+                    "cid": "0d6aea84-330e-455a-b23f-84250d083d37",
+                    "name": "Aurora",
+                    "level": 14,
+                    "ac": 10,
+                    "characterClass": "monk",
+                    "spellSlots": [],
+                    "modifiers": {
+                        "STR": 2,
+                        "DEX": 2,
+                        "CON": 2,
+                        "INT": 2,
+                        "WIS": 2,
+                        "CHA": 2
+                    }
+                },
+                "spells": [],
+                "weapons": [
+                    "club"
+                ]
+            }
+        ],
+        "results": [],
+        "initiative": [
+            {
+                "name": "Testing5004",
+                "iValue": 12,
+                "turnType": "Player",
+                "currentTurn": false,
+                "actionResource": 1,
+                "bonusActionResource": 1,
+                "movementResource": 30
+            },
+            {
+                "name": "Aurora",
+                "iValue": 11,
+                "turnType": "Player",
+                "currentTurn": false,
+                "actionResource": 1,
+                "bonusActionResource": 1,
+                "movementResource": 30
+            },
+            {
+                "name": "Azer",
+                "iValue": 1,
+                "turnType": "Monster",
+                "currentTurn": false,
+                "actionResource": 1,
+                "bonusActionResource": 1,
+                "movementResource": 30
+            },
+            {
+                "name": "Boar",
+                "iValue": 4,
+                "turnType": "Monster",
+                "currentTurn": false,
+                "actionResource": 1,
+                "bonusActionResource": 1,
+                "movementResource": 40
+            },
+            {
+                "name": "Frog",
+                "iValue": 9,
+                "turnType": "Monster",
+                "currentTurn": false,
+                "actionResource": 1,
+                "bonusActionResource": 1,
+                "movementResource": 20
+            }
+        ],
+        "gridSize": {
+            "rows": 25,
+            "cols": 25
+        }
+    },
+    {
+        "name": "Desert",
+        "date": "2026-03-19T23:12:02.066Z",
+        "eid": "d09c4d69-6e28-4272-9497-1cd9a63a3ee2",
+        "maplink": "blob:http://localhost:5173/0e41f31b-1d84-44f0-afda-fceeb650651d",
+        "completed": false,
+        "monsters": [
+            {
+                "statArray": {
+                    "STR": 19,
+                    "DEX": 18,
+                    "CON": 16,
+                    "INT": 16,
+                    "WIS": 19,
+                    "CHA": 18
+                },
+                "saveProfs": {
+                    "STR": 4,
+                    "DEX": 4,
+                    "CON": 3,
+                    "INT": 3,
+                    "WIS": 4,
+                    "CHA": 4
+                },
+                "damResists": [],
+                "damImmunes": [
+                    "poison"
+                ],
+                "damVulns": [],
+                "conImmunes": [
+                    "charmed",
+                    "poisoned"
+                ],
+                "activeConditions": [],
+                "activeStatusEffects": [],
+                "hp": 127,
+                "maxhp": 127,
+                "position": [
+                    [
+                        0,
+                        0
+                    ]
+                ],
+                "cid": "f4c68eaa-84d9-4e65-b800-f114ab55f1b5",
+                "name": "Guardian Naga",
+                "cr": "10",
+                "creatureType": "Monstrosity",
+                "ac": 18,
+                "lResists": 0,
+                "magicResist": false,
+                "lairAction": false,
+                "enemy": false,
+                "size": "large",
+                "movement": 40,
+                "actions": [
+                    {
+                        "name": "Bite",
+                        "desc": "Melee Weapon Attack: +8 to hit, reach 10 ft., one creature. Hit: 8 (1d8 + 4) piercing damage, and the target must make a DC 15 Constitution saving throw, taking 45 (10d8) poison damage on a failed save, or half as much damage on a successful one.",
+                        "actionRange": "10",
+                        "numTarget": 1,
+                        "shape": "",
+                        "rolls": {
+                            "rollType": "toHit",
+                            "saveType": "",
+                            "halfSave": true,
+                            "saveDC": 0,
+                            "damage": "1d8",
+                            "attackBonus": 8,
+                            "damMod": 4
+                        },
+                        "damType": [
+                            "piercing"
+                        ],
+                        "conditions": [],
+                        "status_effect": null,
+                        "ling_effect": null,
+                        "extra_effect": null,
+                        "ling_save": null,
+                        "actionCost": "action",
+                        "recharge": "",
+                        "special_notes": null,
+                        "extraDamage": [],
+                        "statusEffect": [],
+                        "lingEffect": {},
+                        "extraEffect": {
+                            "rolls": {
+                                "rollType": "save",
+                                "saveType": "CON",
+                                "halfSave": true,
+                                "saveDC": "15",
+                                "damage": "45",
+                                "damMod": "0"
+                            },
+                            "damType": [
+                                "(10d8)"
+                            ],
+                            "conditions": [
+                                ""
+                            ],
+                            "statusEffect": [],
+                            "extraEffect": {},
+                            "specialNotes": []
+                        },
+                        "lingSave": {},
+                        "specialNotes": []
+                    },
+                    {
+                        "name": "Spit Poison",
+                        "desc": "Ranged Weapon Attack: +8 to hit, range 15/30 ft., one creature. Hit: The target must make a DC 15 Constitution saving throw, taking 45 (10d8) poison damage on a failed save, or half as much damage on a successful one.",
+                        "actionRange": "30",
+                        "numTarget": 1,
+                        "shape": "",
+                        "rolls": {
+                            "rollType": "toHit",
+                            "saveType": "",
+                            "halfSave": true,
+                            "saveDC": 0,
+                            "damage": "10d8",
+                            "attackBonus": 8,
+                            "damMod": 0
+                        },
+                        "damType": [
+                            "poison"
+                        ],
+                        "conditions": [],
+                        "status_effect": null,
+                        "ling_effect": null,
+                        "extra_effect": null,
+                        "ling_save": null,
+                        "actionCost": "action",
+                        "recharge": "",
+                        "special_notes": null,
+                        "extraDamage": [],
+                        "statusEffect": [],
+                        "lingEffect": {},
+                        "extraEffect": {
+                            "rolls": {
+                                "rollType": "save",
+                                "saveType": "CON",
+                                "halfSave": true,
+                                "saveDC": "15",
+                                "damage": "45",
+                                "damMod": "0"
+                            },
+                            "damType": [
+                                "(10d8)"
+                            ],
+                            "conditions": [
+                                ""
+                            ],
+                            "statusEffect": [],
+                            "extraEffect": {},
+                            "specialNotes": []
+                        },
+                        "lingSave": {},
+                        "specialNotes": []
+                    }
+                ],
+                "legActions": [],
+                "spellInfo": {
+                    "type": "WIS",
+                    "DC": 16,
+                    "attackRoll": 8,
+                    "spells": [
+                        {
+                            "name": "mending"
+                        },
+                        {
+                            "name": "sacred flame"
+                        },
+                        {
+                            "name": "thaumaturgy"
+                        },
+                        {
+                            "name": "command"
+                        },
+                        {
+                            "name": "cure wounds"
+                        },
+                        {
+                            "name": "shield of faith"
+                        },
+                        {
+                            "name": "calm emotions"
+                        },
+                        {
+                            "name": "hold person"
+                        },
+                        {
+                            "name": "bestow curse"
+                        },
+                        {
+                            "name": "clairvoyance"
+                        },
+                        {
+                            "name": "banishment"
+                        },
+                        {
+                            "name": "freedom of movement"
+                        },
+                        {
+                            "name": "flame strike"
+                        },
+                        {
+                            "name": "geas"
+                        },
+                        {
+                            "name": "true seeing"
+                        }
+                    ],
+                    "spellSlots": [
+                        [
+                            "4",
+                            "4"
+                        ],
+                        [
+                            "3",
+                            "3"
+                        ],
+                        [
+                            "3",
+                            "3"
+                        ],
+                        [
+                            "3",
+                            "3"
+                        ],
+                        [
+                            "2",
+                            "2"
+                        ],
+                        [
+                            "1",
+                            "1"
+                        ]
+                    ]
+                },
+                "multiattack": {
+                    "name": "",
+                    "total": null,
+                    "split": []
+                },
+                "hit_points": 127,
+                "AC": 18,
+                "modifiers": {
+                    "STR": 4,
+                    "DEX": 4,
+                    "CON": 3,
+                    "INT": 3,
+                    "WIS": 4,
+                    "CHA": 4
+                }
+            },
+            {
+                "statArray": {
+                    "STR": 18,
+                    "DEX": 10,
+                    "CON": 17,
+                    "INT": 11,
+                    "WIS": 18,
+                    "CHA": 16
+                },
+                "saveProfs": {
+                    "STR": 4,
+                    "DEX": 0,
+                    "CON": 3,
+                    "INT": 0,
+                    "WIS": 4,
+                    "CHA": 3
+                },
+                "damResists": [],
+                "damImmunes": [
+                    "necrotic",
+                    "poison; bludgeoning",
+                    "piercing",
+                    "and slashing from nonmagical attacks"
+                ],
+                "damVulns": [
+                    "bludgeoning"
+                ],
+                "conImmunes": [
+                    "charmed",
+                    "exhaustion",
+                    "frightened",
+                    "paralyzed",
+                    "poisoned"
+                ],
+                "activeConditions": [],
+                "activeStatusEffects": [],
+                "hp": 97,
+                "maxhp": 97,
+                "position": [
+                    [
+                        0,
+                        0
+                    ]
+                ],
+                "cid": "930eacb8-a93b-413a-b834-53e6ae3793e0",
+                "name": "Mummy Lord",
+                "cr": "15",
+                "creatureType": "Undead",
+                "ac": 17,
+                "lResists": 0,
+                "magicResist": false,
+                "lairAction": false,
+                "enemy": false,
+                "size": "medium",
+                "movement": 20,
+                "actions": [
+                    {
+                        "name": "Dreadful Glare",
+                        "desc": "The mummy lord targets one creature it can see within 60 feet of it. If the target can see the mummy lord, it must succeed on a DC 16 Wisdom saving throw against this magic or become frightened until the end of the mummy's next turn. If the target fails the saving throw by 5 or more, it is also paralyzed for the same duration. A target that succeeds on the saving throw is immune to the Dreadful Glare of all mummies and mummy lords for the next 24 hours.",
+                        "actionRange": "",
+                        "numTarget": 1,
+                        "shape": "",
+                        "rolls": {
+                            "rollType": "save",
+                            "saveType": "WIS",
+                            "halfSave": false,
+                            "saveDC": 16,
+                            "damage": "",
+                            "attackBonus": 0,
+                            "damMod": 0
+                        },
+                        "damType": [],
+                        "conditions": [
+                            "frightened"
+                        ],
+                        "status_effect": null,
+                        "ling_effect": null,
+                        "extra_effect": null,
+                        "ling_save": null,
+                        "actionCost": "action",
+                        "recharge": "",
+                        "special_notes": null,
+                        "extraDamage": [],
+                        "statusEffect": [],
+                        "lingEffect": {},
+                        "extraEffect": {},
+                        "lingSave": {},
+                        "specialNotes": []
+                    }
+                ],
+                "legActions": [
+                    {
+                        "name": "Attack",
+                        "desc": "The mummy lord makes one attack with its rotting fist or uses its Dreadful Glare.",
+                        "cost": 1,
+                        "action": {
+                            "name": "Dreadful Glare",
+                            "desc": "The mummy lord targets one creature it can see within 60 feet of it. If the target can see the mummy lord, it must succeed on a DC 16 Wisdom saving throw against this magic or become frightened until the end of the mummy's next turn. If the target fails the saving throw by 5 or more, it is also paralyzed for the same duration. A target that succeeds on the saving throw is immune to the Dreadful Glare of all mummies and mummy lords for the next 24 hours.",
+                            "actionRange": "",
+                            "numTarget": 1,
+                            "shape": "",
+                            "rolls": {
+                                "rollType": "save",
+                                "saveType": "WIS",
+                                "halfSave": false,
+                                "saveDC": 16,
+                                "damage": "",
+                                "attackBonus": 0,
+                                "damMod": 0
+                            },
+                            "damType": [],
+                            "conditions": [
+                                "frightened"
+                            ],
+                            "status_effect": null,
+                            "ling_effect": null,
+                            "extra_effect": null,
+                            "ling_save": null,
+                            "actionCost": "action",
+                            "recharge": "",
+                            "special_notes": null,
+                            "extraDamage": [],
+                            "statusEffect": [],
+                            "lingEffect": {},
+                            "extraEffect": {},
+                            "lingSave": {},
+                            "specialNotes": []
+                        }
+                    },
+                    {
+                        "name": "Blinding Dust",
+                        "desc": "Blinding dust and sand swirls magically around the mummy lord. Each creature within 5 feet of the mummy lord must succeed on a DC 16 Constitution saving throw or be blinded until the end of the creature's next turn.",
+                        "cost": 1,
+                        "action": null
+                    },
+                    {
+                        "name": "Blasphemous Word (Costs 2 Actions)",
+                        "desc": "The mummy lord utters a blasphemous word. Each non-undead creature within 10 feet of the mummy lord that can hear the magical utterance must succeed on a DC 16 Constitution saving throw or be stunned until the end of the mummy lord's next turn.",
+                        "cost": 2,
+                        "action": null
+                    },
+                    {
+                        "name": "Channel Negative Energy (Costs 2 Actions)",
+                        "desc": "The mummy lord magically unleashes negative energy. Creatures within 60 feet of the mummy lord, including ones behind barriers and around corners, can't regain hit points until the end of the mummy lord's next turn.",
+                        "cost": 2,
+                        "action": null
+                    },
+                    {
+                        "name": "Whirlwind of Sand (Costs 2 Actions)",
+                        "desc": "The mummy lord magically transforms into a whirlwind of sand, moves up to 60 feet, and reverts to its normal form. While in whirlwind form, the mummy lord is immune to all damage, and it can't be grappled, petrified, knocked prone, restrained, or stunned. Equipment worn or carried by the mummy lord remain in its possession.",
+                        "cost": 2,
+                        "action": null
+                    }
+                ],
+                "spellInfo": {
+                    "type": "WIS",
+                    "DC": 17,
+                    "attackRoll": 9,
+                    "spells": [
+                        {
+                            "name": "sacred flame"
+                        },
+                        {
+                            "name": "thaumaturgy"
+                        },
+                        {
+                            "name": "command"
+                        },
+                        {
+                            "name": "guiding bolt"
+                        },
+                        {
+                            "name": "shield of faith"
+                        },
+                        {
+                            "name": "hold person"
+                        },
+                        {
+                            "name": "silence"
+                        },
+                        {
+                            "name": "spiritual weapon"
+                        },
+                        {
+                            "name": "animate dead"
+                        },
+                        {
+                            "name": "dispel magic"
+                        },
+                        {
+                            "name": "divination"
+                        },
+                        {
+                            "name": "guardian of faith"
+                        },
+                        {
+                            "name": "contagion"
+                        },
+                        {
+                            "name": "insect plague"
+                        },
+                        {
+                            "name": "harm"
+                        }
+                    ],
+                    "spellSlots": [
+                        [
+                            "4",
+                            "4"
+                        ],
+                        [
+                            "3",
+                            "3"
+                        ],
+                        [
+                            "3",
+                            "3"
+                        ],
+                        [
+                            "3",
+                            "3"
+                        ],
+                        [
+                            "2",
+                            "2"
+                        ],
+                        [
+                            "1",
+                            "1"
+                        ]
+                    ]
+                },
+                "multiattack": {
+                    "name": "Multiattack",
+                    "total": 1,
+                    "split": []
+                },
+                "hit_points": 97,
+                "AC": 17,
+                "modifiers": {
+                    "STR": 4,
+                    "DEX": 0,
+                    "CON": 3,
+                    "INT": 0,
+                    "WIS": 4,
+                    "CHA": 3
+                }
+            },
+            {
+                "statArray": {
+                    "STR": 11,
+                    "DEX": 12,
+                    "CON": 12,
+                    "INT": 10,
+                    "WIS": 10,
+                    "CHA": 10
+                },
+                "saveProfs": {
+                    "STR": 0,
+                    "DEX": 1,
+                    "CON": 1,
+                    "INT": 0,
+                    "WIS": 0,
+                    "CHA": 0
+                },
+                "damResists": [],
+                "damImmunes": [],
+                "damVulns": [],
+                "conImmunes": [],
+                "activeConditions": [],
+                "activeStatusEffects": [],
+                "hp": 11,
+                "maxhp": 11,
+                "position": [
+                    [
+                        0,
+                        0
+                    ]
+                ],
+                "cid": "8e190a59-210e-4de6-8f83-c1ef05af5a3d",
+                "name": "Bandit",
+                "cr": "1/8",
+                "creatureType": "Humanoid",
+                "ac": 12,
+                "lResists": 0,
+                "magicResist": false,
+                "lairAction": false,
+                "enemy": false,
+                "size": "medium",
+                "movement": 30,
+                "actions": [
+                    {
+                        "name": "Scimitar",
+                        "desc": "Melee Weapon Attack: +3 to hit, reach 5 ft., one target. Hit: 4 (1d6 + 1) slashing damage.",
+                        "actionRange": "5",
+                        "numTarget": 1,
+                        "shape": "",
+                        "rolls": {
+                            "rollType": "toHit",
+                            "saveType": "",
+                            "halfSave": false,
+                            "saveDC": 0,
+                            "damage": "1d6",
+                            "attackBonus": 3,
+                            "damMod": 1
+                        },
+                        "damType": [
+                            "slashing"
+                        ],
+                        "conditions": [],
+                        "status_effect": null,
+                        "ling_effect": null,
+                        "extra_effect": null,
+                        "ling_save": null,
+                        "actionCost": "action",
+                        "recharge": "",
+                        "special_notes": null,
+                        "extraDamage": [],
+                        "statusEffect": [],
+                        "lingEffect": {},
+                        "extraEffect": {},
+                        "lingSave": {},
+                        "specialNotes": []
+                    },
+                    {
+                        "name": "Light Crossbow",
+                        "desc": "Ranged Weapon Attack: +3 to hit, range 80/320 ft., one target. Hit: 5 (1d8 + 1) piercing damage.",
+                        "actionRange": "320",
+                        "numTarget": 1,
+                        "shape": "",
+                        "rolls": {
+                            "rollType": "toHit",
+                            "saveType": "",
+                            "halfSave": false,
+                            "saveDC": 0,
+                            "damage": "1d8",
+                            "attackBonus": 3,
+                            "damMod": 1
+                        },
+                        "damType": [
+                            "piercing"
+                        ],
+                        "conditions": [],
+                        "status_effect": null,
+                        "ling_effect": null,
+                        "extra_effect": null,
+                        "ling_save": null,
+                        "actionCost": "action",
+                        "recharge": "",
+                        "special_notes": null,
+                        "extraDamage": [],
+                        "statusEffect": [],
+                        "lingEffect": {},
+                        "extraEffect": {},
+                        "lingSave": {},
+                        "specialNotes": []
+                    }
+                ],
+                "legActions": [],
+                "spellInfo": {
+                    "type": "",
+                    "DC": null,
+                    "attackRoll": null,
+                    "spells": [],
+                    "spellSlots": []
+                },
+                "multiattack": {
+                    "name": "",
+                    "total": null,
+                    "split": []
+                },
+                "hit_points": 11,
+                "AC": 12,
+                "modifiers": {
+                    "STR": 0,
+                    "DEX": 1,
+                    "CON": 1,
+                    "INT": 0,
+                    "WIS": 0,
+                    "CHA": 0
+                }
+            },
+            {
+                "statArray": {
+                    "STR": 28,
+                    "DEX": 10,
+                    "CON": 20,
+                    "INT": 3,
+                    "WIS": 10,
+                    "CHA": 9
+                },
+                "saveProfs": {
+                    "STR": 9,
+                    "DEX": 0,
+                    "CON": 5,
+                    "INT": -4,
+                    "WIS": 0,
+                    "CHA": -1
+                },
+                "damResists": [],
+                "damImmunes": [],
+                "damVulns": [],
+                "conImmunes": [],
+                "activeConditions": [],
+                "activeStatusEffects": [],
+                "hp": 248,
+                "maxhp": 248,
+                "position": [
+                    [
+                        0,
+                        0
+                    ]
+                ],
+                "cid": "dd834551-a8a7-4025-ab2e-ec95946da895",
+                "name": "Roc",
+                "cr": "11",
+                "creatureType": "Monstrosity",
+                "ac": 15,
+                "lResists": 0,
+                "magicResist": false,
+                "lairAction": false,
+                "enemy": false,
+                "size": "gargantuan",
+                "movement": 20,
+                "actions": [
+                    {
+                        "name": "Talons",
+                        "desc": "Melee Weapon Attack: +13 to hit, reach 5 ft., one target. Hit: 23 (4d6 + 9) slashing damage, and the target is grappled (escape DC 19). Until this grapple ends, the target is restrained, and the roc can't use its talons on another target.",
+                        "actionRange": "5",
+                        "numTarget": 1,
+                        "shape": "",
+                        "rolls": {
+                            "rollType": "toHit",
+                            "saveType": "",
+                            "halfSave": false,
+                            "saveDC": 0,
+                            "damage": "4d6",
+                            "attackBonus": 13,
+                            "damMod": 9
+                        },
+                        "damType": [
+                            "slashing"
+                        ],
+                        "conditions": [],
+                        "status_effect": null,
+                        "ling_effect": null,
+                        "extra_effect": null,
+                        "ling_save": null,
+                        "actionCost": "action",
+                        "recharge": "",
+                        "special_notes": null,
+                        "extraDamage": [],
+                        "statusEffect": [],
+                        "lingEffect": {},
+                        "extraEffect": {},
+                        "lingSave": {},
+                        "specialNotes": []
+                    }
+                ],
+                "legActions": [],
+                "spellInfo": {
+                    "type": "",
+                    "DC": null,
+                    "attackRoll": null,
+                    "spells": [],
+                    "spellSlots": []
+                },
+                "multiattack": {
+                    "name": "Multiattack",
+                    "total": 2,
+                    "split": [
+                        {
+                            "name": "beak",
+                            "number": 1
+                        },
+                        {
+                            "name": "talons",
+                            "number": 1
+                        }
+                    ]
+                },
+                "hit_points": 248,
+                "AC": 15,
+                "modifiers": {
+                    "STR": 9,
+                    "DEX": 0,
+                    "CON": 5,
+                    "INT": -4,
+                    "WIS": 0,
+                    "CHA": -1
+                }
+            }
+        ],
+        "players": [
+            {
+                "stats": {
+                    "statArray": {
+                        "STR": 12,
+                        "DEX": 12,
+                        "CON": 12,
+                        "INT": 12,
+                        "WIS": 12,
+                        "CHA": 12
+                    },
+                    "saveProfs": {
+                        "STR": 0,
+                        "DEX": 4,
+                        "CON": 2,
+                        "INT": -1,
+                        "WIS": 5,
+                        "CHA": 2
+                    },
+                    "damResists": [],
+                    "damImmunes": [],
+                    "damVulns": [],
+                    "conImmunes": [],
+                    "activeConditions": [],
+                    "activeStatusEffects": [],
+                    "hp": 21,
+                    "position": [
+                        [
+                            0,
+                            0
+                        ]
+                    ],
+                    "cid": "15777f74-d4e1-4991-8608-9cc972d5649d",
+                    "name": "Test Warlock",
+                    "level": 3,
+                    "ac": 12,
+                    "maxhp": 27,
+                    "characterClass": "warlock",
+                    "spellSlots": [
+                        [
+                            0,
+                            0
+                        ],
+                        [
+                            2,
+                            2
+                        ],
+                        [
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0
+                        ]
+                    ],
+                    "modifiers": {
+                        "STR": 1,
+                        "DEX": 1,
+                        "CON": 1,
+                        "INT": 1,
+                        "WIS": 1,
+                        "CHA": 1
+                    }
+                },
+                "spells": [
+                    "bane",
+                    "burning hands",
+                    "witchbolt",
+                    "wrathful smite",
+                    "cloud of daggers",
+                    "hold person",
+                    "invisibility",
+                    "mirror image",
+                    "shatter"
+                ],
+                "weapons": []
+            },
+            {
+                "stats": {
+                    "statArray": {
+                        "STR": 20,
+                        "DEX": 18,
+                        "CON": 16,
+                        "INT": 14,
+                        "WIS": 12,
+                        "CHA": 10
+                    },
+                    "saveProfs": {
+                        "STR": 0,
+                        "DEX": 4,
+                        "CON": 2,
+                        "INT": -1,
+                        "WIS": 5,
+                        "CHA": 2
+                    },
+                    "damResists": [],
+                    "damImmunes": [],
+                    "damVulns": [],
+                    "conImmunes": [],
+                    "activeConditions": [],
+                    "activeStatusEffects": [],
+                    "hp": 103,
+                    "position": [
+                        [
+                            0,
+                            0
+                        ]
+                    ],
+                    "cid": "5178714b-ead0-4e49-b2c6-b93cba436838",
+                    "name": "Test Fighter",
+                    "level": 11,
+                    "ac": 16,
+                    "maxhp": 112,
+                    "characterClass": "fighter",
+                    "spellSlots": [],
+                    "modifiers": {
+                        "STR": 5,
+                        "DEX": 4,
+                        "CON": 3,
+                        "INT": 2,
+                        "WIS": 1,
+                        "CHA": 0
+                    }
+                },
+                "spells": [],
+                "weapons": [
+                    "warhammer ONEHANDED",
+                    "warhammer TWOHANDED"
+                ],
+                "secondWindCharges": 0,
+                "actionSurgeCharges": 0,
+                "extraAttackAmt": 0
+            },
+            {
+                "stats": {
+                    "statArray": {
+                        "STR": 15,
+                        "DEX": 15,
+                        "CON": 15,
+                        "INT": 15,
+                        "WIS": 15,
+                        "CHA": 15
+                    },
+                    "saveProfs": {
+                        "STR": 2,
+                        "DEX": 2,
+                        "CON": 2,
+                        "INT": 2,
+                        "WIS": 2,
+                        "CHA": 2
+                    },
+                    "damResists": [],
+                    "damImmunes": [],
+                    "damVulns": [],
+                    "conImmunes": [],
+                    "activeConditions": [],
+                    "activeStatusEffects": [],
+                    "hp": 73,
+                    "position": [
+                        [
+                            0,
+                            0
+                        ]
+                    ],
+                    "cid": "86d661ba-1302-4d9a-837e-708763a4f417",
+                    "name": "Aurora",
+                    "level": 14,
+                    "ac": 10,
+                    "maxhp": 73,
+                    "characterClass": "monk",
+                    "spellSlots": [],
+                    "modifiers": {
+                        "STR": 2,
+                        "DEX": 2,
+                        "CON": 2,
+                        "INT": 2,
+                        "WIS": 2,
+                        "CHA": 2
+                    }
+                },
+                "spells": [],
+                "weapons": [
+                    "club"
+                ]
+            }
+        ],
+        "results": [],
+        "initiative": [
+            {
+                "name": "Test Warlock",
+                "iValue": 9,
+                "turnType": "Player",
+                "currentTurn": false,
+                "actionResource": 1,
+                "bonusActionResource": 1,
+                "movementResource": 30
+            },
+            {
+                "name": "Test Fighter",
+                "iValue": 11,
+                "turnType": "Player",
+                "currentTurn": false,
+                "actionResource": 1,
+                "bonusActionResource": 1,
+                "movementResource": 30
+            },
+            {
+                "name": "Guardian Naga",
+                "iValue": 12,
+                "turnType": "Monster",
+                "currentTurn": false,
+                "actionResource": 1,
+                "bonusActionResource": 1,
+                "movementResource": 40
+            },
+            {
+                "name": "Mummy Lord",
+                "iValue": 10,
+                "turnType": "Monster",
+                "currentTurn": false,
+                "actionResource": 1,
+                "bonusActionResource": 1,
+                "movementResource": 20
+            },
+            {
+                "name": "Bandit",
+                "iValue": 13,
+                "turnType": "Monster",
+                "currentTurn": false,
+                "actionResource": 1,
+                "bonusActionResource": 1,
+                "movementResource": 30
+            },
+            {
+                "name": "Roc",
+                "iValue": 5,
+                "turnType": "Monster",
+                "currentTurn": false,
+                "actionResource": 1,
+                "bonusActionResource": 1,
+                "movementResource": 20
+            },
+            {
+                "name": "Aurora",
+                "iValue": 14,
+                "turnType": "Player",
+                "currentTurn": false,
+                "actionResource": 1,
+                "bonusActionResource": 1,
+                "movementResource": 30
+            }
+        ],
+        "gridSize": {
+            "rows": 20,
+            "cols": 20
+        }
     }
 ]

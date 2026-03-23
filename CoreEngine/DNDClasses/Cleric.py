@@ -2,9 +2,11 @@ from CoreEngine import Player
 
 class Cleric(Player):
     def __init__(self, name, stats, saveProfs, ac, hp, class_type, level, conImmunities, damImmunes, damResists,
-                 damVulns, activeStatusEffects, activeConditions, cid, position, turnUndeadCharges=-1, destroyUndeadCap=-1):
-        super().__init__(name, stats, saveProfs, ac, hp, class_type, level, conImmunities, damImmunes, damResists,
-                         damVulns, activeStatusEffects, activeConditions, cid, position)
+                 damVulns, activeStatusEffects, activeConditions, cid, position, spellSlots, turnUndeadCharges=-1, destroyUndeadCap=-1):
+        super().__init__(name, stats, saveProfs, ac, hp, class_type,
+                         level, conImmunities, damImmunes, damResists,
+                         damVulns, activeStatusEffects, activeConditions,
+                         cid, position, spellSlots)
 
         self.__turnUndeadCharges = 1 if turnUndeadCharges == -1 else turnUndeadCharges
         self.__abilties = [

@@ -1,44 +1,77 @@
 import json
 import logging
 import os
-import sys
-from typing import Union, List, Annotated
+from typing import Union, List, Optional, Any
 import uuid
-
-import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import Field
 
 from logs.loggingConfig import setupLogging
-from BackendAPI.models import ActionRequest, Monster, Player, Encounter, Spell, Weapon, MonAction
+from BackendAPI.models import Monster, Player, Encounter, MonAction
 from BackendAPI.models.DNDClasses import Barbarian, Bard, Cleric, Druid, Fighter, Paladin, Sorcerer
 
 from dotenv import load_dotenv
 import main
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends, HTTPException, status, Response
+from fastapi.params import Cookie
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 import time
+from datetime import datetime, timedelta, timezone
+
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+from google.oauth2 import id_token as google_id_token
+from google.auth.transport import requests as google_requests
+from pathlib import Path
+from .models.UserAuth import (TokenData, UserCreate,
+                             UserInDB, UserPublic, ChangePasswordRequest, SetDisabledRequest, GoogleAuthRequest)
 
 setupLogging()
 logger = logging.getLogger("backend")
 load_dotenv()
 
-origins = [os.getenv("ORIGIN1"), os.getenv("ORIGIN2")]
+#USER VALIDATION
+ACCESS_SECRET_KEY = os.getenv("ACCESS_SECRET_KEY")
+REFRESH_SECRET_KEY = os.getenv("REFRESH_SECRET_KEY")
+ALGORITHM = os.getenv("ALGORITHM")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 15))
+REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", 30))
+COOKIE_SECURE = os.getenv("COOKIE_SECURE", "false").lower() == "true"
+COOKIE_SAMESITE = os.getenv("COOKIE_SAMESITE", "lax")
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+REFRESH_COOKIE_NAME = "refresh_token"
+REFRESH_COOKIE_PATH = "/auth"
+USERS_PATH = Path("CoreEngine/data/user_list.json")
+REFRESH_STORE_PATH = Path("CoreEngine/data/refresh_store.json")
+ORIGINS = [os.getenv("ORIGIN1"), os.getenv("ORIGIN2")]
+
+def loadUserDb() -> dict:
+    if not USERS_PATH.exists():
+        return {}
+    return json.loads(USERS_PATH.read_text(encoding="utf-8"))
+def saveUserDb(db: dict) -> None:
+    tmp = USERS_PATH.with_suffix(".tmp")
+    tmp.write_text(json.dumps(db, indent=2), encoding="utf-8")
+    tmp.replace(USERS_PATH)
+userDb = loadUserDb()
+
 app = FastAPI()
+pwdContext = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2Scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=ORIGINS,
     allow_credentials=True,
     allow_methods=["*"], #DELETE, PUT, etc
     allow_headers=["*"], #Specific requests from specific sources.
 )
 
 @app.middleware("http")
-async def log_requests(request: Request, call_next):
-    start_time = time.time()
+async def logRequests(request: Request, callNext):
+    startTime = time.time()
     logger.info("Incoming request: %s %s", request.method, request.url.path)
-    response = await call_next(request)
-    duration = time.time() - start_time
+    response = await callNext(request)
+    duration = time.time() - startTime
     logger.info(
         "Completed request: %s %s Status=%s Duration=%.4fs",request.method,request.url.path,response.status_code,duration)
 
@@ -52,6 +85,40 @@ def refresh():
 refresh()
 AnyPlayer = Union[Fighter, Barbarian, Bard, Cleric, Druid, Paladin, Sorcerer]
 
+async def getCurrentUser(token : str = Depends(oauth2Scheme)):
+    credentialsException = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials", headers={"WWW-Authenticate" : "Bearer"})
+    try:
+        payload = jwt.decode(token, ACCESS_SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("type") != "access":
+            raise credentialsException
+        username: str | None = payload.get("sub")
+        if username is None:
+            raise credentialsException
+        tokenData = TokenData(username=username)
+    except JWTError:
+        raise credentialsException
+    user = getUser(userDb, username=tokenData.username)
+    if user is None:
+        raise credentialsException
+    return user
+async def getCurrentActiveUser(currentUser : UserInDB = Depends(getCurrentUser)):
+    if currentUser.disabled:
+        raise HTTPException(status_code=400, detail="Inactive user")
+    return currentUser
+
+def requireOwnedEncounter(eid: str, currentUser: UserInDB) -> None:
+    if eid not in currentUser.encounter_ids:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Encounter not found"
+        )
+def requireOwnedPlayer(pid: str, currentUser: UserInDB) -> None:
+    if pid not in currentUser.player_ids:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Player not found"
+        )
+
 def isPlayer(creature):
     if isinstance(creature, dict):
         if creature.get("stats", {}):
@@ -63,14 +130,14 @@ def isPlayer(creature):
     else:
         return False
 @app.get("/encounter/{eid}/creature/{cid}/position")
-def getCreaturePosition(eid : str, cid : str):
-    creature = getCreature(eid, cid)
+def getCreaturePosition(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    creature = getCreature(eid, cid, currentUser)
     if isinstance(creature.get("stats", {}), dict):
         return creature.get("stats").get("position", [0, 0])
     return creature.get("position", [0, 0])
-@app.get("/encounter/{eid}/creature/{cid}/actions", response_model = List[Union[Weapon, Spell, MonAction]])
-def getCreatureActions(eid : str, cid : str):
-    creature = getCreature(eid, cid)
+@app.get("/encounter/{eid}/creature/{cid}/actions", response_model = List[Union[str, MonAction]])
+def getCreatureActions(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    creature = getCreature(eid, cid, currentUser)
     if isPlayer(creature):
         spells = creature.get("spells", [])
         weapons = creature.get("weapons", [])
@@ -80,8 +147,8 @@ def getCreatureActions(eid : str, cid : str):
         actions += creature.get("spellInfo").get("spells", [])
     return actions
 @app.get("/encounter/{eid}/creature/{cid}", response_model=Union[AnyPlayer, Monster])
-def getCreature(eid : str, cid : str):
-    enc = getEncounter(eid)
+def getCreature(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    enc = getEncounter(eid, currentUser)
     creatures = enc.get("players", []) + enc.get("monsters", [])
     cids = []
     for creature in creatures:
@@ -93,13 +160,16 @@ def getCreature(eid : str, cid : str):
     try:
         creatureIdx = cids.index(cid)
     except:
-        raise ValueError(f"{cid} not a recognized creature.")
-
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Player not found"
+        )
     return creatures[creatureIdx]
 @app.post("/encounter/{eid}/creature")
-def addtoEncounter(eid : str, creature : Union[AnyPlayer, Player, Monster]):
-    encounter = getEncounter(eid)
+def addtoEncounter(eid : str, creature : Union[AnyPlayer, Player, Monster], currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    encounter = getEncounter(eid, currentUser)
     if isPlayer(creature):
+        requireOwnedPlayer(creature["stats"]["cid"], currentUser)
         encounter.get("players", []).append(creature)
         pass
     else:
@@ -108,22 +178,28 @@ def addtoEncounter(eid : str, creature : Union[AnyPlayer, Player, Monster]):
     refresh()
     return {"verification" : "true"}
 @app.get("/encounter/{eid}/state/maplink")
-def getMapLink(eid : str):
-    enc = getEncounter(eid)
+def getMapLink(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    enc = getEncounter(eid, currentUser)
     maplink = enc.get("maplink", None)
     return maplink
 @app.get("/encounter/{eid}/state")
-def getEncounter(eid : str):
+def getEncounter(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    requireOwnedEncounter(eid, currentUser)
+
     for encounter in ENCOUNTER_LIST:
-        db_eid = encounter.get("eid", None)
-        if eid == db_eid:
-            logger.info(f"{eid} found!")
+        dbEid = encounter.get("eid", None)
+        if eid == dbEid:
+            logger.info(f"{eid} found for user {currentUser.username}!")
             return encounter
-    logger.info(f"{eid} not found!")
+
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="Encounter not found"
+    )
 @app.get("/encounter/{eid}/recommendation/{cid}")
-def actionRecommendation(eid : str, cid : str):
+def actionRecommendation(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
     #Returns a list of all possible actions a given creature can perform, ordered by the rankings of best to worst.
-    encounter = main.loadEncounter(getEncounter(eid))
+    encounter = main.loadEncounter(getEncounter(eid, currentUser))
     initiative = main.setActiveInitiative(encounter)
     players = [encounter.getPlayer(i) for i in range(encounter.playerSize())]
     playercids = [player.getCID().lower() for player in players]
@@ -141,16 +217,14 @@ def actionRecommendation(eid : str, cid : str):
             return rankings
 @app.get("/uuid")
 def getUUID():
-    my_uuid_object = uuid.uuid4()
-    my_uuid_string = str(my_uuid_object)
-    logger.info(my_uuid_string)
-    return my_uuid_string
-
-
+    myUuidObject = uuid.uuid4()
+    myUuidString = str(myUuidObject)
+    logger.info(myUuidString)
+    return myUuidString
 
 @app.get("/encounter/{eid}/initiative/nextturn")
-def getNextTurn(eid : str):
-    encounter = main.loadEncounter(getEncounter(eid))
+def getNextTurn(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    encounter = main.loadEncounter(getEncounter(eid, currentUser))
     initiative = encounter.getInitiative()
     for i, turn in enumerate(initiative):
         if turn["currentTurn"]:
@@ -204,43 +278,65 @@ def getNextTurn(eid : str):
     logger.info(f"preEffects: {preEffects}")
     return preEffects
 @app.get("/encounter/{eid}/initiative/currentturn")
-def getTurn(eid : str):
-    encounter = getEncounter(eid)
+def getTurn(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    encounter = getEncounter(eid, currentUser)
     initiative = encounter.get("initiative", [])
     for turn in initiative:
         if turn["currentTurn"]:
             return turn["name"]
     return {"error" : "no turns in initiative!"}
 @app.get("/encounter/{eid}/initiative")
-def getInitiative(eid : str):
-    enc = getEncounter(eid)
+def getInitiative(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    enc = getEncounter(eid, currentUser)
     return enc.get("initiative", [])
 @app.post("/encounter")
-def postEncounter(encounter : Encounter):
-    ENCOUNTER_LIST.append(encounter.model_dump(mode="json", by_alias=True))
+def postEncounter(encounter : Encounter, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    def attachEncounterToUser(username: str, eid: str) -> None:
+        userData = userDb.get(username)
+        if not userData:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        encounter_ids = userData.setdefault("encounter_ids", [])
+        if eid not in encounter_ids:
+            encounter_ids.append(eid)
+            saveUserDb(userDb)
+    encounterJSON = encounter.model_dump(mode="json", by_alias=True)
+    for i, player in enumerate(encounterJSON["players"]):
+        if player["stats"]["characterClass"].lower() != "sorcerer" and "metamagics" in player:
+            del encounterJSON["players"][i]["metamagics"]
+            del encounterJSON["players"][i]["chosenMetaMagics"]
+            del encounterJSON["players"][i]["sorceryPoints"]
+    ENCOUNTER_LIST.append(encounterJSON)
     with open("CoreEngine/data/encounter_list.json", "w") as wf:
         json.dump(ENCOUNTER_LIST, wf, indent=4)
+    attachEncounterToUser(currentUser.username, encounterJSON["eid"])
     refresh()
     return dict(verification="true")
 
-
-
 @app.get("/dashboard/{eid}/packet")
-def getEncounterMiniData(eid : str):
-    encounter = getEncounter(eid)
+def getEncounterMiniData(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    encounter = getEncounter(eid, currentUser)
     players = encounter.get("players", [])
     monsters = encounter.get("monsters", [])
     logger.info(players)
     logger.info(monsters)
-    p_packet = [{"name" : player.get("stats").get("name"), "level" : player.get("stats").get("level"),
+    pPacket = [{"name" : player.get("stats").get("name"), "level" : player.get("stats").get("level"),
                "characterClass" : player.get("stats").get("characterClass")} for player in players]
-    m_packet = [{"name" : monster.get("name"), "cr" : monster.get("cr"), "size" : monster.get("size")} for monster in monsters]
-    return {"players" : p_packet, "monsters" : m_packet}
+    mPacket = [{"name" : monster.get("name"), "cr" : monster.get("cr"), "size" : monster.get("size"),
+                 "type" : monster.get("creatureType")} for monster in monsters]
+    return {"players" : pPacket, "monsters" : mPacket}
+
+@app.get("/dashboard/monsters")
+def getMonsters():
+    with open("CoreEngine/data/monster_list.json", "r") as pf:
+        monster_list = json.load(pf)
+    return monster_list
 @app.get("/dashboard/players")
-def getPlayers():
+def getPlayers(currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    owned = set(currentUser.player_ids)
     with open("CoreEngine/data/player_list.json", "r") as pf:
         player_list = json.load(pf)
-    return player_list
+    return [player for player in player_list if player["stats"]["cid"] in owned]
 @app.get("/dashboard/weapons")
 def getWeapons():
     with open("CoreEngine/data/weapons_list.json", "r") as wf:
@@ -271,15 +367,16 @@ def getSpells(classid : str, level : int):
     logger.info("Spell data from get spells: %s", relevantSpellData)
     return relevantSpellData
 @app.get("/dashboard/encounters")
-def getEncounterPacket():
-    return [{"name" : enc.get("name"), "date" : enc.get("date"), "eid" : enc.get("eid"), "completed" : enc.get("completed")} for enc in ENCOUNTER_LIST]
+def getEncounterPacket(currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    owned = set(currentUser.encounter_ids)
+    return [{"name" : enc.get("name"), "date" : enc.get("date"),
+             "eid" : enc.get("eid"), "completed" : enc.get("completed")} for enc in ENCOUNTER_LIST if enc.get("eid") in owned]
 @app.post("/dashboard/players")
-def postPlayerToPlayerList(player : Union[AnyPlayer, Player]):
-    # TODO: Replace with DB call to add in.
+def postPlayerToPlayerList(player : Union[AnyPlayer, Player], currentUser: UserInDB = Depends(getCurrentActiveUser)):
     def addClassPassives():
         #List of classes with relevant passives:
         #Barbarian, Bard, Fighter, Monk, Paladin, Ranger, Rogue
-            #List of add and forget passives (here):
+            #List of add and forget passives (DONE HERE):
                 #(B)Magic Secrets, (Ro) Slippery Mind
             #Rest are on playerTurn() logic
         if playerObj.getClass().lower() == "bard":
@@ -289,24 +386,394 @@ def postPlayerToPlayerList(player : Union[AnyPlayer, Player]):
                 main.addChosenSpell(spell, playerObj)
         elif playerObj.getClass().lower() == "rogue":
             playerObj.setSaveProf("WIS", playerObj.getSaveProf("WIS") + playerObj.getProfBonus())
+    def attachPlayerToUser(username: str, pid: str) -> None:
+        userData = userDb.get(username)
+        if not userData:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        player_ids = userData.setdefault("player_ids", [])
+        if pid not in player_ids:
+            player_ids.append(pid)
+            saveUserDb(userDb)
     playerJSON = player.model_dump(mode="json", by_alias=True)
+    if playerJSON["stats"]["characterClass"].lower() != "sorcerer" and "metamagics" in playerJSON:
+        del playerJSON["metamagics"]
+        del playerJSON["chosenMetaMagics"]
+        del playerJSON["sorceryPoints"]
     playerObj = main.getPlayerStats(playerJSON)
-    print(playerObj.getClass())
-    main.getSavedWeapons(playerObj, playerJSON)
-    main.getSavedSpells(playerObj, playerJSON)
+    main.getSavedWeapons(playerObj, playerJSON["weapons"])
+    main.getSavedSpells(playerObj, playerJSON["spells"])
     addClassPassives()
     main.savePlayer(playerObj)
+    attachPlayerToUser(currentUser.username, playerJSON["stats"]["cid"])
     return dict(verification="true")
 
-#DEBUG ROUTE
-@app.get("/__whoami")
-def whoami():
-    return {
-        "file": __file__,
-        "cwd": os.getcwd(),
-        "python": sys.executable,
-        "pid": os.getpid(),
-    }
 
-if __name__ == "__main__":
-    uvicorn.run("main:app", host="127.0.0.1", port=8001, reload=True)
+#USER AUTH METHODS
+def loadRefreshStore() -> dict[str, Any]:
+    if not REFRESH_STORE_PATH.exists():
+        return {}
+    return json.loads(REFRESH_STORE_PATH.read_text(encoding="utf-8"))
+def saveRefreshStore(store: dict[str, Any]) -> None:
+    tmp = REFRESH_STORE_PATH.with_suffix(".tmp")
+    tmp.write_text(json.dumps(store, indent=2), encoding="utf-8")
+    tmp.replace(REFRESH_STORE_PATH)
+def addRefreshSession(username: str, jti: str, exp: int) -> None:
+    store = loadRefreshStore()
+    userEntry = store.setdefault(username, {})
+    sessions = userEntry.setdefault("sessions", {})
+    sessions[jti] = {"exp": exp}
+    saveRefreshStore(store)
+def hasRefreshSession(username: str, jti: str) -> bool:
+    store = loadRefreshStore()
+    userEntry = store.get(username, {})
+    sessions = userEntry.get("sessions", {})
+    return jti in sessions
+def replaceRefreshSession(username: str, oldJti: str, newJti: str, newExp: int) -> bool:
+    store = loadRefreshStore()
+    userEntry = store.get(username, {})
+    sessions = userEntry.get("sessions", {})
+
+    if oldJti not in sessions:
+        return False
+
+    del sessions[oldJti]
+    sessions[newJti] = {"exp": newExp}
+    saveRefreshStore(store)
+    return True
+def revokeRefreshSession(username: str, jti: str) -> None:
+    store = loadRefreshStore()
+    userEntry = store.get(username, {})
+    sessions = userEntry.get("sessions", {})
+
+    if jti in sessions:
+        del sessions[jti]
+
+    if not sessions and username in store:
+        del store[username]
+
+    saveRefreshStore(store)
+def revokeAllRefreshSessions(username: str) -> None:
+    store = loadRefreshStore()
+    if username in store:
+        del store[username]
+        saveRefreshStore(store)
+def cleanupExpiredRefreshSessions() -> None:
+    nowTs = int(datetime.now(timezone.utc).timestamp())
+    store = loadRefreshStore()
+    dirty = False
+
+    for username in list(store.keys()):
+        sessions = store[username].get("sessions", {})
+        expiredJtis = [jti for jti, meta in sessions.items() if meta.get("exp", 0) <= nowTs]
+
+        for jti in expiredJtis:
+            del sessions[jti]
+            dirty = True
+
+        if not sessions:
+            del store[username]
+            dirty = True
+
+    if dirty:
+        saveRefreshStore(store)
+
+def createAccessToken(*, subject: str, expiresMinutes: int = ACCESS_TOKEN_EXPIRE_MINUTES) -> str:
+    now = _now_utc()
+    payload = {
+        "sub": subject,
+        "type": "access",
+        "iat": int(now.timestamp()),
+        "exp": int((now + timedelta(minutes=expiresMinutes)).timestamp()),
+    }
+    return jwt.encode(payload, ACCESS_SECRET_KEY, algorithm=ALGORITHM)
+def createRefreshToken(*, subject: str, expiresDays: int = REFRESH_TOKEN_EXPIRE_DAYS) -> tuple[str, str]:
+    #Returns (refresh_jwt, jti). We store the jti server-side for revocation/rotation.
+    now = _now_utc()
+    jti = getUUID()
+    payload = {
+        "sub": subject,
+        "type": "refresh",
+        "jti": jti,
+        "iat": int(now.timestamp()),
+        "exp": int((now + timedelta(days=expiresDays)).timestamp()),
+    }
+    token = jwt.encode(payload, REFRESH_SECRET_KEY, algorithm=ALGORITHM)
+    return token, jti
+#AUTH METHODS LOCAL
+def verifyPassword(plainPassword, hashed_password):
+    return pwdContext.verify(plainPassword, hashed_password)
+def getPasswordHash(password):
+    return pwdContext.hash(password)
+def getUser(db, username : str):
+    if username in db:
+        userData = db[username]
+        return UserInDB(**userData)
+def authenticateUser(db, username : str, password : str):
+    user = getUser(db, username)
+    if not user:
+        return False
+    if not verifyPassword(password, user.hashed_password):
+        return False
+    return user
+def userToPublic(user: UserInDB) -> UserPublic:
+    return UserPublic(
+        uid=user.uid,
+        username=user.username,
+        email=user.email,
+        disabled=bool(user.disabled),
+        encounter_ids=user.encounter_ids,
+        player_ids=user.player_ids
+    )
+def createUser(db: dict, userIn: UserCreate) -> UserInDB:
+    # basic uniqueness check
+    if userIn.username in db:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Username already registered",
+        )
+
+    hashed = getPasswordHash(userIn.password)
+    encounter_ids = []
+    player_ids = []
+
+    record = {
+        "uid" : getUUID(),
+        "username": userIn.username,
+        "email": userIn.email,
+        "disabled": False,
+        "hashed_password": hashed,
+        "auth_provider": "local",
+        "encounter_ids": encounter_ids,
+        "player_ids": player_ids,
+        "google_sub": None,
+    }
+    db[userIn.username] = record
+    saveUserDb(userDb)
+    return UserInDB(**record)
+#AUTH METHODS GOOGLE
+def findUserByGoogleSub(db: dict, googleSub: str) -> Optional[UserInDB]:
+    for _, userData in db.items():
+        if userData.get("auth_provider") == "google" and userData.get("google_sub") == googleSub:
+            return UserInDB(**userData)
+    return None
+def createGoogleUser(db: dict, *, googleSub: str, email: str | None) -> UserInDB:
+    baseUsername = f"g_{googleSub[:12]}"
+    username = baseUsername
+    i = 1
+    while username in db:
+        i += 1
+        username = f"{baseUsername}_{i}"
+
+    encounter_ids = []
+    player_ids = []
+
+    record = {
+        "uid" : getUUID(),
+        "username": username,
+        "email": email,
+        "disabled": False,
+        "hashed_password": None,
+        "auth_provider": "google",
+        "encounter_ids": encounter_ids,
+        "player_ids": player_ids,
+        "google_sub": googleSub,
+    }
+    db[username] = record
+    saveUserDb(userDb)
+    return UserInDB(**record)
+#AUTH HELPERS
+def _now_utc() -> datetime:
+    return datetime.now(timezone.utc)
+async def issueAccessAuth(user, response):
+    access = createAccessToken(subject=user.username)
+    refresh, jti = createRefreshToken(subject=user.username)
+
+    refreshPayload = jwt.decode(refresh, REFRESH_SECRET_KEY, algorithms=[ALGORITHM])
+    addRefreshSession(user.username, jti, refreshPayload["exp"])
+
+    response.set_cookie(
+        key=REFRESH_COOKIE_NAME,
+        value=refresh,
+        httponly=True,
+        secure=COOKIE_SECURE,
+        samesite=COOKIE_SAMESITE,
+        path=REFRESH_COOKIE_PATH,
+        max_age=60 * 60 * 24 * REFRESH_TOKEN_EXPIRE_DAYS,
+    )
+
+    return {"access_token": access, "token_type": "bearer"}
+
+#AUTH ENDPOINTS
+@app.get("/users/me/", response_model=UserPublic)
+async def readUsersMe(currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    return userToPublic(currentUser)
+@app.post("/signup", response_model=UserPublic, status_code=status.HTTP_201_CREATED)
+async def signup(userIn: UserCreate):
+    uDb = createUser(userDb, userIn)
+    return userToPublic(uDb)
+@app.post("/auth/login")
+async def login(response: Response, formData: OAuth2PasswordRequestForm = Depends()):
+    cleanupExpiredRefreshSessions()
+    user = authenticateUser(userDb, formData.username, formData.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password"
+        )
+    return await issueAccessAuth(user, response)
+@app.post("/auth/google")
+async def authGoogle(body: GoogleAuthRequest, response: Response):
+    #Does both signin and signup logic for google accounts.
+    if not GOOGLE_CLIENT_ID:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="GOOGLE_CLIENT_ID is not configured",
+        )
+    try:
+        claims = google_id_token.verify_oauth2_token(
+            body.id_token,
+            google_requests.Request(),
+            GOOGLE_CLIENT_ID,
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Google ID token",
+        )
+
+    googleSub = claims.get("sub")
+    email = claims.get("email")
+
+    if not googleSub:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Google token missing subject",
+        )
+    user = findUserByGoogleSub(userDb, googleSub)
+    if not user:
+        user = createGoogleUser(userDb, googleSub=googleSub, email=email)
+
+    if user.disabled:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user")
+
+    return await issueAccessAuth(user, response)
+@app.post("/auth/refresh")
+async def refreshToken(
+    response: Response,
+    refreshToken: str | None = Cookie(default=None, alias=REFRESH_COOKIE_NAME)
+):
+    if not refreshToken:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing refresh token"
+        )
+
+    try:
+        payload = jwt.decode(refreshToken, REFRESH_SECRET_KEY, algorithms=[ALGORITHM])
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token"
+        )
+
+    if payload.get("type") != "refresh":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Wrong token type"
+        )
+
+    username = payload.get("sub")
+    oldJti = payload.get("jti")
+
+    if not username or not oldJti:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Malformed refresh token"
+        )
+
+    if not hasRefreshSession(username, oldJti):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token revoked"
+        )
+
+    access = createAccessToken(subject=username)
+
+    newRefresh, newJti = createRefreshToken(subject=username)
+    newPayload = jwt.decode(newRefresh, REFRESH_SECRET_KEY, algorithms=[ALGORITHM])
+
+    replaced = replaceRefreshSession(username, oldJti, newJti, newPayload["exp"])
+    if not replaced:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token revoked"
+        )
+
+    response.set_cookie(
+        key=REFRESH_COOKIE_NAME,
+        value=newRefresh,
+        httponly=True,
+        secure=COOKIE_SECURE,
+        samesite=COOKIE_SAMESITE,
+        path=REFRESH_COOKIE_PATH,
+        max_age=60 * 60 * 24 * REFRESH_TOKEN_EXPIRE_DAYS,
+    )
+
+    return {"access_token": access, "token_type": "bearer"}
+@app.post("/auth/logout")
+async def logout(
+    response: Response,
+    refreshToken: str | None = Cookie(default=None, alias=REFRESH_COOKIE_NAME)
+):
+    if refreshToken:
+        try:
+            payload = jwt.decode(refreshToken, REFRESH_SECRET_KEY, algorithms=[ALGORITHM])
+            if payload.get("type") == "refresh" and payload.get("sub") and payload.get("jti"):
+                revokeRefreshSession(payload["sub"], payload["jti"])
+        except Exception:
+            pass
+
+    response.delete_cookie(
+        key=REFRESH_COOKIE_NAME,
+        path=REFRESH_COOKIE_PATH
+    )
+
+    return {"detail": "logged out"}
+@app.post("/auth/change-password", status_code=status.HTTP_204_NO_CONTENT)
+async def changePassword(body: ChangePasswordRequest, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    if currentUser.auth_provider != "local" or not currentUser.hashed_password:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This account uses an external provider (e.g., Google). Password changes are not available.",
+        )
+    if not verifyPassword(body.current_password, currentUser.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Current password is incorrect",
+        )
+    if body.current_password == body.new_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password must be different from current password",
+        )
+    newHash = getPasswordHash(body.new_password)
+
+    # Assuming userDb is keyed by username:
+    if currentUser.username not in userDb:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User record not found",
+        )
+
+    userDb[currentUser.username]["hashed_password"] = newHash
+
+    saveUserDb(userDb)
+    return {"detail": "Password changed successfully"}
+@app.post("/auth/set-disabled", status_code=status.HTTP_204_NO_CONTENT)
+async def setDisabled(body: SetDisabledRequest, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    #TODO: for now, allow self-toggle (useful for testing)
+    # Later, implement admin checks.
+    userDb[currentUser.username]["disabled"] = bool(body.disabled)
+    saveUserDb(userDb)
+    return {"detail": "Disabled user"}

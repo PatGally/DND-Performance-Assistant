@@ -79,6 +79,18 @@ class Monster(Stats):
     def isEnemy(self):
         return self.__enemy
 
+    def getSpellMod(self):
+        if self.isCaster():
+            statType = self.__spellInfo["type"]
+            if statType:
+                mod = self.getMod(statType)
+                pB = self.getProfBonus()
+                return mod + pB
+            else:
+                return 0
+        else:
+            return 0
+
     def isCaster(self):
         return self.__caster
     def getSpellInfo(self):
@@ -163,7 +175,13 @@ class Monster(Stats):
         return {}
 
     def toDict(self):
+        def stripSpellData(p_spellInfo):
+            for i, spell in enumerate(p_spellInfo["spells"]):
+                if "spellData" in spell:
+                    del p_spellInfo["spells"][i]["spellData"]
+            return p_spellInfo
         actions = [action.toDict() for action in self.__actions]
+        spellInfo = stripSpellData(self.__spellInfo)
         return {
             "name" : self.__name,
             "cr" : self.__cr,
@@ -171,7 +189,7 @@ class Monster(Stats):
             "statArray": {stat : str(self.getStat(stat)) for stat in
                           ["STR", "DEX", "CON", "INT", "WIS", "CHA"]},
             "hp" : str(self.getHP()),
-            "maxHP" : str(self.getMaxHP()),
+            "maxhp" : str(self.getMaxHP()),
             "cid" : str(self.getCID()),
             "position" : self.getPosition(),
             "ac" : str(self.__ac),
@@ -181,7 +199,7 @@ class Monster(Stats):
             "damResists" : self.getDamResistances(),
             "damImmunes" : self.getDamImmunities(),
             "damVulns" : self.getDamVulnerabilities(),
-            "conImmunes" : self.getConImmunities(),
+            "conImmunes" : self.getConImmunes(),
             "activeCons" : self.getActiveConditions(),
             "activeStatusEffects" : self.getActiveStatusEffects(),
             "magicResist" : self.__magicResist,
@@ -189,7 +207,7 @@ class Monster(Stats):
             "enemy": self.__enemy,
             "actions" : actions,
             "legActions" : self.__legActions,
-            "spellInfo" : self.__spellInfo,
+            "spellInfo" : spellInfo,
             "movement" : self.__movement,
             "size" : self.__size
         }

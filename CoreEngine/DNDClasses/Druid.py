@@ -9,9 +9,11 @@ MONSTER_LIST_FILE = os.path.join(BASE_DIR, "..", "data", "monster_list_NEW.json"
 
 class Druid(Player):
     def __init__(self, name, stats, saveProfs, ac, hp, class_type, level, conImmunities, damImmunes, damResists,
-                 damVulns, activeStatusEffects, activeConditions, cid, position, monster=None, wildShaped=None, wildShapeCharges=-1):
-        super().__init__(name, stats, saveProfs, ac, hp, class_type, level, conImmunities, damImmunes, damResists,
-                         damVulns, activeStatusEffects, activeConditions, cid, position)
+                 damVulns, activeStatusEffects, activeConditions, cid, position, spellSlots, monster=None, wildShaped=None, wildShapeCharges=-1):
+        super().__init__(name, stats, saveProfs, ac, hp, class_type,
+                         level, conImmunities, damImmunes, damResists,
+                         damVulns, activeStatusEffects, activeConditions,
+                         cid, position, spellSlots)
         self.__monster = {} if monster is None else monster
         self.__wildShaped = False if wildShaped is None else wildShaped
         self.__wildShapeCharges = 2 if wildShapeCharges is None else wildShapeCharges

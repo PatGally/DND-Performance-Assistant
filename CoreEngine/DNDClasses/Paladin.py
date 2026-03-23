@@ -2,9 +2,11 @@ from CoreEngine import Player
 
 class Paladin(Player):
     def __init__(self, name, stats, saveProfs, ac, hp, class_type, level, conImmunities, damImmunes, damResists,
-                 damVulns, activeStatusEffects, activeConditions, cid, position, layOnHandsPool=None):
-        super().__init__(name, stats, saveProfs, ac, hp, class_type, level, conImmunities, damImmunes, damResists,
-                         damVulns, activeStatusEffects, activeConditions, cid, position)
+                 damVulns, activeStatusEffects, activeConditions, cid, position, spellSlots, layOnHandsPool=None):
+        super().__init__(name, stats, saveProfs, ac, hp, class_type,
+                         level, conImmunities, damImmunes, damResists,
+                         damVulns, activeStatusEffects, activeConditions,
+                         cid, position, spellSlots)
 
         self.__layOnHandsPool = 5 * self.getLevel() if layOnHandsPool is None else layOnHandsPool
         self.__auraRange = 10 if self.getLevel() < 18 else 30
