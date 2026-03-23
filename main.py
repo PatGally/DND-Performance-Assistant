@@ -1098,10 +1098,10 @@ def defineBasicActions(actionNames, actionTypes, actionProbs, actionEDams, actio
         grappleProb = calcTotalSaveProbability(creature, grapple, initiative)  # Calculate probability of save
         grappleProb["probSuccess"] = 0 if grappleProb["probSuccess"] < 0 else grappleProb["probSuccess"]
         grappleProb["probSuccess"] = 1 if grappleProb["probSuccess"] > 1 else grappleProb["probSuccess"]
-        probToStr = f"{grappleProb["probSuccess"]}"
-        probToStr += f" - {grappleProb["probLingEffect"]}LE" if grappleProb["probLingEffect"] else ""
-        probToStr += f" - {grappleProb['probExtraEffect']}EE" if grappleProb["probExtraEffect"] else ""
-        probToStr += f" - {grappleProb['probLingSaves']}LS" if grappleProb["probLingSaves"] else ""
+        probToStr = f"{grappleProb['probSuccess']}"
+        probToStr += f" - {grappleProb['probLingEffect']}LE" if grappleProb['probLingEffect'] else ""
+        probToStr += f" - {grappleProb['probExtraEffect']}EE" if grappleProb['probExtraEffect'] else ""
+        probToStr += f" - {grappleProb['probLingSaves']}LS" if grappleProb['probLingSaves'] else ""
         grappleProb = probToStr
         grappleImpact = calcImpact(creature, grapple, grappleProb, 0,
                                    copy.deepcopy(initiative), initiative)  # Calculates the impact of these actions to the encounter.
@@ -1117,10 +1117,10 @@ def defineBasicActions(actionNames, actionTypes, actionProbs, actionEDams, actio
         shoveProb = calcTotalSaveProbability(creature, shove, initiative)
         shoveProb["probSuccess"] = 0 if shoveProb["probSuccess"] < 0 else shoveProb["probSuccess"]
         shoveProb["probSuccess"] = 1 if shoveProb["probSuccess"] > 1 else shoveProb["probSuccess"]
-        probToStr = f"{shoveProb["probSuccess"]}"
-        probToStr += f" - {shoveProb["probLingEffect"]}LE" if shoveProb["probLingEffect"] else ""
-        probToStr += f" - {shoveProb['probExtraEffect']}EE" if shoveProb["probExtraEffect"] else ""
-        probToStr += f" - {shoveProb['probLingSaves']}LS" if shoveProb["probLingSaves"] else ""
+        probToStr = f"{shoveProb['probSuccess']}"
+        probToStr += f" - {shoveProb['probLingEffect']}LE" if shoveProb['probLingEffect'] else ""
+        probToStr += f" - {shoveProb['probExtraEffect']}EE" if shoveProb['probExtraEffect'] else ""
+        probToStr += f" - {shoveProb['probLingSaves']}LS" if shoveProb['probLingSaves'] else ""
         shoveProb = probToStr
         shoveImpact = calcImpact(creature, shove, shoveProb, 0,
                                  copy.deepcopy(initiative),initiative)
@@ -3755,10 +3755,10 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
                 if isinstance(spellProb, dict):
                     spellProb["probSuccess"] = 0 if spellProb["probSuccess"] < 0 else spellProb["probSuccess"]
                     spellProb["probSuccess"] = 1 if spellProb["probSuccess"] > 1 else spellProb["probSuccess"]
-                    probToStr = f"{spellProb["probSuccess"]}" if spellProb["probSuccess"] else f"0.0"
-                    probToStr += f" - {spellProb["probLingEffect"]}LE" if spellProb["probLingEffect"] else ""
-                    probToStr += f" - {spellProb['probExtraEffect']}EE" if spellProb["probExtraEffect"] else ""
-                    probToStr += f" - {spellProb['probLingSaves']}LS" if spellProb["probLingSaves"] else ""
+                    probToStr = f"{spellProb['probSuccess']}" if spellProb['probSuccess'] else f"0.0"
+                    probToStr += f" - {spellProb["probLingEffect"]}LE" if spellProb['probLingEffect'] else ""
+                    probToStr += f" - {spellProb['probExtraEffect']}EE" if spellProb['probExtraEffect'] else ""
+                    probToStr += f" - {spellProb['probLingSaves']}LS" if spellProb['probLingSaves'] else ""
                     probTargets = spellProb["target"] if spellProb["probSuccess"] != 0 else ""
                 else:
                     spellProb = 0 if spellProb < 0 else spellProb
@@ -4170,10 +4170,10 @@ def monsterTurn(creature, initiative):
             if isinstance(actionProb, dict):
                 actionProb["probSuccess"] = 0 if actionProb["probSuccess"] < 0 else actionProb["probSuccess"]
                 actionProb["probSuccess"] = 1 if actionProb["probSuccess"] > 1 else actionProb["probSuccess"]
-                probToStr = f"{actionProb["probSuccess"]}" if actionProb["probSuccess"] else f"0.0"
-                probToStr += f" - {actionProb["probLingEffect"]}LE" if actionProb["probLingEffect"] else ""
-                probToStr += f" - {actionProb['probExtraEffect']}EE" if actionProb["probExtraEffect"] else ""
-                probToStr += f" - {actionProb['probLingSaves']}LS" if actionProb["probLingSaves"] else ""
+                probToStr = f"{actionProb['probSuccess']}" if actionProb['probSuccess'] else f"0.0"
+                probToStr += f" - {actionProb['probLingEffect']}LE" if actionProb['probLingEffect'] else ""
+                probToStr += f" - {actionProb['probExtraEffect']}EE" if actionProb['probExtraEffect'] else ""
+                probToStr += f" - {actionProb['probLingSaves']}LS" if actionProb['probLingSaves'] else ""
                 probTargets = actionProb["target"] if actionProb["probSuccess"] != 0 else ""
             else:
                 actionProb = 0 if actionProb < 0 else actionProb
