@@ -4003,6 +4003,11 @@ def rankActions(actions):
     overallRankings = rank_all_actions(
         overallRankings, weights={"prob": 1.0, "eDam": 1.0, "impact": 1.25}
     )
+    for action in overallRankings:
+        if "target" in action and action["target"]:
+            for i, t in enumerate(action["target"]):
+                action["target"][i] = t.getName()
+
     return overallRankings
     # return [oRank["name"] for oRank in overallRankings]
 def actionViabilityCheck(action, activeInitiativeEntry, initiative, isPlayerTurn):

@@ -222,6 +222,12 @@ def actionRecommendation(eid : str, cid : str, currentUser: UserInDB = Depends(g
             rankings = main.monsterTurn(monster, initiative)
             logger.info("Rankings for %s: %s", eid, rankings)
             return rankings
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Creature not found"
+            )
+
 @app.get("/uuid")
 def getUUID():
     myUuidObject = uuid.uuid4()
