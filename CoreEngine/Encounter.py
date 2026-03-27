@@ -1,8 +1,9 @@
 class Encounter:
-    def __init__(self, name, date, eid):
+    def __init__(self, name, date, eid, mapData):
         self.__name = name
         self.__date = date
         self.__eid = eid
+        self.__mapData = mapData
         self.__completed = False
         self.__initiative = []
         self.__monsters = []
@@ -12,6 +13,10 @@ class Encounter:
 
     def getEID(self):
         return self.__eid
+    def setMapData(self, mapData):
+        self.__mapData = mapData
+    def getMapData(self):
+        return self.__mapData
 
     def setComplete(self, complete):
         self.__completed = complete

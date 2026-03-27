@@ -1,7 +1,7 @@
 import os
 import urllib.parse
 from dotenv import load_dotenv
-from pymongo.mongo_client import MongoClient
+from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.server_api import ServerApi
 
 
@@ -29,13 +29,11 @@ class Driver:
 
     def connect(self):
         if Driver._client is None:
-            Driver._client = MongoClient(self._uri, server_api=ServerApi("1"))
+            Driver._client = AsyncIOMotorClient(self._uri, server_api=ServerApi("1"))
         return Driver._client
 
     def getDb(self, name):
         client = self.connect()
         return client[name]
 
-db = Driver()
-db.connect()
-print(db.getDb("basic_actions"))
+# print(db.getDb("encounters"))
