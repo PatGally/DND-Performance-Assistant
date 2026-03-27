@@ -2,6 +2,8 @@ import copy
 import itertools
 import json
 
+from pymongo.errors import PyMongoError
+from db.driver import Driver
 import math
 import random
 import re
@@ -25,6 +27,14 @@ from CoreEngine.DNDClasses import (
 
 from datetime import datetime
 import os
+
+db = Driver()
+encounterDb = db.getDb("encounters")
+encounterDb.create_index("eid", unique=True)
+playerDb = db.getDb("players")
+playerDb.create_index("stats.cid", unique=True)
+userDB = db.getDb("users")
+userDB.create_index("username", unique=True)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "CoreEngine/data")
@@ -151,6 +161,7 @@ def getPlayerStats(data):
     playerdata = [playerName, playerStats, saveProfs, playerAC, playerHP, class_type, playerLvl, conImmunes, damImmunes,
                   damResists, damVulns, activeStatusEffects, activeConditions, cid, position, spellSlots]
     return getClassStats(data, playerdata, class_type)
+
 def getSavedWeapons(player, data):
     searchdata = copy.deepcopy(data)
     for i, w in enumerate(searchdata):
@@ -365,16 +376,9 @@ def findSpell(spellName, spellData):
         return i
     else:
         return -1
-def savePlayer(player, filename=PLAYER_LIST_FILE):
-    # Adds a serialized player to an existing player_list JSON file.
-    try:
-        with open(filename, "r") as f:
-            players = json.load(f)
-    except FileNotFoundError:
-        players = []
-    except json.JSONDecodeError:
-        players = []
 
+async def savePlayer(player, filename=PLAYER_LIST_FILE):
+    # Adds a serialized player to an existing player_list JSON file.
     stats_dict = {
         "name": player.getName(),
         "level": str(player.getLevel()),
@@ -450,10 +454,16 @@ def savePlayer(player, filename=PLAYER_LIST_FILE):
         **class_fields,
     }
 
-    players.append(player_dict)
+    try:
+        await playerDb.replace_one(
+            {"stats.cid": player.getCID()},
+            player_dict,
+            upsert=True,
+        )
+    except PyMongoError as err:
+        raise err
 
-    with open(filename, "w") as f:
-        json.dump(players, f, indent=4)
+
 def loadMonsterActions(monsterData):
     actionData = monsterData["actions"]
     actions = []
@@ -633,7 +643,7 @@ def loadMonsterSpells(monsterData):
     return spellInfo
 
 # ENCOUNTER CREATE/SAVE/LOAD METHODS
-def saveEncounter(encounter):
+async def saveEncounter(encounter):
     # Adds a serialized encounter to an existing encounter_list JSON file.
     def saveClassStats(player, saveDict, characterClass):
         characterClass = characterClass.lower()
@@ -667,25 +677,6 @@ def saveEncounter(encounter):
         elif characterClass == "sorcerer":
             saveDict["sorceryPoints"] = player.getSorceryPoints()
             saveDict["chosenMetaMagics"] = player.getChosenMetaMagics()
-
-    try:
-        with open(ENCOUNTER_LIST_FILE, "r") as f:
-            encounterFile = json.load(f)
-    except FileNotFoundError:
-        encounterFile = []
-    except json.JSONDecodeError:
-        # File exists but is corrupted or partially written
-        encounterFile = []
-
-    duplicate = False
-    overwrite = False
-    idx = 0
-    while not duplicate and idx < len(encounterFile):
-        if encounter.getName() == encounterFile[idx]["name"]:
-            duplicate = True
-            overwrite = True
-            encounterFile.remove(encounterFile[idx])
-        idx += 1
 
     monster_list = []
     for i in range(encounter.monsterSize()):
@@ -731,21 +722,56 @@ def saveEncounter(encounter):
         player_list.append(player_dict)
 
     result_list = [encounter.getResultByIdx(i) for i in range(encounter.resultSize())]
-
+    mapData = encounter.getMapData()
+    if mapData:
+        mapDataDict = {
+            "version": int(mapData.version),
+            "map": {
+                "image": {
+                    "mapLink": mapData.map.image.mapLink,
+                    "sourceType": mapData.map.image.sourceType,
+                    "originPx": {
+                        "x": int(mapData.map.image.originPx.x),
+                        "y": int(mapData.map.image.originPx.y)
+                    },
+                    "naturalSizePx": {
+                        "w": int(mapData.map.image.naturalSizePx.w),
+                        "h": int(mapData.map.image.naturalSizePx.h)
+                    }
+                }
+            },
+            "grid": {
+                "cellBounds": {
+                    "cols": int(mapData.grid.cellBounds.cols),
+                    "rows": int(mapData.grid.cellBounds.rows)
+                },
+                "cellSizePx": int(mapData.grid.cellSizePx)
+            },
+            "layers": {
+                "creatureTokens": [
+                    {"cid": str(t.cid), "token_image": t.token_image} for t in mapData.layers.creatureTokens
+                ],
+                "aoeTokens": [
+                    {
+                        "tid": t.tid,
+                        "cid": t.cid,
+                        "resultID": int(t.resultID),
+                        "name": t.name,
+                        "shape": {"type": t.shape.type, "radiusCells": int(t.shape.radiusCells)},
+                        "anchor": {"x": int(t.anchor.x), "y": int(t.anchor.y)},
+                        "timing": t.timing
+                    } for t in mapData.layers.aoeTokens
+                ]
+            }
+        }
+    else:
+        mapDataDict = None
     name = encounter.getName()
-    if duplicate and not overwrite:
-        lastChar = name[len(name) - 1]
-        if lastChar.isdigit() and name[len(name) - 2] == "_":  # Overwrite the overwrite
-            lastChar = int(lastChar) + 1
-            name = name[:-1]
-            name += str(lastChar)
-        else:  # Overwrite a non-overwrite
-            name += "_0"
-
     encounter_dict = {
         "name": name,
         "date": encounter.getDate(),
         "eid": encounter.getEID(),
+        "mapData": mapDataDict,
         "completed": encounter.isComplete(),
         "monsters": monster_list,
         "players": player_list,
@@ -753,12 +779,15 @@ def saveEncounter(encounter):
         "initiative": encounter.getInitiative(),
     }
 
-    encounterFile.append(encounter_dict)
     try:
-        with open(ENCOUNTER_LIST_FILE, "w") as f:
-            json.dump(encounterFile, f, indent=4)
-    except TypeError as e:
-        pass
+        await encounterDb.replace_one(
+            {"eid": encounter.getEID()},
+            encounter_dict,
+            upsert=True,
+        )
+    except PyMongoError as err:
+        raise err
+
 def loadEncounter(encounterData):
     # REFACTORING NOTES:
     # Uses encounterData from parameter instead of pulling it here.
@@ -4225,7 +4254,10 @@ def setActiveInitiative(encounter):
                     break
     return initiative
 
-def main():
+async def main():
+    # players = playerDb.find({
+    #      "stats.cid" : {"$in": owned}
+    #  })
     with open(ENCOUNTER_LIST_FILE, "r") as ef:
         encounters = json.load(ef)
         encounter = {}

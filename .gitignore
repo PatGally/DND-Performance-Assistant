@@ -23,3 +23,6 @@ shelf/
 
 CoreEngine/data/refresh_store.json
 CoreEngine/data/user_list.json
+
+Dockerfile
+Dockerfile*

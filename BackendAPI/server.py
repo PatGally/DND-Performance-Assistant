@@ -4,11 +4,11 @@ import os
 from typing import Union, List, Optional, Any
 import uuid
 from fastapi.middleware.cors import CORSMiddleware
-
 from logs.loggingConfig import setupLogging
 from BackendAPI.models import Monster, Player, Encounter, MonAction, ActionRequest
 from BackendAPI.models.DNDClasses import Barbarian, Bard, Cleric, Druid, Fighter, Paladin, Sorcerer
-
+from pymongo.errors import PyMongoError
+from main import encounterDb, playerDb, userDB
 from dotenv import load_dotenv
 import main
 from fastapi import FastAPI, Request, Depends, HTTPException, status, Response
@@ -16,7 +16,6 @@ from fastapi.params import Cookie
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 import time
 from datetime import datetime, timedelta, timezone
-
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from google.oauth2 import id_token as google_id_token
@@ -27,7 +26,6 @@ from .models.UserAuth import (TokenData, UserCreate,
 
 setupLogging()
 logger = logging.getLogger("backend")
-
 load_dotenv(".env")
 
 env = os.getenv("ENV", "development")
@@ -51,14 +49,36 @@ USERS_PATH = Path("CoreEngine/data/user_list.json")
 REFRESH_STORE_PATH = Path("CoreEngine/data/refresh_store.json")
 ORIGINS = [origin for origin in [os.getenv("ORIGIN1"), os.getenv("ORIGIN2")] if origin]
 
-def loadUserDb() -> dict:
-    if not USERS_PATH.exists():
-        return {}
-    return json.loads(USERS_PATH.read_text(encoding="utf-8"))
-def saveUserDb(db: dict) -> None:
-    tmp = USERS_PATH.with_suffix(".tmp")
-    tmp.write_text(json.dumps(db, indent=2), encoding="utf-8")
-    tmp.replace(USERS_PATH)
+DEFAULT_USER_FIELDS = {
+    "hashed_password": None,
+    "auth_provider": "local",
+    "google_sub": None,
+    "disabled": False,
+    "encounter_ids": [],
+    "player_ids": []
+}
+
+async def loadUserDb() -> dict:
+    users = userDB.find({})
+    users_list = await users.to_list(length=None)
+
+    users_dict = {user["username"]: user for user in users_list}
+    return users_dict
+
+async def saveUserDb(db: dict) -> None:
+    for username, user_doc in db.items():
+        for key, value in DEFAULT_USER_FIELDS.items():
+            if key not in user_doc or user_doc[key] is None:
+                user_doc[key] = value
+            elif isinstance(value, list) and not user_doc[key]:
+                user_doc[key] = value.copy()  # avoid shared mutable lists
+
+        await userDB.replace_one(
+            {"username": username},
+            user_doc,
+            upsert=True
+        )
+
 userDb = loadUserDb()
 
 app = FastAPI()
@@ -84,12 +104,7 @@ async def logRequests(request: Request, callNext):
 
     return response
 
-ENCOUNTER_LIST = []
-def refresh():
-    with open("CoreEngine/data/encounter_list.json", "r") as rf: #TODO: DB pull here
-        global ENCOUNTER_LIST
-        ENCOUNTER_LIST = json.load(rf)
-refresh()
+USER_ENCOUNTERS = {}
 AnyPlayer = Union[Fighter, Barbarian, Bard, Cleric, Druid, Paladin, Sorcerer]
 
 async def getCurrentUser(token : str = Depends(oauth2Scheme)):
@@ -113,12 +128,14 @@ async def getCurrentActiveUser(currentUser : UserInDB = Depends(getCurrentUser))
         raise HTTPException(status_code=400, detail="Inactive user")
     return currentUser
 
-def requireOwnedEncounter(eid: str, currentUser: UserInDB) -> None:
-    if eid not in currentUser.encounter_ids:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Encounter not found"
-        )
+async def refresh_user_encounters(currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    owned_ids = currentUser.encounter_ids
+    encounterList = encounterDb.find({"eid": {"$in": owned_ids}})
+    encounters = await encounterList.to_list(length=None)
+    USER_ENCOUNTERS[currentUser.username] = encounters
+
+    return encounters
+
 def requireOwnedPlayer(pid: str, currentUser: UserInDB) -> None:
     if pid not in currentUser.player_ids:
         raise HTTPException(
@@ -173,7 +190,7 @@ def getCreature(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrent
         )
     return creatures[creatureIdx]
 @app.post("/encounter/{eid}/creature")
-def addtoEncounter(eid : str, creature : Union[AnyPlayer, Player, Monster], currentUser: UserInDB = Depends(getCurrentActiveUser)):
+async def addtoEncounter(eid : str, creature : Union[AnyPlayer, Player, Monster], currentUser: UserInDB = Depends(getCurrentActiveUser)):
     encounter = getEncounter(eid, currentUser)
     if isPlayer(creature):
         requireOwnedPlayer(creature["stats"]["cid"], currentUser)
@@ -181,28 +198,30 @@ def addtoEncounter(eid : str, creature : Union[AnyPlayer, Player, Monster], curr
         pass
     else:
         encounter.get("monsters", []).append(creature)
-    main.saveEncounter(main.loadEncounter(encounter))
-    refresh()
+    try:
+        await main.saveEncounter(main.loadEncounter(encounter))
+    except PyMongoError as err:
+        raise HTTPException(status_code=500, detail=f"Failed to save Encounter: {err}")
+    await refresh_user_encounters(currentUser)
     return {"verification" : "true"}
 @app.get("/encounter/{eid}/state/maplink")
 def getMapLink(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
     enc = getEncounter(eid, currentUser)
-    maplink = enc.get("maplink", None)
-    return maplink
-@app.get("/encounter/{eid}/state")
-def getEncounter(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    requireOwnedEncounter(eid, currentUser)
+    mapLink = None
+    mapData = enc.get("mapData")
+    if mapData:
+        mapLink = mapData.get("map", {}).get("image", {}).get("mapLink", {})
+    return mapLink
 
-    for encounter in ENCOUNTER_LIST:
-        dbEid = encounter.get("eid", None)
-        if eid == dbEid:
-            logger.info(f"{eid} found for user {currentUser.username}!")
+@app.get("/encounter/{eid}/state")
+async def getEncounter(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    await refresh_user_encounters(currentUser)
+    for encounter in USER_ENCOUNTERS.get(currentUser.username, []):
+        if encounter.get("eid") == eid:
             return encounter
 
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail="Encounter not found"
-    )
+    raise HTTPException(status_code=404, detail="Encounter not found")
+
 @app.get("/encounter/{eid}/recommendation/{cid}")
 def actionRecommendation(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
     #Returns a list of all possible actions a given creature can perform, ordered by the rankings of best to worst.
@@ -259,7 +278,7 @@ def getUUID():
     return myUuidString
 
 @app.get("/encounter/{eid}/initiative/nextturn")
-def getNextTurn(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+async def getNextTurn(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
     encounter = main.loadEncounter(getEncounter(eid, currentUser))
     initiative = encounter.getInitiative()
     for i, turn in enumerate(initiative):
@@ -307,9 +326,11 @@ def getNextTurn(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)
                             result["turnCount"] += 1
                             appendTurnCountResID.append(resultID)
                         refreshFlag = True
-
-    main.saveEncounter(encounter)
-    refresh()
+    try:
+        await main.saveEncounter(encounter)
+    except PyMongoError as err:
+        raise HTTPException(status_code=500, detail=f"Failed to save Encounter: {err}")
+    await refresh_user_encounters(currentUser)
     preEffects = {"preEffects" : preEffects, "refresh" : refreshFlag}
     logger.info(f"preEffects: {preEffects}")
     return preEffects
@@ -325,8 +346,9 @@ def getTurn(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
 def getInitiative(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
     enc = getEncounter(eid, currentUser)
     return enc.get("initiative", [])
+
 @app.post("/encounter")
-def postEncounter(encounter : Encounter, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+async def postEncounter(encounter : Encounter, currentUser: UserInDB = Depends(getCurrentActiveUser)):
     def attachEncounterToUser(username: str, eid: str) -> None:
         userData = userDb.get(username)
         if not userData:
@@ -342,12 +364,23 @@ def postEncounter(encounter : Encounter, currentUser: UserInDB = Depends(getCurr
             del encounterJSON["players"][i]["metamagics"]
             del encounterJSON["players"][i]["chosenMetaMagics"]
             del encounterJSON["players"][i]["sorceryPoints"]
-    ENCOUNTER_LIST.append(encounterJSON)
-    with open("CoreEngine/data/encounter_list.json", "w") as wf:
-        json.dump(ENCOUNTER_LIST, wf, indent=4)
     attachEncounterToUser(currentUser.username, encounterJSON["eid"])
-    refresh()
+    try:
+        await encounterDb.replace_one(
+            {"eid": encounterJSON.get("eid")},
+            encounterJSON,
+            upsert=True,
+        )
+    except PyMongoError as err:
+        raise HTTPException(status_code=500, detail=f"Failed to save Encounter: {err}")
+    await refresh_user_encounters(currentUser)
     return dict(verification="true")
+@app.get("/dashboard/encounters")
+async def getEncounterPacket(currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    owned_ids = currentUser.encounter_ids  # list of eids user owns
+    encounterList = encounterDb.find({"eid": {"$in": owned_ids}})
+    encounters = await encounterList.to_list(length=None)
+    return [{"name": enc.get("name"),"date": enc.get("date"),"eid": enc.get("eid"),"completed": enc.get("completed")}for enc in encounters]
 
 @app.get("/dashboard/{eid}/packet")
 def getEncounterMiniData(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
@@ -360,17 +393,21 @@ def getEncounterMiniData(eid : str, currentUser: UserInDB = Depends(getCurrentAc
                  "type" : monster.get("creatureType")} for monster in monsters]
     return {"players" : pPacket, "monsters" : mPacket}
 
+
 @app.get("/dashboard/monsters")
 def getMonsters():
     with open("CoreEngine/data/monster_list.json", "r") as pf:
         monster_list = json.load(pf)
     return monster_list
+
 @app.get("/dashboard/players")
-def getPlayers(currentUser: UserInDB = Depends(getCurrentActiveUser)):
+async def getPlayers(currentUser: UserInDB = Depends(getCurrentActiveUser)):
     owned = set(currentUser.player_ids)
-    with open("CoreEngine/data/player_list.json", "r") as pf:
-        player_list = json.load(pf)
-    return [player for player in player_list if player["stats"]["cid"] in owned]
+    players = playerDb.find({
+        "stats.cid" : {"$in": owned}
+    })
+    return await players.to_list(length=None)
+
 @app.get("/dashboard/weapons")
 def getWeapons():
     with open("CoreEngine/data/weapons_list.json", "r") as wf:
@@ -400,11 +437,6 @@ def getSpells(classid : str, level : int):
                     i += 1
     logger.info("Spell data from get spells: %s", relevantSpellData)
     return relevantSpellData
-@app.get("/dashboard/encounters")
-def getEncounterPacket(currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    owned = set(currentUser.encounter_ids)
-    return [{"name" : enc.get("name"), "date" : enc.get("date"),
-             "eid" : enc.get("eid"), "completed" : enc.get("completed")} for enc in ENCOUNTER_LIST if enc.get("eid") in owned]
 @app.post("/dashboard/players")
 def postPlayerToPlayerList(player : Union[AnyPlayer, Player], currentUser: UserInDB = Depends(getCurrentActiveUser)):
     def addClassPassives():
@@ -422,6 +454,7 @@ def postPlayerToPlayerList(player : Union[AnyPlayer, Player], currentUser: UserI
             playerObj.setSaveProf("WIS", playerObj.getSaveProf("WIS") + playerObj.getProfBonus())
     def attachPlayerToUser(username: str, pid: str) -> None:
         userData = userDb.get(username)
+
         if not userData:
             raise HTTPException(status_code=404, detail="User not found")
 
@@ -438,7 +471,11 @@ def postPlayerToPlayerList(player : Union[AnyPlayer, Player], currentUser: UserI
     main.getSavedWeapons(playerObj, playerJSON["weapons"])
     main.getSavedSpells(playerObj, playerJSON["spells"])
     addClassPassives()
-    main.savePlayer(playerObj)
+    try:
+        main.savePlayer(playerObj)
+    except PyMongoError as err:
+        raise HTTPException(status_code=500, detail=f"Failed to save player: {err}")
+
     attachPlayerToUser(currentUser.username, playerJSON["stats"]["cid"])
     return dict(verification="true")
 
@@ -645,6 +682,7 @@ async def readUsersMe(currentUser: UserInDB = Depends(getCurrentActiveUser)):
 @app.post("/signup", response_model=UserPublic, status_code=status.HTTP_201_CREATED)
 async def signup(userIn: UserCreate):
     uDb = createUser(userDb, userIn)
+    await refresh_user_encounters(uDb)
     return userToPublic(uDb)
 @app.post("/auth/login")
 async def login(response: Response, formData: OAuth2PasswordRequestForm = Depends()):
@@ -655,6 +693,7 @@ async def login(response: Response, formData: OAuth2PasswordRequestForm = Depend
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password"
         )
+    await refresh_user_encounters(user)
     return await issueAccessAuth(user, response)
 @app.post("/auth/google")
 async def authGoogle(body: GoogleAuthRequest, response: Response):
@@ -753,7 +792,8 @@ async def refreshToken(
         path=REFRESH_COOKIE_PATH,
         max_age=60 * 60 * 24 * REFRESH_TOKEN_EXPIRE_DAYS,
     )
-
+    currentUser = await getCurrentActiveUser()
+    await refresh_user_encounters(currentUser)
     return {"access_token": access, "token_type": "bearer"}
 @app.post("/auth/logout")
 async def logout(
