@@ -5,6 +5,13 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 
+class Outcome(BaseModel):
+    rollResult : List[str] = Field(alias="rollResult")
+    diceResult : List[int] = Field(alias="diceResult")
+
+class ExtraOutcome(BaseModel):
+    extraRollResult : List[str] = Field(alias="extraRollResult")
+    extraDiceResult : List[int] = Field(alias="extraDiceResult")
 
 class ActionRequest(BaseModel):
     """
@@ -29,8 +36,8 @@ class ActionRequest(BaseModel):
     conditions: List[str] = Field(default_factory=list)
     statuseffects: List[Dict[str, Any]] = Field(default_factory=list)
 
-    outcome: Dict[str, List[str]] = Field(default_factory=dict)
-    extraOutcome: Optional[Dict[str, List[str]]] = Field(default_factory=dict)
+    outcome: Outcome
+    extraOutcome: extraOutcome
 
     # Sender uses "%H:%M:%S"
     timestamp: time

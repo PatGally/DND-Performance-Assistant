@@ -1596,8 +1596,8 @@
                 "maxhp": 127,
                 "position": [
                     [
-                        0,
-                        0
+                        1,
+                        2
                     ]
                 ],
                 "cid": "f4c68eaa-84d9-4e65-b800-f114ab55f1b5",
@@ -1647,14 +1647,14 @@
                                 "saveType": "CON",
                                 "halfSave": true,
                                 "saveDC": "15",
-                                "damage": "45",
+                                "damage": "10d8",
                                 "damMod": "0"
                             },
                             "damType": [
-                                "(10d8)"
+                                "poison"
                             ],
                             "conditions": [
-                                ""
+                                "poisoned"
                             ],
                             "statusEffect": [],
                             "extraEffect": {},
@@ -1851,7 +1851,7 @@
                 "position": [
                     [
                         0,
-                        0
+                        1
                     ]
                 ],
                 "cid": "930eacb8-a93b-413a-b834-53e6ae3793e0",
@@ -2085,7 +2085,7 @@
                 "maxhp": 11,
                 "position": [
                     [
-                        0,
+                        1,
                         0
                     ]
                 ],
@@ -2219,8 +2219,8 @@
                 "maxhp": 248,
                 "position": [
                     [
-                        0,
-                        0
+                        1,
+                        1
                     ]
                 ],
                 "cid": "dd834551-a8a7-4025-ab2e-ec95946da895",
@@ -2397,7 +2397,8 @@
                     "hold person",
                     "invisibility",
                     "mirror image",
-                    "shatter"
+                    "shatter",
+                    "spiritual weapon"
                 ],
                 "weapons": []
             },
@@ -2428,8 +2429,8 @@
                     "hp": 103,
                     "position": [
                         [
-                            0,
-                            0
+                            2,
+                            1
                         ]
                     ],
                     "cid": "5178714b-ead0-4e49-b2c6-b93cba436838",
@@ -2484,8 +2485,8 @@
                     "hp": 73,
                     "position": [
                         [
-                            0,
-                            0
+                            2,
+                            2
                         ]
                     ],
                     "cid": "86d661ba-1302-4d9a-837e-708763a4f417",
@@ -2517,8 +2518,8 @@
                 "iValue": 9,
                 "turnType": "Player",
                 "currentTurn": false,
-                "actionResource": 1,
-                "bonusActionResource": 1,
+                "actionResource": 0,
+                "bonusActionResource": 0,
                 "movementResource": 30
             },
             {

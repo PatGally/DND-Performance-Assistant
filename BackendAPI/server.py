@@ -6,7 +6,7 @@ import uuid
 from fastapi.middleware.cors import CORSMiddleware
 
 from logs.loggingConfig import setupLogging
-from BackendAPI.models import Monster, Player, Encounter, MonAction
+from BackendAPI.models import Monster, Player, Encounter, MonAction, ActionRequest
 from BackendAPI.models.DNDClasses import Barbarian, Bard, Cleric, Druid, Fighter, Paladin, Sorcerer
 
 from dotenv import load_dotenv
@@ -46,7 +46,7 @@ COOKIE_SECURE = os.getenv("COOKIE_SECURE", "false").lower() == "true"
 COOKIE_SAMESITE = os.getenv("COOKIE_SAMESITE", "lax")
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 REFRESH_COOKIE_NAME = "refresh_token"
-REFRESH_COOKIE_PATH = "/auth"
+REFRESH_COOKIE_PATH = os.getenv("REFRESH_COOKIE_PATH")
 USERS_PATH = Path("CoreEngine/data/user_list.json")
 REFRESH_STORE_PATH = Path("CoreEngine/data/refresh_store.json")
 ORIGINS = [origin for origin in [os.getenv("ORIGIN1"), os.getenv("ORIGIN2")] if origin]
@@ -228,6 +228,29 @@ def actionRecommendation(eid : str, cid : str, currentUser: UserInDB = Depends(g
                 detail="Creature not found"
             )
 
+@app.post("/encounter/{eid}/simulate/ruleset")
+def rulesetSimulate(eid : str, action : ActionRequest, currentUser : UserInDB = Depends(getCurrentActiveUser)):
+    """entry = {
+        "resultID": random.randint(1, 9999999999),
+        "actor": player.getName(),
+        "action": actionName,
+        "actionType": actionType,
+        "actionProb": actionProb,
+        "actionEDam": actionEDam,
+        "actionImpact": actionImpact,
+        "targets": [t["Statblock"].getName() if isinstance(t, dict) else t.getName() for t in targets],
+        "targetCRs": [t["Statblock"].getLevel() if isinstance(t, dict) else t.getLevel() for t in targets],
+        "conditions": conditions,
+        "statuseffects": statuseffects,
+        "outcome": result,
+        "extraOutcome": extraResult,
+        "timestamp": datetime.now().strftime("%H:%M:%S")
+    # }
+    """
+    encounter = main.loadEncounter(getEncounter(eid, currentUser))
+    #Do simulation logic
+    main.logActionResult(encounter, action)
+
 @app.get("/uuid")
 def getUUID():
     myUuidObject = uuid.uuid4()
@@ -331,8 +354,6 @@ def getEncounterMiniData(eid : str, currentUser: UserInDB = Depends(getCurrentAc
     encounter = getEncounter(eid, currentUser)
     players = encounter.get("players", [])
     monsters = encounter.get("monsters", [])
-    logger.info(players)
-    logger.info(monsters)
     pPacket = [{"name" : player.get("stats").get("name"), "level" : player.get("stats").get("level"),
                "characterClass" : player.get("stats").get("characterClass")} for player in players]
     mPacket = [{"name" : monster.get("name"), "cr" : monster.get("cr"), "size" : monster.get("size"),
