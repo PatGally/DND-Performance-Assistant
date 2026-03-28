@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, List, Union, Optional
 from pydantic import BaseModel, Field, ConfigDict
-import MapData
+from .MapData import MapData
 from .DNDClasses import Fighter, Barbarian, Bard, Cleric, Druid, Paladin, Sorcerer
 from .Player import Player
 from .Monster import Monster
@@ -31,7 +31,7 @@ class Encounter(BaseModel):
     name: str
     date: str
     eid: str
-    mapdata: Optional[MapData.MapData] = None  # Added MapData field
+    mapdata: Optional[MapData] = None  # Added MapData field
     completed: bool = False
 
     monsters: List[Monster] = Field(default_factory=list)

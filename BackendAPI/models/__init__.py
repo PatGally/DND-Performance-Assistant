@@ -6,3 +6,4 @@ from .Spell import Spell
 from .Monster import Monster
 from .MonAction import MonAction
 from .Encounter import Encounter
+from .MapData import MapData

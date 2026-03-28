@@ -8,7 +8,6 @@ from logs.loggingConfig import setupLogging
 from BackendAPI.models import Monster, Player, Encounter, MonAction, ActionRequest
 from BackendAPI.models.DNDClasses import Barbarian, Bard, Cleric, Druid, Fighter, Paladin, Sorcerer
 from pymongo.errors import PyMongoError
-from main import encounterDb, playerDb, userDB
 from dotenv import load_dotenv
 import main
 from fastapi import FastAPI, Request, Depends, HTTPException, status, Response
@@ -23,6 +22,9 @@ from google.auth.transport import requests as google_requests
 from pathlib import Path
 from .models.UserAuth import (TokenData, UserCreate,
                              UserInDB, UserPublic, ChangePasswordRequest, SetDisabledRequest, GoogleAuthRequest)
+from db.db_access import init_indexes, get_user_by_username, get_encounter_by_eid, get_player_by_cid, \
+    upsert_encounter_dict, find_encounters_by_username, find_players_by_username, upsert_user_dict, addEncounterToUser, \
+    addPlayerToUser, getUserByGoogleSub
 
 setupLogging()
 logger = logging.getLogger("backend")
@@ -48,39 +50,6 @@ REFRESH_COOKIE_PATH = os.getenv("REFRESH_COOKIE_PATH")
 USERS_PATH = Path("CoreEngine/data/user_list.json")
 REFRESH_STORE_PATH = Path("CoreEngine/data/refresh_store.json")
 ORIGINS = [origin for origin in [os.getenv("ORIGIN1"), os.getenv("ORIGIN2")] if origin]
-
-DEFAULT_USER_FIELDS = {
-    "hashed_password": None,
-    "auth_provider": "local",
-    "google_sub": None,
-    "disabled": False,
-    "encounter_ids": [],
-    "player_ids": []
-}
-
-async def loadUserDb() -> dict:
-    users = userDB.find({})
-    users_list = await users.to_list(length=None)
-
-    users_dict = {user["username"]: user for user in users_list}
-    return users_dict
-
-async def saveUserDb(db: dict) -> None:
-    for username, user_doc in db.items():
-        for key, value in DEFAULT_USER_FIELDS.items():
-            if key not in user_doc or user_doc[key] is None:
-                user_doc[key] = value
-            elif isinstance(value, list) and not user_doc[key]:
-                user_doc[key] = value.copy()  # avoid shared mutable lists
-
-        await userDB.replace_one(
-            {"username": username},
-            user_doc,
-            upsert=True
-        )
-
-userDb = loadUserDb()
-
 app = FastAPI()
 pwdContext = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2Scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -104,7 +73,6 @@ async def logRequests(request: Request, callNext):
 
     return response
 
-USER_ENCOUNTERS = {}
 AnyPlayer = Union[Fighter, Barbarian, Bard, Cleric, Druid, Paladin, Sorcerer]
 
 async def getCurrentUser(token : str = Depends(oauth2Scheme)):
@@ -119,7 +87,7 @@ async def getCurrentUser(token : str = Depends(oauth2Scheme)):
         tokenData = TokenData(username=username)
     except JWTError:
         raise credentialsException
-    user = getUser(userDb, username=tokenData.username)
+    user = await getUser(username=tokenData.username)
     if user is None:
         raise credentialsException
     return user
@@ -127,15 +95,12 @@ async def getCurrentActiveUser(currentUser : UserInDB = Depends(getCurrentUser))
     if currentUser.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
     return currentUser
-
-async def refresh_user_encounters(currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    owned_ids = currentUser.encounter_ids
-    encounterList = encounterDb.find({"eid": {"$in": owned_ids}})
-    encounters = await encounterList.to_list(length=None)
-    USER_ENCOUNTERS[currentUser.username] = encounters
-
-    return encounters
-
+def requireOwnedEncounter(eid: str, currentUser: UserInDB) -> None:
+    if eid not in currentUser.encounter_ids:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Encounter not found"
+        )
 def requireOwnedPlayer(pid: str, currentUser: UserInDB) -> None:
     if pid not in currentUser.player_ids:
         raise HTTPException(
@@ -153,15 +118,20 @@ def isPlayer(creature):
         return True
     else:
         return False
+
+@app.on_event("startup")
+async def startup_event():
+    await init_indexes()
+
 @app.get("/encounter/{eid}/creature/{cid}/position")
-def getCreaturePosition(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    creature = getCreature(eid, cid, currentUser)
+async def getCreaturePosition(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    creature = await getCreature(eid, cid, currentUser)
     if isinstance(creature.get("stats", {}), dict):
         return creature.get("stats").get("position", [0, 0])
     return creature.get("position", [0, 0])
 @app.get("/encounter/{eid}/creature/{cid}/actions", response_model = List[Union[str, MonAction]])
-def getCreatureActions(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    creature = getCreature(eid, cid, currentUser)
+async def getCreatureActions(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    creature = await getCreature(eid, cid, currentUser)
     if isPlayer(creature):
         spells = creature.get("spells", [])
         weapons = creature.get("weapons", [])
@@ -171,8 +141,8 @@ def getCreatureActions(eid : str, cid : str, currentUser: UserInDB = Depends(get
         actions += creature.get("spellInfo").get("spells", [])
     return actions
 @app.get("/encounter/{eid}/creature/{cid}", response_model=Union[AnyPlayer, Monster])
-def getCreature(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    enc = getEncounter(eid, currentUser)
+async def getCreature(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    enc = await getEncounter(eid, currentUser)
     creatures = enc.get("players", []) + enc.get("monsters", [])
     cids = []
     for creature in creatures:
@@ -191,7 +161,7 @@ def getCreature(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrent
     return creatures[creatureIdx]
 @app.post("/encounter/{eid}/creature")
 async def addtoEncounter(eid : str, creature : Union[AnyPlayer, Player, Monster], currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    encounter = getEncounter(eid, currentUser)
+    encounter = await getEncounter(eid, currentUser)
     if isPlayer(creature):
         requireOwnedPlayer(creature["stats"]["cid"], currentUser)
         encounter.get("players", []).append(creature)
@@ -202,11 +172,10 @@ async def addtoEncounter(eid : str, creature : Union[AnyPlayer, Player, Monster]
         await main.saveEncounter(main.loadEncounter(encounter))
     except PyMongoError as err:
         raise HTTPException(status_code=500, detail=f"Failed to save Encounter: {err}")
-    await refresh_user_encounters(currentUser)
     return {"verification" : "true"}
 @app.get("/encounter/{eid}/state/maplink")
-def getMapLink(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    enc = getEncounter(eid, currentUser)
+async def getMapLink(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    enc = await getEncounter(eid, currentUser)
     mapLink = None
     mapData = enc.get("mapData")
     if mapData:
@@ -215,17 +184,16 @@ def getMapLink(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser))
 
 @app.get("/encounter/{eid}/state")
 async def getEncounter(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    await refresh_user_encounters(currentUser)
-    for encounter in USER_ENCOUNTERS.get(currentUser.username, []):
-        if encounter.get("eid") == eid:
-            return encounter
-
-    raise HTTPException(status_code=404, detail="Encounter not found")
+    requireOwnedEncounter(eid, currentUser)
+    try:
+        return await get_encounter_by_eid(eid)
+    except:
+        raise HTTPException(status_code=404, detail="Encounter not found")
 
 @app.get("/encounter/{eid}/recommendation/{cid}")
-def actionRecommendation(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+async def actionRecommendation(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
     #Returns a list of all possible actions a given creature can perform, ordered by the rankings of best to worst.
-    encounter = main.loadEncounter(getEncounter(eid, currentUser))
+    encounter = main.loadEncounter(await getEncounter(eid, currentUser))
     initiative = main.setActiveInitiative(encounter)
     players = [encounter.getPlayer(i) for i in range(encounter.playerSize())]
     playercids = [player.getCID().lower() for player in players]
@@ -248,7 +216,7 @@ def actionRecommendation(eid : str, cid : str, currentUser: UserInDB = Depends(g
             )
 
 @app.post("/encounter/{eid}/simulate/ruleset")
-def rulesetSimulate(eid : str, action : ActionRequest, currentUser : UserInDB = Depends(getCurrentActiveUser)):
+async def rulesetSimulate(eid : str, action : ActionRequest, currentUser : UserInDB = Depends(getCurrentActiveUser)):
     """entry = {
         "resultID": random.randint(1, 9999999999),
         "actor": player.getName(),
@@ -266,7 +234,8 @@ def rulesetSimulate(eid : str, action : ActionRequest, currentUser : UserInDB = 
         "timestamp": datetime.now().strftime("%H:%M:%S")
     # }
     """
-    encounter = main.loadEncounter(getEncounter(eid, currentUser))
+    #TODO: Upsert this into DB once it's done.
+    encounter = main.loadEncounter(await getEncounter(eid, currentUser))
     #Do simulation logic
     main.logActionResult(encounter, action)
 
@@ -279,7 +248,7 @@ def getUUID():
 
 @app.get("/encounter/{eid}/initiative/nextturn")
 async def getNextTurn(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    encounter = main.loadEncounter(getEncounter(eid, currentUser))
+    encounter = main.loadEncounter(await getEncounter(eid, currentUser))
     initiative = encounter.getInitiative()
     for i, turn in enumerate(initiative):
         if turn["currentTurn"]:
@@ -330,61 +299,46 @@ async def getNextTurn(eid : str, currentUser: UserInDB = Depends(getCurrentActiv
         await main.saveEncounter(encounter)
     except PyMongoError as err:
         raise HTTPException(status_code=500, detail=f"Failed to save Encounter: {err}")
-    await refresh_user_encounters(currentUser)
     preEffects = {"preEffects" : preEffects, "refresh" : refreshFlag}
     logger.info(f"preEffects: {preEffects}")
     return preEffects
 @app.get("/encounter/{eid}/initiative/currentturn")
-def getTurn(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    encounter = getEncounter(eid, currentUser)
+async def getTurn(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    encounter = await getEncounter(eid, currentUser)
     initiative = encounter.get("initiative", [])
     for turn in initiative:
         if turn["currentTurn"]:
             return turn["name"]
     return {"error" : "no turns in initiative!"}
 @app.get("/encounter/{eid}/initiative")
-def getInitiative(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    enc = getEncounter(eid, currentUser)
+async def getInitiative(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    enc = await getEncounter(eid, currentUser)
     return enc.get("initiative", [])
 
 @app.post("/encounter")
 async def postEncounter(encounter : Encounter, currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    def attachEncounterToUser(username: str, eid: str) -> None:
-        userData = userDb.get(username)
-        if not userData:
-            raise HTTPException(status_code=404, detail="User not found")
-
-        encounter_ids = userData.setdefault("encounter_ids", [])
-        if eid not in encounter_ids:
-            encounter_ids.append(eid)
-            saveUserDb(userDb)
     encounterJSON = encounter.model_dump(mode="json", by_alias=True)
     for i, player in enumerate(encounterJSON["players"]):
         if player["stats"]["characterClass"].lower() != "sorcerer" and "metamagics" in player:
             del encounterJSON["players"][i]["metamagics"]
             del encounterJSON["players"][i]["chosenMetaMagics"]
             del encounterJSON["players"][i]["sorceryPoints"]
-    attachEncounterToUser(currentUser.username, encounterJSON["eid"])
     try:
-        await encounterDb.replace_one(
-            {"eid": encounterJSON.get("eid")},
-            encounterJSON,
-            upsert=True,
-        )
+        await upsert_encounter_dict(encounterJSON)
     except PyMongoError as err:
         raise HTTPException(status_code=500, detail=f"Failed to save Encounter: {err}")
-    await refresh_user_encounters(currentUser)
+    await addEncounterToUser(currentUser.username, encounterJSON["eid"])
     return dict(verification="true")
 @app.get("/dashboard/encounters")
 async def getEncounterPacket(currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    owned_ids = currentUser.encounter_ids  # list of eids user owns
-    encounterList = encounterDb.find({"eid": {"$in": owned_ids}})
+    encounterList = await find_encounters_by_username(currentUser.username)
     encounters = await encounterList.to_list(length=None)
-    return [{"name": enc.get("name"),"date": enc.get("date"),"eid": enc.get("eid"),"completed": enc.get("completed")}for enc in encounters]
+    return [{"name": enc.get("name"),"date": enc.get("date"),"eid": enc.get("eid"),"completed": enc.get("completed")} \
+            for enc in encounters]
 
 @app.get("/dashboard/{eid}/packet")
-def getEncounterMiniData(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    encounter = getEncounter(eid, currentUser)
+async def getEncounterMiniData(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    encounter = await getEncounter(eid, currentUser)
     players = encounter.get("players", [])
     monsters = encounter.get("monsters", [])
     pPacket = [{"name" : player.get("stats").get("name"), "level" : player.get("stats").get("level"),
@@ -402,10 +356,7 @@ def getMonsters():
 
 @app.get("/dashboard/players")
 async def getPlayers(currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    owned = set(currentUser.player_ids)
-    players = playerDb.find({
-        "stats.cid" : {"$in": owned}
-    })
+    players = await find_players_by_username(currentUser.username)
     return await players.to_list(length=None)
 
 @app.get("/dashboard/weapons")
@@ -438,7 +389,7 @@ def getSpells(classid : str, level : int):
     logger.info("Spell data from get spells: %s", relevantSpellData)
     return relevantSpellData
 @app.post("/dashboard/players")
-def postPlayerToPlayerList(player : Union[AnyPlayer, Player], currentUser: UserInDB = Depends(getCurrentActiveUser)):
+async def postPlayerToPlayerList(player : Union[AnyPlayer, Player], currentUser: UserInDB = Depends(getCurrentActiveUser)):
     def addClassPassives():
         #List of classes with relevant passives:
         #Barbarian, Bard, Fighter, Monk, Paladin, Ranger, Rogue
@@ -452,16 +403,6 @@ def postPlayerToPlayerList(player : Union[AnyPlayer, Player], currentUser: UserI
                 main.addChosenSpell(spell, playerObj)
         elif playerObj.getClass().lower() == "rogue":
             playerObj.setSaveProf("WIS", playerObj.getSaveProf("WIS") + playerObj.getProfBonus())
-    def attachPlayerToUser(username: str, pid: str) -> None:
-        userData = userDb.get(username)
-
-        if not userData:
-            raise HTTPException(status_code=404, detail="User not found")
-
-        player_ids = userData.setdefault("player_ids", [])
-        if pid not in player_ids:
-            player_ids.append(pid)
-            saveUserDb(userDb)
     playerJSON = player.model_dump(mode="json", by_alias=True)
     if playerJSON["stats"]["characterClass"].lower() != "sorcerer" and "metamagics" in playerJSON:
         del playerJSON["metamagics"]
@@ -472,11 +413,10 @@ def postPlayerToPlayerList(player : Union[AnyPlayer, Player], currentUser: UserI
     main.getSavedSpells(playerObj, playerJSON["spells"])
     addClassPassives()
     try:
-        main.savePlayer(playerObj)
+        await main.savePlayer(playerObj)
     except PyMongoError as err:
         raise HTTPException(status_code=500, detail=f"Failed to save player: {err}")
-
-    attachPlayerToUser(currentUser.username, playerJSON["stats"]["cid"])
+    await addPlayerToUser(currentUser.username, playerJSON["stats"]["cid"])
     return dict(verification="true")
 
 
@@ -576,12 +516,14 @@ def verifyPassword(plainPassword, hashed_password):
     return pwdContext.verify(plainPassword, hashed_password)
 def getPasswordHash(password):
     return pwdContext.hash(password)
-def getUser(db, username : str):
-    if username in db:
-        userData = db[username]
+async def getUser(username : str):
+    userData = await get_user_by_username(username)
+    if userData:
         return UserInDB(**userData)
-def authenticateUser(db, username : str, password : str):
-    user = getUser(db, username)
+    else:
+        raise HTTPException(status_code=404, detail="User not found")
+async def authenticateUser(username : str, password : str):
+    user = await getUser(username)
     if not user:
         return False
     if not verifyPassword(password, user.hashed_password):
@@ -596,9 +538,10 @@ def userToPublic(user: UserInDB) -> UserPublic:
         encounter_ids=user.encounter_ids,
         player_ids=user.player_ids
     )
-def createUser(db: dict, userIn: UserCreate) -> UserInDB:
+async def createUser(userIn: UserCreate) -> UserInDB:
     # basic uniqueness check
-    if userIn.username in db:
+    userData = await get_user_by_username(userIn.username)
+    if userData:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Username already registered",
@@ -619,20 +562,14 @@ def createUser(db: dict, userIn: UserCreate) -> UserInDB:
         "player_ids": player_ids,
         "google_sub": None,
     }
-    db[userIn.username] = record
-    saveUserDb(userDb)
+    await upsert_user_dict(record)
     return UserInDB(**record)
 #AUTH METHODS GOOGLE
-def findUserByGoogleSub(db: dict, googleSub: str) -> Optional[UserInDB]:
-    for _, userData in db.items():
-        if userData.get("auth_provider") == "google" and userData.get("google_sub") == googleSub:
-            return UserInDB(**userData)
-    return None
-def createGoogleUser(db: dict, *, googleSub: str, email: str | None) -> UserInDB:
+async def createGoogleUser(*, googleSub: str, email: str | None) -> UserInDB:
     baseUsername = f"g_{googleSub[:12]}"
     username = baseUsername
     i = 1
-    while username in db:
+    while await get_user_by_username(username):
         i += 1
         username = f"{baseUsername}_{i}"
 
@@ -650,18 +587,21 @@ def createGoogleUser(db: dict, *, googleSub: str, email: str | None) -> UserInDB
         "player_ids": player_ids,
         "google_sub": googleSub,
     }
-    db[username] = record
-    saveUserDb(userDb)
+    await upsert_user_dict(record)
     return UserInDB(**record)
 #AUTH HELPERS
 def _now_utc() -> datetime:
     return datetime.now(timezone.utc)
 async def issueAccessAuth(user, response):
-    access = createAccessToken(subject=user.username)
-    refresh, jti = createRefreshToken(subject=user.username)
+    if isinstance(user, dict):
+        username = user["username"]
+    else:
+        username = user.username
+    access = createAccessToken(subject=username)
+    refresh, jti = createRefreshToken(subject=username)
 
     refreshPayload = jwt.decode(refresh, REFRESH_SECRET_KEY, algorithms=[ALGORITHM])
-    addRefreshSession(user.username, jti, refreshPayload["exp"])
+    addRefreshSession(username, jti, refreshPayload["exp"])
 
     response.set_cookie(
         key=REFRESH_COOKIE_NAME,
@@ -676,24 +616,19 @@ async def issueAccessAuth(user, response):
     return {"access_token": access, "token_type": "bearer"}
 
 #AUTH ENDPOINTS
-@app.get("/users/me/", response_model=UserPublic)
-async def readUsersMe(currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    return userToPublic(currentUser)
 @app.post("/signup", response_model=UserPublic, status_code=status.HTTP_201_CREATED)
 async def signup(userIn: UserCreate):
-    uDb = createUser(userDb, userIn)
-    await refresh_user_encounters(uDb)
-    return userToPublic(uDb)
+    user = await createUser(userIn)
+    return userToPublic(user)
 @app.post("/auth/login")
 async def login(response: Response, formData: OAuth2PasswordRequestForm = Depends()):
     cleanupExpiredRefreshSessions()
-    user = authenticateUser(userDb, formData.username, formData.password)
+    user = await authenticateUser(formData.username, formData.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password"
         )
-    await refresh_user_encounters(user)
     return await issueAccessAuth(user, response)
 @app.post("/auth/google")
 async def authGoogle(body: GoogleAuthRequest, response: Response):
@@ -723,11 +658,11 @@ async def authGoogle(body: GoogleAuthRequest, response: Response):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Google token missing subject",
         )
-    user = findUserByGoogleSub(userDb, googleSub)
+    user = await getUserByGoogleSub(googleSub)
     if not user:
-        user = createGoogleUser(userDb, googleSub=googleSub, email=email)
+        user = await createGoogleUser(googleSub=googleSub, email=email)
 
-    if user.disabled:
+    if user["disabled"]:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user")
 
     return await issueAccessAuth(user, response)
@@ -792,8 +727,6 @@ async def refreshToken(
         path=REFRESH_COOKIE_PATH,
         max_age=60 * 60 * 24 * REFRESH_TOKEN_EXPIRE_DAYS,
     )
-    currentUser = await getCurrentActiveUser()
-    await refresh_user_encounters(currentUser)
     return {"access_token": access, "token_type": "bearer"}
 @app.post("/auth/logout")
 async def logout(
@@ -834,20 +767,27 @@ async def changePassword(body: ChangePasswordRequest, currentUser: UserInDB = De
     newHash = getPasswordHash(body.new_password)
 
     # Assuming userDb is keyed by username:
-    if currentUser.username not in userDb:
+    userData = await get_user_by_username(currentUser.username)
+    if not userData:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User record not found",
         )
 
-    userDb[currentUser.username]["hashed_password"] = newHash
+    userData["hashed_password"] = newHash
+    await upsert_user_dict(userData)
 
-    saveUserDb(userDb)
     return {"detail": "Password changed successfully"}
 @app.post("/auth/set-disabled", status_code=status.HTTP_204_NO_CONTENT)
 async def setDisabled(body: SetDisabledRequest, currentUser: UserInDB = Depends(getCurrentActiveUser)):
     #TODO: for now, allow self-toggle (useful for testing)
     # Later, implement admin checks.
-    userDb[currentUser.username]["disabled"] = bool(body.disabled)
-    saveUserDb(userDb)
+    userData = await get_user_by_username(currentUser.username)
+    if not userData:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User record not found",
+        )
+    userData["disabled"] = bool(body.disabled)
+    await upsert_user_dict(userData)
     return {"detail": "Disabled user"}

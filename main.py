@@ -3,9 +3,9 @@ import itertools
 import json
 
 from pymongo.errors import PyMongoError
-from db.driver import Driver
+import asyncio
+from db.db_access import init_indexes, get_encounter_by_eid, upsert_player_dict, upsert_encounter_dict
 import math
-import random
 import re
 from typing import Set, List, Dict, Any, Tuple, Optional
 
@@ -27,14 +27,6 @@ from CoreEngine.DNDClasses import (
 
 from datetime import datetime
 import os
-
-db = Driver()
-encounterDb = db.getDb("encounters")
-encounterDb.create_index("eid", unique=True)
-playerDb = db.getDb("players")
-playerDb.create_index("stats.cid", unique=True)
-userDB = db.getDb("users")
-userDB.create_index("username", unique=True)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "CoreEngine/data")
@@ -161,7 +153,6 @@ def getPlayerStats(data):
     playerdata = [playerName, playerStats, saveProfs, playerAC, playerHP, class_type, playerLvl, conImmunes, damImmunes,
                   damResists, damVulns, activeStatusEffects, activeConditions, cid, position, spellSlots]
     return getClassStats(data, playerdata, class_type)
-
 def getSavedWeapons(player, data):
     searchdata = copy.deepcopy(data)
     for i, w in enumerate(searchdata):
@@ -377,7 +368,7 @@ def findSpell(spellName, spellData):
     else:
         return -1
 
-async def savePlayer(player, filename=PLAYER_LIST_FILE):
+async def savePlayer(player):
     # Adds a serialized player to an existing player_list JSON file.
     stats_dict = {
         "name": player.getName(),
@@ -455,14 +446,9 @@ async def savePlayer(player, filename=PLAYER_LIST_FILE):
     }
 
     try:
-        await playerDb.replace_one(
-            {"stats.cid": player.getCID()},
-            player_dict,
-            upsert=True,
-        )
+        await upsert_player_dict(player_dict)
     except PyMongoError as err:
         raise err
-
 
 def loadMonsterActions(monsterData):
     actionData = monsterData["actions"]
@@ -725,7 +711,6 @@ async def saveEncounter(encounter):
     mapData = encounter.getMapData()
     if mapData:
         mapDataDict = {
-            "version": int(mapData.version),
             "map": {
                 "image": {
                     "mapLink": mapData.map.image.mapLink,
@@ -780,14 +765,9 @@ async def saveEncounter(encounter):
     }
 
     try:
-        await encounterDb.replace_one(
-            {"eid": encounter.getEID()},
-            encounter_dict,
-            upsert=True,
-        )
+        await upsert_encounter_dict(encounter_dict)
     except PyMongoError as err:
         raise err
-
 def loadEncounter(encounterData):
     # REFACTORING NOTES:
     # Uses encounterData from parameter instead of pulling it here.
@@ -800,7 +780,6 @@ def loadEncounter(encounterData):
         getSavedWeapons(playerObj, playerJSON["weapons"])
         getSavedSpells(playerObj, playerJSON["spells"])
         encounter.addPlayer(playerObj)
-
     for monsterJSON in encounterData["monsters"]:
         # name, cr, cType, stats, hp, maxHP, ac, saveProfs, lResists, damResists,
         # damImmunes, damVulns, conImmunes, lairAction, legAction
@@ -843,7 +822,6 @@ def loadEncounter(encounterData):
                                      activeStatusEffects, lairAction, magicResist,
                                      enemy, actions, spellInfo, legActions,
                                      cid, position, size, movement))
-
     for resultJSON in encounterData["results"]:
         encounter.addResult(resultJSON)
 
@@ -4254,45 +4232,49 @@ def setActiveInitiative(encounter):
                     break
     return initiative
 
-async def main():
-    # players = playerDb.find({
-    #      "stats.cid" : {"$in": owned}
-    #  })
-    with open(ENCOUNTER_LIST_FILE, "r") as ef:
-        encounters = json.load(ef)
-        encounter = {}
-        for enc in encounters:
-            if enc.get("eid") == "d09c4d69-6e28-4272-9497-1cd9a63a3ee2":
-                encounter = loadEncounter(enc)
-                break
-        actionResult = {
-          "resultID": 100001,
-          "actor": "Guardian Naga",
-          "action": "Bite",
-          "actionType": "action",
-          "actionProb": 0.72,
-          "actionEDam": 30.5,
-          "actionImpact": 4.2,
-          "targets": ["Test Fighter"],
-          "targetCRs": [11],
-          "conditions": [],
-          "statuseffects": [],
-          "outcome": {
-            "rollResults": ["y"],
-            "diceResults": [8]
-          },
-          "extraOutcome": {
-            "extraRollResults": ["y"],
-            "extraDiceResults": [24]
-          },
-          "timestamp": "14:22:10"
-        }
-        actor = "Guardian Naga"
-        action = encounter.getMonster(0).getAction(0)
-        selectedTargets = [encounter.getPlayer(1)]
-        initiative = setActiveInitiative(encounter)
-        executeAction(actor, action, selectedTargets, actionResult, initiative)
-        print("Success!")
+def main():
+    async def manual_test():
+        await init_indexes()
+        testEID = "639a7ea8-709f-4481-b402-01a9cdead888"
+        encounter = await get_encounter_by_eid(testEID)
+        print(encounter)
+        # with open(ENCOUNTER_LIST_FILE, "r") as ef:
+        #     encounters = json.load(ef)
+        # for enc in encounters:
+        #     if enc.get("eid") == "d09c4d69-6e28-4272-9497-1cd9a63a3ee2":
+        #         encounter = loadEncounter(enc)
+        #         break
+        # actionResult = {
+        #     "resultID": 100001,
+        #     "actor": "Guardian Naga",
+        #     "action": "Bite",
+        #     "actionType": "action",
+        #     "actionProb": 0.72,
+        #     "actionEDam": 30.5,
+        #     "actionImpact": 4.2,
+        #     "targets": ["Test Fighter"],
+        #     "targetCRs": [11],
+        #     "conditions": [],
+        #     "statuseffects": [],
+        #     "outcome": {
+        #         "rollResults": ["y"],
+        #         "diceResults": [8]
+        #     },
+        #     "extraOutcome": {
+        #         "extraRollResults": ["y"],
+        #         "extraDiceResults": [24]
+        #     },
+        #     "timestamp": "14:22:10"
+        # }
+        # actor = "Guardian Naga"
+        # action = encounter.getMonster(0).getAction(0)
+        # selectedTargets = [encounter.getPlayer(1)]
+        # initiative = setActiveInitiative(encounter)
+        # executeAction(actor, action, selectedTargets, actionResult, initiative)
+        # print("Success!")
+        # run your other methods here
+
+    asyncio.run(manual_test())
 
 
 if __name__ == "__main__":
