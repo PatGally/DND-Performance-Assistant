@@ -89,7 +89,7 @@ class Stats(BaseModel):
 
     # --- HP (JSON strings ok; internal ints) ---
     hp: int = Field(default=0, alias="hp")
-    max_hp: int = Field(default=0, alias="maxHP")
+    max_hp: int = Field(default=0, alias="maxhp")
     position : List[List[int]] = Field(min_length=1, alias="position")
     cid: str = Field(default_factory=lambda: str(uuid4()), alias="cid")
 

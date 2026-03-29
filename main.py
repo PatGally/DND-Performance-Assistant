@@ -44,8 +44,6 @@ Coord = Tuple[int, int]
 
 # PLAYER/MONSTER/SPELL/WEAPON CREATE/SAVE/LOAD METHODS
 def getPlayerStats(data):
-    # Creates a player object based on pulled JSON player data.
-    # TODO: Add new player attributes to this method.
     def getClassStats(data, playerdata, characterClass):
         if characterClass.lower() == "barbarian":
             rageCharges = data["rageCharges"]
@@ -2715,7 +2713,6 @@ def computePerTargetSEImpact(action, probSuccess, creature, useProbSuccess=True)
                 ].lower() not in [
                     c["name"].lower() for c in creature.getActiveStatusEffects()
                 ]:
-                    # TODO: Change these checks to account for "negative" SEs that account for positive attributes
                     if (
                         effect["name"].lower() == "disadvantage"
                         and "attack rolls against" in effect["effect"]["attribute"]

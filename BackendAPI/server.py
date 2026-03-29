@@ -217,7 +217,8 @@ async def actionRecommendation(eid : str, cid : str, currentUser: UserInDB = Dep
 
 @app.post("/encounter/{eid}/simulate/ruleset")
 async def rulesetSimulate(eid : str, action : ActionRequest, currentUser : UserInDB = Depends(getCurrentActiveUser)):
-    """entry = {
+    """
+    entry = {
         "resultID": random.randint(1, 9999999999),
         "actor": player.getName(),
         "action": actionName,
@@ -232,12 +233,35 @@ async def rulesetSimulate(eid : str, action : ActionRequest, currentUser : UserI
         "outcome": result,
         "extraOutcome": extraResult,
         "timestamp": datetime.now().strftime("%H:%M:%S")
-    # }
+    }
     """
     #TODO: Upsert this into DB once it's done.
     encounter = main.loadEncounter(await getEncounter(eid, currentUser))
     #Do simulation logic
     main.logActionResult(encounter, action)
+
+# @app.post("/encounter/{eid}/simulate/manual")
+# async def manualSimulate(eid : str, action : ManualRequest, currentUser : UserInDB = Depends(getCurrentActiveUser)):
+#     #TODO: Patrick
+#     # Fill out the ManualRequest pydantic (figure out what it looks like)
+#     # Call the main method
+#     #
+#     pass
+
+@app.post("/encounter/{eid}/simulate/movement")
+async def movementSimulate(eid : str, cid : str, newPos : List[int], currentUser : UserInDB = Depends(getCurrentActiveUser)):
+    encounter = main.loadEncounter(await getEncounter(eid, currentUser))
+    creatures = []
+    players = [encounter.getPlayer(i) for i in range(encounter.playerSize())]
+    monsters = [encounter.getMonster(i) for i in range(encounter.monsterSize())]
+    creatures.extend(players)
+    creatures.extend(monsters)
+    for creature in creatures:
+        if creature.getCID() == cid:
+            creature.setPosition(newPos)
+            break
+
+    await main.saveEncounter(encounter)
 
 @app.get("/uuid")
 def getUUID():
