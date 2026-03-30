@@ -118,6 +118,15 @@ def isPlayer(creature):
         return True
     else:
         return False
+async def getCreatureObj(encounter, cid):
+    creatures = []
+    players = [encounter.getPlayer(i) for i in range(encounter.playerSize())]
+    monsters = [encounter.getMonster(i) for i in range(encounter.monsterSize())]
+    creatures.extend(players)
+    creatures.extend(monsters)
+    for creature in creatures:
+        if creature.getCID() == cid:
+            return creature
 
 @app.on_event("startup")
 async def startup_event():
@@ -131,15 +140,20 @@ async def getCreaturePosition(eid : str, cid : str, currentUser: UserInDB = Depe
     return creature.get("position", [0, 0])
 @app.get("/encounter/{eid}/creature/{cid}/actions", response_model = List[Union[str, MonAction]])
 async def getCreatureActions(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    creature = await getCreature(eid, cid, currentUser)
+    encounter = main.loadEncounter(await getEncounter(eid, currentUser))
+    creature = await getCreatureObj(encounter, cid)
     if isPlayer(creature):
-        spells = creature.get("spells", [])
-        weapons = creature.get("weapons", [])
-        return weapons + spells
-    actions = creature.get("actions", [])
-    if creature.get("spellInfo", {}):
-        actions += creature.get("spellInfo").get("spells", [])
-    return actions
+        actions = []
+        spells = [creature.getSpell(i) for i in range(creature.getSpellLength())]
+        weapons = [creature.getWeapon(i) for i in range(creature.getWeaponLength())]
+        actions.extend(spells)
+        actions.extend(weapons)
+        return actions
+    else:
+        actions = [creature.getAction(i) for i in range(creature.getActionLength())]
+        if creature.get("spellInfo", {}):
+            actions.extend([creature.getSpell(i) for i in range(creature.getSpellLength())])
+        return actions
 @app.get("/encounter/{eid}/creature/{cid}", response_model=Union[AnyPlayer, Monster])
 async def getCreature(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
     enc = await getEncounter(eid, currentUser)
@@ -240,27 +254,11 @@ async def rulesetSimulate(eid : str, action : ActionRequest, currentUser : UserI
     #Do simulation logic
     main.logActionResult(encounter, action)
 
-# @app.post("/encounter/{eid}/simulate/manual")
-# async def manualSimulate(eid : str, action : ManualRequest, currentUser : UserInDB = Depends(getCurrentActiveUser)):
-#     #TODO: Patrick
-#     # Fill out the ManualRequest pydantic (figure out what it looks like)
-#     # Call the main method
-#     #
-#     pass
-
 @app.post("/encounter/{eid}/simulate/movement")
 async def movementSimulate(eid : str, cid : str, newPos : List[int], currentUser : UserInDB = Depends(getCurrentActiveUser)):
     encounter = main.loadEncounter(await getEncounter(eid, currentUser))
-    creatures = []
-    players = [encounter.getPlayer(i) for i in range(encounter.playerSize())]
-    monsters = [encounter.getMonster(i) for i in range(encounter.monsterSize())]
-    creatures.extend(players)
-    creatures.extend(monsters)
-    for creature in creatures:
-        if creature.getCID() == cid:
-            creature.setPosition(newPos)
-            break
-
+    creature = await getCreatureObj(encounter, cid)
+    creature.setPosition(newPos)
     await main.saveEncounter(encounter)
 
 @app.get("/uuid")
@@ -371,18 +369,15 @@ async def getEncounterMiniData(eid : str, currentUser: UserInDB = Depends(getCur
                  "type" : monster.get("creatureType")} for monster in monsters]
     return {"players" : pPacket, "monsters" : mPacket}
 
-
 @app.get("/dashboard/monsters")
 def getMonsters():
     with open("CoreEngine/data/monster_list.json", "r") as pf:
         monster_list = json.load(pf)
     return monster_list
-
 @app.get("/dashboard/players")
 async def getPlayers(currentUser: UserInDB = Depends(getCurrentActiveUser)):
     players = await find_players_by_username(currentUser.username)
     return await players.to_list(length=None)
-
 @app.get("/dashboard/weapons")
 def getWeapons():
     with open("CoreEngine/data/weapons_list.json", "r") as wf:
