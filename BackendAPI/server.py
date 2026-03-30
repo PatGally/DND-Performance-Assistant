@@ -200,7 +200,9 @@ async def getMapLink(eid : str, currentUser: UserInDB = Depends(getCurrentActive
 async def getEncounter(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
     requireOwnedEncounter(eid, currentUser)
     try:
-        return await get_encounter_by_eid(eid)
+        encounter = await get_encounter_by_eid(eid)
+        encounter.pop("_id", None)
+        return encounter
     except:
         raise HTTPException(status_code=404, detail="Encounter not found")
 
@@ -680,8 +682,7 @@ async def authGoogle(body: GoogleAuthRequest, response: Response):
     user = await getUserByGoogleSub(googleSub)
     if not user:
         user = await createGoogleUser(googleSub=googleSub, email=email)
-
-    if user["disabled"]:
+    if user.disabled:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user")
 
     return await issueAccessAuth(user, response)

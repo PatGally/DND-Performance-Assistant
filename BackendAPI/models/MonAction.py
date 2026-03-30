@@ -119,13 +119,12 @@ class MonAction(BaseModel):
     dam_type: List[str] = Field(default_factory=list, alias="damType")
     conditions: List[str] = Field(default_factory=list)
 
-    status_effect: Optional[list[dict[str, Any]]] = None
-
-    ling_effect: Optional[list[dict[str, Any]]] = None
-    extra_effect: Optional[list[dict[str, Any]]] = None
+    status_effect: Optional[List[dict[str, Any]]] = None
+    ling_effect: Optional[dict[str, Any]] = None
+    extra_effect: Optional[dict[str, Any]] = None
 
     # In your data this can be {} or a structured object
-    ling_save: Optional[list[dict[str, Any]]] = None
+    ling_save: Optional[dict[str, Any]] = None
 
     action_cost: str = Field(default="action", alias="actionCost")
     recharge: Union[str, List[str]] = Field(default="", alias="recharge")
