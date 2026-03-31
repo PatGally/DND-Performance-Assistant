@@ -12,7 +12,8 @@ class NaturalSizePx(BaseModel):
 class MapImage(BaseModel):
     mapLink: str
     sourceType: str
-    originPx: OriginPx
+    # originPx: OriginPx
+    originPx: Optional[OriginPx] = None
     naturalSizePx: NaturalSizePx
 
 class MapDataMap(BaseModel):

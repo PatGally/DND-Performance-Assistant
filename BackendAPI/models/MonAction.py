@@ -119,7 +119,8 @@ class MonAction(BaseModel):
     dam_type: List[str] = Field(default_factory=list, alias="damType")
     conditions: List[str] = Field(default_factory=list)
 
-    status_effect: Optional[List[dict[str, Any]]] = None
+    status_effect: Optional[list[dict[str, Any]]] = None
+
     ling_effect: Optional[dict[str, Any]] = None
     extra_effect: Optional[dict[str, Any]] = None
 

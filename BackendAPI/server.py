@@ -9,6 +9,8 @@ from BackendAPI.models import Monster, Player, Encounter, MonAction, ActionReque
 from BackendAPI.models.DNDClasses import Barbarian, Bard, Cleric, Druid, Fighter, Paladin, Sorcerer
 from pymongo.errors import PyMongoError
 from dotenv import load_dotenv
+import httpx
+from fastapi.responses import StreamingResponse
 import main
 from fastapi import FastAPI, Request, Depends, HTTPException, status, Response
 from fastapi.params import Cookie
@@ -20,6 +22,8 @@ from passlib.context import CryptContext
 from google.oauth2 import id_token as google_id_token
 from google.auth.transport import requests as google_requests
 from pathlib import Path
+
+from .models.AffectedCreatures import AffectedCreaturesRequest
 from .models.UserAuth import (TokenData, UserCreate,
                              UserInDB, UserPublic, ChangePasswordRequest, SetDisabledRequest, GoogleAuthRequest)
 from db.db_access import init_indexes, get_user_by_username, get_encounter_by_eid, get_player_by_cid, \
@@ -61,6 +65,22 @@ app.add_middleware(
     allow_methods=["*"], #DELETE, PUT, etc
     allow_headers=["*"], #Specific requests from specific sources.
 )
+@app.get("/api/drive-image/{file_id}")
+async def get_drive_image(file_id: str):
+    url = f"https://drive.google.com/uc?export=view&id={file_id}"
+
+    async with httpx.AsyncClient(follow_redirects=True) as client:
+        response = await client.get(url)
+
+        if response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail="Failed to fetch image")
+
+        content_type = response.headers.get("content-type", "image/jpeg")
+
+        return StreamingResponse(
+            iter([response.content]),
+            media_type=content_type
+        )
 
 @app.middleware("http")
 async def logRequests(request: Request, callNext):
@@ -101,6 +121,15 @@ def requireOwnedEncounter(eid: str, currentUser: UserInDB) -> None:
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Encounter not found"
         )
+async def getCreatureObj(encounter, cid):
+    creatures = []
+    players = [encounter.getPlayer(i) for i in range(encounter.playerSize())]
+    monsters = [encounter.getMonster(i) for i in range(encounter.monsterSize())]
+    creatures.extend(players)
+    creatures.extend(monsters)
+    for creature in creatures:
+        if creature.getCID() == cid:
+            return creature
 def requireOwnedPlayer(pid: str, currentUser: UserInDB) -> None:
     if pid not in currentUser.player_ids:
         raise HTTPException(
@@ -118,15 +147,6 @@ def isPlayer(creature):
         return True
     else:
         return False
-async def getCreatureObj(encounter, cid):
-    creatures = []
-    players = [encounter.getPlayer(i) for i in range(encounter.playerSize())]
-    monsters = [encounter.getMonster(i) for i in range(encounter.monsterSize())]
-    creatures.extend(players)
-    creatures.extend(monsters)
-    for creature in creatures:
-        if creature.getCID() == cid:
-            return creature
 
 @app.on_event("startup")
 async def startup_event():
@@ -140,8 +160,7 @@ async def getCreaturePosition(eid : str, cid : str, currentUser: UserInDB = Depe
     return creature.get("position", [0, 0])
 @app.get("/encounter/{eid}/creature/{cid}/actions")
 async def getCreatureActions(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    encounter = main.loadEncounter(await getEncounter(eid, currentUser))
-    creature = await getCreatureObj(encounter, cid)
+    creature = await getCreature(eid, cid, currentUser)
     if isPlayer(creature):
         actions = []
         spells = [creature.getSpell(i).toDict() for i in range(creature.getSpellLength())]
@@ -260,6 +279,42 @@ async def rulesetSimulate(eid : str, action : ActionRequest, currentUser : UserI
     encounter = main.loadEncounter(await getEncounter(eid, currentUser))
     #Do simulation logic
     main.logActionResult(encounter, action)
+handlers = {
+    "statArray": main.handle_stat_array,
+    "saveProfs": main.handle_save_profs,
+    "damResists": main.handle_dam_resistances,
+    "damImmunes": main.handle_dam_immunes,
+    "damVulns": main.handle_dam_vulns,
+    "conImmunes": main.handle_con_immunes,
+    "activeConditions": main.handle_active_conditions,
+    "activeStatusEffects": main.handle_active_status_effects,
+    "hp": main.handle_hp,
+    "position": main.handle_position,
+    "ac": main.handle_ac,
+    "lResists": main.handle_l_resists,
+    "spellSlots": main.handle_spell_slots,
+}
+
+@app.post("/encounter/{eid}/simulate/manual")
+async def manualSimulate(eid : str, affectedCreatures : AffectedCreaturesRequest, currentUser : UserInDB = Depends(getCurrentActiveUser)):
+    encounter = main.loadEncounter(await getEncounter(eid, currentUser))
+    print(encounter)
+    creature_dict = affectedCreatures.model_dump(mode="json", by_alias=True, exclude_none=True)
+    for creature in creature_dict["affectedCreatures"]:
+        cid = creature.get("cid", "")
+        creatureObj = await getCreatureObj (encounter, cid)
+        for field, value in creature.items():
+            handler = handlers.get(field)
+            if field == "lResists" and not hasattr(creatureObj, "setlResists"):
+                continue
+            if handler :
+                handler(creatureObj, value)
+    try:
+        await main.saveEncounter(encounter)
+    except PyMongoError as err:
+        raise HTTPException(status_code=500, detail=f"Failed to save Encounter: {err}")
+
+    return {"verification" : "true"}
 
 @app.post("/encounter/{eid}/creature/{cid}/simulate/movement")
 async def movementSimulate(eid : str, cid : str, newPos : List[List[int]], currentUser : UserInDB = Depends(getCurrentActiveUser)):
@@ -385,15 +440,18 @@ async def getEncounterMiniData(eid : str, currentUser: UserInDB = Depends(getCur
                  "type" : monster.get("creatureType")} for monster in monsters]
     return {"players" : pPacket, "monsters" : mPacket}
 
+
 @app.get("/dashboard/monsters")
 def getMonsters():
     with open("CoreEngine/data/monster_list.json", "r") as pf:
         monster_list = json.load(pf)
     return monster_list
+
 @app.get("/dashboard/players")
 async def getPlayers(currentUser: UserInDB = Depends(getCurrentActiveUser)):
     players = await find_players_by_username(currentUser.username)
     return await players.to_list(length=None)
+
 @app.get("/dashboard/weapons")
 def getWeapons():
     with open("CoreEngine/data/weapons_list.json", "r") as wf:

@@ -688,7 +688,6 @@ async def saveEncounter(encounter):
             "statArray": {stat: str(player.getStat(stat)) for stat in ["STR", "DEX", "CON", "INT", "WIS", "CHA"]},
             "spellSlots": player.getSpellSlots()
         }
-
         spells_list = []
         for j in range(player.getSpellLength()):
             spells_list.append(player.getSpell(j).getName().lower())
@@ -709,43 +708,54 @@ async def saveEncounter(encounter):
     mapData = encounter.getMapData()
     if mapData:
         mapDataDict = {
-            "map": {
-                "image": {
-                    "mapLink": mapData.map.image.mapLink,
-                    "sourceType": mapData.map.image.sourceType,
-                    "originPx": {
-                        "x": int(mapData.map.image.originPx.x),
-                        "y": int(mapData.map.image.originPx.y)
-                    },
-                    "naturalSizePx": {
-                        "w": int(mapData.map.image.naturalSizePx.w),
-                        "h": int(mapData.map.image.naturalSizePx.h)
+                "map": {
+                    "image": {
+                        "mapLink": mapData.get("map", {}).get("image", {}).get("mapLink"),
+                        "sourceType": mapData.get("map", {}).get("image", {}).get("sourceType"),
+                        "originPx": {
+                            "x": int(mapData.get("map", {}).get("image", {}).get("originPx", {}).get("x", 0)),
+                            "y": int(mapData.get("map", {}).get("image", {}).get("originPx", {}).get("y", 0))
+                        },
+                        "naturalSizePx": {
+                            "w": int(mapData.get("map", {}).get("image", {}).get("naturalSizePx", {}).get("w", 0)),
+                            "h": int(mapData.get("map", {}).get("image", {}).get("naturalSizePx", {}).get("h", 0))
+                        }
                     }
-                }
-            },
-            "grid": {
-                "cellBounds": {
-                    "cols": int(mapData.grid.cellBounds.cols),
-                    "rows": int(mapData.grid.cellBounds.rows)
                 },
-                "cellSizePx": int(mapData.grid.cellSizePx)
-            },
-            "layers": {
-                "creatureTokens": [
-                    {"cid": str(t.cid), "token_image": t.token_image} for t in mapData.layers.creatureTokens
-                ],
-                "aoeTokens": [
-                    {
-                        "tid": t.tid,
-                        "cid": t.cid,
-                        "resultID": int(t.resultID),
-                        "name": t.name,
-                        "shape": {"type": t.shape.type, "radiusCells": int(t.shape.radiusCells)},
-                        "anchor": {"x": int(t.anchor.x), "y": int(t.anchor.y)},
-                        "timing": t.timing
-                    } for t in mapData.layers.aoeTokens
-                ]
-            }
+                "grid": {
+                    "cellBounds": {
+                        "cols": int(mapData.get("grid", {}).get("cellBounds", {}).get("cols", 0)),
+                        "rows": int(mapData.get("grid", {}).get("cellBounds", {}).get("rows", 0))
+                    },
+                    "cellSizePx": int(mapData.get("grid", {}).get("cellSizePx", 0))
+                },
+                "layers": {
+                    "creatureTokens": [
+                        {
+                            "cid": str(t.get("cid", "")),
+                            "token_image": t.get("token_image")
+                        }
+                        for t in mapData.get("layers", {}).get("creatureTokens", [])
+                    ],
+                    "aoeTokens": [
+                        {
+                            "tid": t.get("tid"),
+                            "cid": t.get("cid"),
+                            "resultID": int(t.get("resultID", 0)),
+                            "name": t.get("name"),
+                            "shape": {
+                                "type": t.get("shape", {}).get("type"),
+                                "radiusCells": int(t.get("shape", {}).get("radiusCells", 0))
+                            },
+                            "anchor": {
+                                "x": int(t.get("anchor", {}).get("x", 0)),
+                                "y": int(t.get("anchor", {}).get("y", 0))
+                            },
+                            "timing": t.get("timing")
+                        }
+                        for t in mapData.get("layers", {}).get("aoeTokens", [])
+                    ]
+                }
         }
     else:
         mapDataDict = None
@@ -754,7 +764,7 @@ async def saveEncounter(encounter):
         "name": name,
         "date": encounter.getDate(),
         "eid": encounter.getEID(),
-        "mapData": mapDataDict,
+        "mapdata": mapDataDict,
         "completed": encounter.isComplete(),
         "monsters": monster_list,
         "players": player_list,
@@ -3193,14 +3203,14 @@ def enemyCanMutate(newEffect, creature):
 def endOfEncounter(initiative):
     allPlayersDead = True
     for playerTurns in initiative:
-        if playerTurns["turnType"].lower() == "player":
+        if playerTurns["turnType"] == "Player":
             if not playerTurns["Statblock"].isActiveCondition("Dead") and not playerTurns[
                 "Statblock"].isActiveCondition("Out of Combat"):
                 allPlayersDead = False
                 break
     allMonstersDead = True
     for monsterTurn in initiative:
-        if monsterTurn["turnType"].lower() == "monster":
+        if monsterTurn["turnType"] == "Monster":
             if not monsterTurn["Statblock"].isActiveCondition("Dead") and not monsterTurn[
                 "Statblock"].isActiveCondition("Out of Combat"):
                 allMonstersDead = False
@@ -4215,12 +4225,12 @@ def setActiveInitiative(encounter):
     for creature in initiative:
         # Add creature statblock to their associated turn
         # SHALLOW COPY OF MONSTER/PLAYER OBJECTS - Changes to creature["Statblock"] affect associated object in encounter
-        if creature["turnType"].lower() == "player":
+        if creature["turnType"] == "Player":
             for i in range(encounter.playerSize()):
                 if creature["name"].lower() == encounter.getPlayer(i).getName().lower():
                     creature["Statblock"] = encounter.getPlayer(i)
                     break
-        elif creature["turnType"].lower() == "monster":
+        elif creature["turnType"] == "Monster":
             for i in range(encounter.monsterSize()):
                 if (
                     creature["name"].lower()
