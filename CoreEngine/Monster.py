@@ -62,6 +62,18 @@ class Monster(Stats):
         self.__profBonus = pb
     def getProfBonus(self):
         return self.__profBonus
+    def setSpellSlots(self,level, slotAmount):
+        slotIndex = level -1
+        spells = self.getSpellInfo()
+        spells = spells.get("spellSlots", [])
+        if not (0 <= slotIndex < len(spells)):
+            raise ValueError("Invalid spell slot level")
+        spells[slotIndex][0] = str(slotAmount)
+        self.__spellInfo["spellSlots"] = spells
+
+    def getSpellSlots(self):
+        return self.__spellInfo.get("spellSlots", [])
+
     def setCreatureType(self, creatureType):
         self.__creatureType = creatureType
     def getCreatureType(self):
