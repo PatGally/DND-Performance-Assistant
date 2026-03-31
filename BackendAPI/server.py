@@ -9,6 +9,8 @@ from BackendAPI.models import Monster, Player, Encounter, MonAction, ActionReque
 from BackendAPI.models.DNDClasses import Barbarian, Bard, Cleric, Druid, Fighter, Paladin, Sorcerer
 from pymongo.errors import PyMongoError
 from dotenv import load_dotenv
+import httpx
+from fastapi.responses import StreamingResponse
 import main
 from fastapi import FastAPI, Request, Depends, HTTPException, status, Response
 from fastapi.params import Cookie
@@ -61,6 +63,22 @@ app.add_middleware(
     allow_methods=["*"], #DELETE, PUT, etc
     allow_headers=["*"], #Specific requests from specific sources.
 )
+@app.get("/api/drive-image/{file_id}")
+async def get_drive_image(file_id: str):
+    url = f"https://drive.google.com/uc?export=view&id={file_id}"
+
+    async with httpx.AsyncClient(follow_redirects=True) as client:
+        response = await client.get(url)
+
+        if response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail="Failed to fetch image")
+
+        content_type = response.headers.get("content-type", "image/jpeg")
+
+        return StreamingResponse(
+            iter([response.content]),
+            media_type=content_type
+        )
 
 @app.middleware("http")
 async def logRequests(request: Request, callNext):
@@ -682,7 +700,7 @@ async def authGoogle(body: GoogleAuthRequest, response: Response):
     user = await getUserByGoogleSub(googleSub)
     if not user:
         user = await createGoogleUser(googleSub=googleSub, email=email)
-    if user.disabled:
+    if user.get("disabled"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user")
 
     return await issueAccessAuth(user, response)
