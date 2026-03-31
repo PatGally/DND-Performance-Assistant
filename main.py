@@ -709,17 +709,15 @@ async def saveEncounter(encounter):
     if mapData:
         mapDataDict = {
                 "map": {
-                    "image": {
-                        "mapLink": mapData.get("map", {}).get("image", {}).get("mapLink"),
-                        "sourceType": mapData.get("map", {}).get("image", {}).get("sourceType"),
-                        "originPx": {
-                            "x": int(mapData.get("map", {}).get("image", {}).get("originPx", {}).get("x", 0)),
-                            "y": int(mapData.get("map", {}).get("image", {}).get("originPx", {}).get("y", 0))
-                        },
-                        "naturalSizePx": {
-                            "w": int(mapData.get("map", {}).get("image", {}).get("naturalSizePx", {}).get("w", 0)),
-                            "h": int(mapData.get("map", {}).get("image", {}).get("naturalSizePx", {}).get("h", 0))
-                        }
+                    "mapLink": mapData.get("map", {}).get("image", {}).get("mapLink"),
+                    "sourceType": mapData.get("map", {}).get("image", {}).get("sourceType"),
+                    "originPx": {
+                        "x": int(mapData.get("map", {}).get("image", {}).get("originPx", {}).get("x", 0)),
+                        "y": int(mapData.get("map", {}).get("image", {}).get("originPx", {}).get("y", 0))
+                    },
+                    "naturalSizePx": {
+                        "w": int(mapData.get("map", {}).get("image", {}).get("naturalSizePx", {}).get("w", 0)),
+                        "h": int(mapData.get("map", {}).get("image", {}).get("naturalSizePx", {}).get("h", 0))
                     }
                 },
                 "grid": {
@@ -4292,6 +4290,7 @@ def main():
         creature = encounter.getPlayerByCID(testCID)
         creature = encounter.getMonsterByCID(testCID) if creature is None else creature
         initiative = setActiveInitiative(encounter)
+
         print(monsterTurn(creature, initiative))
 
     asyncio.run(manual_test())

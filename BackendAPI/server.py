@@ -178,8 +178,9 @@ async def getCreaturePosition(eid : str, cid : str, currentUser: UserInDB = Depe
     return creature.get("position", [0, 0])
 @app.get("/encounter/{eid}/creature/{cid}/actions")
 async def getCreatureActions(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    creature = await getCreature(eid, cid, currentUser)
-    if isPlayer(creature):
+    encounter = main.loadEncounter(await getEncounter(eid, currentUser))
+    creature = await getCreatureObj(encounter, cid)
+    if isinstance(creature, Player):
         actions = []
         spells = [creature.getSpell(i).toDict() for i in range(creature.getSpellLength())]
         weapons = [creature.getWeapon(i).toDict() for i in range(creature.getWeaponLength())]
@@ -196,6 +197,7 @@ async def getCreatureActions(eid : str, cid : str, currentUser: UserInDB = Depen
                 else:
                     actions.append(spell)
         return actions
+
 @app.get("/encounter/{eid}/creature/{cid}", response_model=Union[AnyPlayer, Monster])
 async def getCreature(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
     enc = await getEncounter(eid, currentUser)

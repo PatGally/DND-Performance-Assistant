@@ -12,12 +12,8 @@ class NaturalSizePx(BaseModel):
 class MapImage(BaseModel):
     mapLink: str
     sourceType: str
-    # originPx: OriginPx
-    originPx: Optional[OriginPx] = None
+    originPx: OriginPx
     naturalSizePx: NaturalSizePx
-
-class MapDataMap(BaseModel):
-    image: MapImage
 
 class CellBounds(BaseModel):
     cols: int
@@ -29,7 +25,7 @@ class Grid(BaseModel):
 
 class CreatureToken(BaseModel):
     cid: str
-    token_image: Optional[str] = None
+    token_image: str
 
 class Shape(BaseModel):
     type: str
@@ -53,6 +49,6 @@ class Layers(BaseModel):
     aoeTokens: List[AoeToken] = Field(default_factory=list)
 
 class MapData(BaseModel):
-    map: MapDataMap
+    map: MapImage
     grid: Grid
     layers: Layers
