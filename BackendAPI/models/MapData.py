@@ -52,7 +52,6 @@ class Layers(BaseModel):
     aoeTokens: List[AoeToken] = Field(default_factory=list)
 
 class MapData(BaseModel):
-    version: int
     map: MapDataMap
     grid: Grid
     layers: Layers

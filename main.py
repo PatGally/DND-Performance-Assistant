@@ -652,7 +652,7 @@ async def saveEncounter(encounter):
 
         elif characterClass == "fighter":
             saveDict["secondWindCharges"] = player.getSecondWindCharges()
-            saveDict["actionSurgeCharges"] = player.getActionSurgeCharges()
+            saveDict["actionSurgeCharges"] = player.getActionSurge()
             saveDict["extraAttackAmt"] = player.getExtraAttackAmt()
 
         elif characterClass == "paladin":
@@ -686,9 +686,8 @@ async def saveEncounter(encounter):
             "damResists": player.getDamResistances(),
             "damVulns": player.getDamVulnerabilities(),
             "statArray": {stat: str(player.getStat(stat)) for stat in ["STR", "DEX", "CON", "INT", "WIS", "CHA"]},
-            "spellSlots": player.getSpellSlots()
+            "spellSlots": player.getSpellSlots(),
         }
-
         spells_list = []
         for j in range(player.getSpellLength()):
             spells_list.append(player.getSpell(j).getName().lower())
@@ -709,43 +708,54 @@ async def saveEncounter(encounter):
     mapData = encounter.getMapData()
     if mapData:
         mapDataDict = {
-            "map": {
-                "image": {
-                    "mapLink": mapData.map.image.mapLink,
-                    "sourceType": mapData.map.image.sourceType,
-                    "originPx": {
-                        "x": int(mapData.map.image.originPx.x),
-                        "y": int(mapData.map.image.originPx.y)
-                    },
-                    "naturalSizePx": {
-                        "w": int(mapData.map.image.naturalSizePx.w),
-                        "h": int(mapData.map.image.naturalSizePx.h)
+                "map": {
+                    "image": {
+                        "mapLink": mapData.get("map", {}).get("image", {}).get("mapLink"),
+                        "sourceType": mapData.get("map", {}).get("image", {}).get("sourceType"),
+                        "originPx": {
+                            "x": int(mapData.get("map", {}).get("image", {}).get("originPx", {}).get("x", 0)),
+                            "y": int(mapData.get("map", {}).get("image", {}).get("originPx", {}).get("y", 0))
+                        },
+                        "naturalSizePx": {
+                            "w": int(mapData.get("map", {}).get("image", {}).get("naturalSizePx", {}).get("w", 0)),
+                            "h": int(mapData.get("map", {}).get("image", {}).get("naturalSizePx", {}).get("h", 0))
+                        }
                     }
-                }
-            },
-            "grid": {
-                "cellBounds": {
-                    "cols": int(mapData.grid.cellBounds.cols),
-                    "rows": int(mapData.grid.cellBounds.rows)
                 },
-                "cellSizePx": int(mapData.grid.cellSizePx)
-            },
-            "layers": {
-                "creatureTokens": [
-                    {"cid": str(t.cid), "token_image": t.token_image} for t in mapData.layers.creatureTokens
-                ],
-                "aoeTokens": [
-                    {
-                        "tid": t.tid,
-                        "cid": t.cid,
-                        "resultID": int(t.resultID),
-                        "name": t.name,
-                        "shape": {"type": t.shape.type, "radiusCells": int(t.shape.radiusCells)},
-                        "anchor": {"x": int(t.anchor.x), "y": int(t.anchor.y)},
-                        "timing": t.timing
-                    } for t in mapData.layers.aoeTokens
-                ]
-            }
+                "grid": {
+                    "cellBounds": {
+                        "cols": int(mapData.get("grid", {}).get("cellBounds", {}).get("cols", 0)),
+                        "rows": int(mapData.get("grid", {}).get("cellBounds", {}).get("rows", 0))
+                    },
+                    "cellSizePx": int(mapData.get("grid", {}).get("cellSizePx", 0))
+                },
+                "layers": {
+                    "creatureTokens": [
+                        {
+                            "cid": str(t.get("cid", "")),
+                            "token_image": t.get("token_image")
+                        }
+                        for t in mapData.get("layers", {}).get("creatureTokens", [])
+                    ],
+                    "aoeTokens": [
+                        {
+                            "tid": t.get("tid"),
+                            "cid": t.get("cid"),
+                            "resultID": int(t.get("resultID", 0)),
+                            "name": t.get("name"),
+                            "shape": {
+                                "type": t.get("shape", {}).get("type"),
+                                "radiusCells": int(t.get("shape", {}).get("radiusCells", 0))
+                            },
+                            "anchor": {
+                                "x": int(t.get("anchor", {}).get("x", 0)),
+                                "y": int(t.get("anchor", {}).get("y", 0))
+                            },
+                            "timing": t.get("timing")
+                        }
+                        for t in mapData.get("layers", {}).get("aoeTokens", [])
+                    ]
+                }
         }
     else:
         mapDataDict = None
@@ -754,7 +764,7 @@ async def saveEncounter(encounter):
         "name": name,
         "date": encounter.getDate(),
         "eid": encounter.getEID(),
-        "mapData": mapDataDict,
+        "mapdata": mapDataDict,
         "completed": encounter.isComplete(),
         "monsters": monster_list,
         "players": player_list,
@@ -771,7 +781,7 @@ def loadEncounter(encounterData):
     # Uses encounterData from parameter instead of pulling it here.
     if encounterData["completed"]:
         return None
-    encounter = Encounter(encounterData["name"], encounterData["date"], encounterData["eid"])
+    encounter = Encounter(encounterData["name"], encounterData["date"], encounterData["eid"], encounterData["mapdata"])
 
     for playerJSON in encounterData["players"]:
         playerObj = getPlayerStats(playerJSON)
@@ -3347,7 +3357,7 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, toke
     #actionResult is the entry below.
     #Token is an object describing AOE placement.
     #TODO: Make this method work for both players and monsters.
-    # Add a token to the mapData section once implemented.
+    # Add a token to the mapdata section once implemented.
 
     """
     entry = {
@@ -4230,11 +4240,12 @@ def setActiveInitiative(encounter):
     return initiative
 
 def main():
-    async def manual_test():
-        await init_indexes()
-        testEID = "639a7ea8-709f-4481-b402-01a9cdead888"
-        encounter = await get_encounter_by_eid(testEID)
-        print(encounter)
+    pass
+    # async def manual_test():
+        # await init_indexes()
+        # testEID = "639a7ea8-709f-4481-b402-01a9cdead888"
+        # encounter = await get_encounter_by_eid(testEID)
+        # print(encounter)
         # with open(ENCOUNTER_LIST_FILE, "r") as ef:
         #     encounters = json.load(ef)
         # for enc in encounters:
@@ -4271,8 +4282,49 @@ def main():
         # print("Success!")
         # run your other methods here
 
-    asyncio.run(manual_test())
+    # asyncio.run(manual_test())
 
+def handle_stat_array(creature, values):
+    for statName, statValue in values.items():
+        creature.updateStat(statName, statValue)
+        
+def handle_save_profs(creature, values):
+     for profName, profValue in values.items():
+        creature.setSaveProf(profName, profValue)
+
+def handle_dam_resistances(creature, damResists):
+    creature.setAllDamResistances(damResists)
+
+def handle_dam_immunes(creature, damImmunes):
+    creature.setAllDamImmunes(damImmunes)
+
+def handle_dam_vulns(creature, damVulns):
+    creature.setAllDamVuls(damVulns)
+
+def handle_con_immunes(creature, conImmuns):
+    creature.setAllConImmuns(conImmuns)
+
+def handle_active_conditions(creature, newCons):
+    creature.setAllActiveConditions(newCons)
+
+def handle_active_status_effects(creature, newStatus):
+    creature.setAllActiveStatusEffects(newStatus)
+
+def handle_hp(creature, value):
+    creature.setHP(value)
+
+def handle_position(creature, positions):
+    creature.setPosition(positions)
+
+def handle_ac(creature, value):
+    creature.setAC(value)
+
+def handle_l_resists(creature, lResists):
+    creature.setlResists(lResists)
+
+def handle_spell_slots(creature, values):
+    for level, slotAmount in values:
+        creature.setSpellSlots(int(level), int(slotAmount))
 
 if __name__ == "__main__":
     main()
