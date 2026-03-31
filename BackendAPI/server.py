@@ -757,6 +757,8 @@ async def authGoogle(body: GoogleAuthRequest, response: Response):
     user = await getUserByGoogleSub(googleSub)
     if not user:
         user = await createGoogleUser(googleSub=googleSub, email=email)
+        if not isinstance(user, dict):
+            user = user.model_dump(mode="json", by_alias=True)
     if user.get("disabled"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user")
 
