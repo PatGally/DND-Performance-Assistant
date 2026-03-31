@@ -37,9 +37,9 @@ class Encounter:
         self.__players.append(player)
     def getPlayer(self, i):
         return self.__players[i]
-    def getPlayerByName(self, name):
+    def getPlayerByCID(self, cid):
         for player in self.__players:
-            if player.getName().lower() == name.lower():
+            if player.getCID() == cid:
                 return player
     def playerSize(self):
         return len(self.__players)
@@ -56,9 +56,9 @@ class Encounter:
         return False
     def getMonster(self, idx):
         return self.__monsters[idx]
-    def getMonsterByName(self, name):
+    def getMonsterByCID(self, cid):
         for monster in self.__monsters:
-            if monster.getName().lower() == name.lower():
+            if monster.getCID() == cid:
                 return monster
     def monsterSize(self):
         return len(self.__monsters)

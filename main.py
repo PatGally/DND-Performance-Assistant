@@ -771,7 +771,8 @@ def loadEncounter(encounterData):
     # Uses encounterData from parameter instead of pulling it here.
     if encounterData["completed"]:
         return None
-    encounter = Encounter(encounterData["name"], encounterData["date"], encounterData["eid"])
+    mapData = encounterData["mapData"] if "mapData" in encounterData else {}
+    encounter = Encounter(encounterData["name"], encounterData["date"], encounterData["eid"], mapData)
 
     for playerJSON in encounterData["players"]:
         playerObj = getPlayerStats(playerJSON)
@@ -3192,14 +3193,14 @@ def enemyCanMutate(newEffect, creature):
 def endOfEncounter(initiative):
     allPlayersDead = True
     for playerTurns in initiative:
-        if playerTurns["turnType"] == "Player":
+        if playerTurns["turnType"].lower() == "player":
             if not playerTurns["Statblock"].isActiveCondition("Dead") and not playerTurns[
                 "Statblock"].isActiveCondition("Out of Combat"):
                 allPlayersDead = False
                 break
     allMonstersDead = True
     for monsterTurn in initiative:
-        if monsterTurn["turnType"] == "Monster":
+        if monsterTurn["turnType"].lower() == "monster":
             if not monsterTurn["Statblock"].isActiveCondition("Dead") and not monsterTurn[
                 "Statblock"].isActiveCondition("Out of Combat"):
                 allMonstersDead = False
@@ -4214,12 +4215,12 @@ def setActiveInitiative(encounter):
     for creature in initiative:
         # Add creature statblock to their associated turn
         # SHALLOW COPY OF MONSTER/PLAYER OBJECTS - Changes to creature["Statblock"] affect associated object in encounter
-        if creature["turnType"] == "Player":
+        if creature["turnType"].lower() == "player":
             for i in range(encounter.playerSize()):
                 if creature["name"].lower() == encounter.getPlayer(i).getName().lower():
                     creature["Statblock"] = encounter.getPlayer(i)
                     break
-        elif creature["turnType"] == "Monster":
+        elif creature["turnType"].lower() == "monster":
             for i in range(encounter.monsterSize()):
                 if (
                     creature["name"].lower()
@@ -4232,44 +4233,14 @@ def setActiveInitiative(encounter):
 def main():
     async def manual_test():
         await init_indexes()
-        testEID = "639a7ea8-709f-4481-b402-01a9cdead888"
+        testEID = "enc_001"
+        testCID = "930eacb8-a93b-413a-b834-53e6ae3793e0"
         encounter = await get_encounter_by_eid(testEID)
-        print(encounter)
-        # with open(ENCOUNTER_LIST_FILE, "r") as ef:
-        #     encounters = json.load(ef)
-        # for enc in encounters:
-        #     if enc.get("eid") == "d09c4d69-6e28-4272-9497-1cd9a63a3ee2":
-        #         encounter = loadEncounter(enc)
-        #         break
-        # actionResult = {
-        #     "resultID": 100001,
-        #     "actor": "Guardian Naga",
-        #     "action": "Bite",
-        #     "actionType": "action",
-        #     "actionProb": 0.72,
-        #     "actionEDam": 30.5,
-        #     "actionImpact": 4.2,
-        #     "targets": ["Test Fighter"],
-        #     "targetCRs": [11],
-        #     "conditions": [],
-        #     "statuseffects": [],
-        #     "outcome": {
-        #         "rollResults": ["y"],
-        #         "diceResults": [8]
-        #     },
-        #     "extraOutcome": {
-        #         "extraRollResults": ["y"],
-        #         "extraDiceResults": [24]
-        #     },
-        #     "timestamp": "14:22:10"
-        # }
-        # actor = "Guardian Naga"
-        # action = encounter.getMonster(0).getAction(0)
-        # selectedTargets = [encounter.getPlayer(1)]
-        # initiative = setActiveInitiative(encounter)
-        # executeAction(actor, action, selectedTargets, actionResult, initiative)
-        # print("Success!")
-        # run your other methods here
+        encounter = loadEncounter(encounter)
+        creature = encounter.getPlayerByCID(testCID)
+        creature = encounter.getMonsterByCID(testCID) if creature is None else creature
+        initiative = setActiveInitiative(encounter)
+        print(monsterTurn(creature, initiative))
 
     asyncio.run(manual_test())
 

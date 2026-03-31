@@ -23203,7 +23203,7 @@
             {
                 "name": "Dreadful Glare",
                 "desc": "The mummy targets one creature it can see within 60 ft. of it. If the target can see the mummy, it must succeed on a DC 11 Wisdom saving throw against this magic or become frightened until the end of the mummy's next turn. If the target fails the saving throw by 5 or more, it is also paralyzed for the same duration. A target that succeeds on the saving throw is immune to the Dreadful Glare of all mummies (but not mummy lords) for the next 24 hours.",
-                "actionRange": "",
+                "actionRange": "60",
                 "numTarget": 1,
                 "shape": "",
                 "rolls": {
@@ -23274,7 +23274,7 @@
             {
                 "name": "Dreadful Glare",
                 "desc": "The mummy lord targets one creature it can see within 60 feet of it. If the target can see the mummy lord, it must succeed on a DC 16 Wisdom saving throw against this magic or become frightened until the end of the mummy's next turn. If the target fails the saving throw by 5 or more, it is also paralyzed for the same duration. A target that succeeds on the saving throw is immune to the Dreadful Glare of all mummies and mummy lords for the next 24 hours.",
-                "actionRange": "",
+                "actionRange": "60",
                 "numTarget": 1,
                 "shape": "",
                 "rolls": {
@@ -23309,7 +23309,7 @@
                 "action": {
                     "name": "Dreadful Glare",
                     "desc": "The mummy lord targets one creature it can see within 60 feet of it. If the target can see the mummy lord, it must succeed on a DC 16 Wisdom saving throw against this magic or become frightened until the end of the mummy's next turn. If the target fails the saving throw by 5 or more, it is also paralyzed for the same duration. A target that succeeds on the saving throw is immune to the Dreadful Glare of all mummies and mummy lords for the next 24 hours.",
-                    "actionRange": "",
+                    "actionRange": "60",
                     "numTarget": 1,
                     "shape": "",
                     "rolls": {

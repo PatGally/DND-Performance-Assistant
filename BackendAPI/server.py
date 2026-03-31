@@ -5,7 +5,7 @@ from typing import Union, List, Optional, Any
 import uuid
 from fastapi.middleware.cors import CORSMiddleware
 from logs.loggingConfig import setupLogging
-from BackendAPI.models import Monster, Player, Encounter, MonAction, ActionRequest
+from BackendAPI.models import Monster, Player, Encounter, MonAction, ActionRequest, Spell, Weapon
 from BackendAPI.models.DNDClasses import Barbarian, Bard, Cleric, Druid, Fighter, Paladin, Sorcerer
 from pymongo.errors import PyMongoError
 from dotenv import load_dotenv
@@ -138,21 +138,26 @@ async def getCreaturePosition(eid : str, cid : str, currentUser: UserInDB = Depe
     if isinstance(creature.get("stats", {}), dict):
         return creature.get("stats").get("position", [0, 0])
     return creature.get("position", [0, 0])
-@app.get("/encounter/{eid}/creature/{cid}/actions", response_model = List[Union[str, MonAction]])
+@app.get("/encounter/{eid}/creature/{cid}/actions")
 async def getCreatureActions(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
     encounter = main.loadEncounter(await getEncounter(eid, currentUser))
     creature = await getCreatureObj(encounter, cid)
     if isPlayer(creature):
         actions = []
-        spells = [creature.getSpell(i) for i in range(creature.getSpellLength())]
-        weapons = [creature.getWeapon(i) for i in range(creature.getWeaponLength())]
+        spells = [creature.getSpell(i).toDict() for i in range(creature.getSpellLength())]
+        weapons = [creature.getWeapon(i).toDict() for i in range(creature.getWeaponLength())]
         actions.extend(spells)
         actions.extend(weapons)
         return actions
     else:
-        actions = [creature.getAction(i) for i in range(creature.getActionLength())]
-        if creature.get("spellInfo", {}):
-            actions.extend([creature.getSpell(i) for i in range(creature.getSpellLength())])
+        actions = [creature.getAction(i).toDict() for i in range(creature.getActionLength())]
+        if creature.isCaster():
+            for i in range(creature.getSpellLength()):
+                spell = creature.getSpell(i)
+                if isinstance(spell, dict) and "spellData" in spell:
+                    actions.append(spell["spellData"].toDict())
+                else:
+                    actions.append(spell)
         return actions
 @app.get("/encounter/{eid}/creature/{cid}", response_model=Union[AnyPlayer, Monster])
 async def getCreature(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
@@ -256,8 +261,8 @@ async def rulesetSimulate(eid : str, action : ActionRequest, currentUser : UserI
     #Do simulation logic
     main.logActionResult(encounter, action)
 
-@app.post("/encounter/{eid}/simulate/movement")
-async def movementSimulate(eid : str, cid : str, newPos : List[int], currentUser : UserInDB = Depends(getCurrentActiveUser)):
+@app.post("/encounter/{eid}/creature/{cid}/simulate/movement")
+async def movementSimulate(eid : str, cid : str, newPos : List[List[int]], currentUser : UserInDB = Depends(getCurrentActiveUser)):
     encounter = main.loadEncounter(await getEncounter(eid, currentUser))
     creature = await getCreatureObj(encounter, cid)
     creature.setPosition(newPos)
@@ -335,9 +340,18 @@ async def getTurn(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUse
             return turn["name"]
     return {"error" : "no turns in initiative!"}
 @app.get("/encounter/{eid}/initiative")
-async def getInitiative(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    enc = await getEncounter(eid, currentUser)
-    return enc.get("initiative", [])
+async def getSimulationInitiative(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    enc = main.loadEncounter(await getEncounter(eid, currentUser))
+    init = main.setActiveInitiative(enc)
+    for i, creature in enumerate(init):
+        if creature["name"].lower() == "william":
+            continue
+        init[i]["hp"] = creature["Statblock"].getHP()
+        init[i]["maxhp"] = creature["Statblock"].getMaxHP()
+        init[i]["ac"] = creature["Statblock"].getAC()
+        init[i]["cid"] = creature["Statblock"].getCID()
+        del init[i]["Statblock"]
+    return init
 
 @app.post("/encounter")
 async def postEncounter(encounter : Encounter, currentUser: UserInDB = Depends(getCurrentActiveUser)):
@@ -682,7 +696,7 @@ async def authGoogle(body: GoogleAuthRequest, response: Response):
     user = await getUserByGoogleSub(googleSub)
     if not user:
         user = await createGoogleUser(googleSub=googleSub, email=email)
-    if user.disabled:
+    if user.get("disabled"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user")
 
     return await issueAccessAuth(user, response)

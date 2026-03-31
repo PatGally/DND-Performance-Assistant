@@ -31,8 +31,8 @@ class Stats:
     def getCID(self):
         return self.__cid
 
-    def setPosition(self, x, y):
-        self.__position = (x, y)
+    def setPosition(self, newPos):
+        self.__position = newPos
 
     def getPosition(self):
         return self.__position
