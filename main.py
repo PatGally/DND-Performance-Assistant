@@ -4225,12 +4225,12 @@ def setActiveInitiative(encounter):
     for creature in initiative:
         # Add creature statblock to their associated turn
         # SHALLOW COPY OF MONSTER/PLAYER OBJECTS - Changes to creature["Statblock"] affect associated object in encounter
-        if creature["turnType"] == "Player":
+        if creature["turnType"].lower() == "player":
             for i in range(encounter.playerSize()):
                 if creature["name"].lower() == encounter.getPlayer(i).getName().lower():
                     creature["Statblock"] = encounter.getPlayer(i)
                     break
-        elif creature["turnType"] == "Monster":
+        elif creature["turnType"].lower() == "monster":
             for i in range(encounter.monsterSize()):
                 if (
                     creature["name"].lower()
@@ -4239,6 +4239,48 @@ def setActiveInitiative(encounter):
                     creature["Statblock"] = encounter.getMonster(i)
                     break
     return initiative
+
+def handle_stat_array(creature, values):
+    for statName, statValue in values.items():
+        creature.updateStat(statName, statValue)
+
+def handle_save_profs(creature, values):
+    for profName, profValue in values.items():
+        creature.setSaveProf(profName, profValue)
+
+def handle_dam_resistances(creature, damResists):
+    creature.setAllDamResistances(damResists)
+
+def handle_dam_immunes(creature, damImmunes):
+    creature.setAllDamImmunes(damImmunes)
+
+def handle_dam_vulns(creature, damVulns):
+    creature.setAllDamVuls(damVulns)
+
+def handle_con_immunes(creature, conImmuns):
+    creature.setAllConImmuns(conImmuns)
+
+def handle_active_conditions(creature, newCons):
+    creature.setAllActiveConditions(newCons)
+
+def handle_active_status_effects(creature, newStatus):
+    creature.setAllActiveStatusEffects(newStatus)
+
+def handle_hp(creature, value):
+    creature.setHP(value)
+
+def handle_position(creature, positions):
+    creature.setPosition(positions)
+
+def handle_ac(creature, value):
+    creature.setAC(value)
+
+def handle_l_resists(creature, lResists):
+    creature.setlResists(lResists)
+
+def handle_spell_slots(creature, values):
+    for level, slotAmount in values:
+        creature.setSpellSlots(int(level), int(slotAmount))
 
 def main():
     async def manual_test():

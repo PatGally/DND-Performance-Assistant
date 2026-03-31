@@ -65,22 +65,22 @@ app.add_middleware(
     allow_methods=["*"], #DELETE, PUT, etc
     allow_headers=["*"], #Specific requests from specific sources.
 )
-@app.get("/api/drive-image/{file_id}")
-async def get_drive_image(file_id: str):
-    url = f"https://drive.google.com/uc?export=view&id={file_id}"
 
-    async with httpx.AsyncClient(follow_redirects=True) as client:
-        response = await client.get(url)
-
-        if response.status_code != 200:
-            raise HTTPException(status_code=response.status_code, detail="Failed to fetch image")
-
-        content_type = response.headers.get("content-type", "image/jpeg")
-
-        return StreamingResponse(
-            iter([response.content]),
-            media_type=content_type
-        )
+handlers = {
+    "statArray": main.handle_stat_array,
+    "saveProfs": main.handle_save_profs,
+    "damResists": main.handle_dam_resistances,
+    "damImmunes": main.handle_dam_immunes,
+    "damVulns": main.handle_dam_vulns,
+    "conImmunes": main.handle_con_immunes,
+    "activeConditions": main.handle_active_conditions,
+    "activeStatusEffects": main.handle_active_status_effects,
+    "hp": main.handle_hp,
+    "position": main.handle_position,
+    "ac": main.handle_ac,
+    "lResists": main.handle_l_resists,
+    "spellSlots": main.handle_spell_slots,
+}
 
 @app.middleware("http")
 async def logRequests(request: Request, callNext):
@@ -151,6 +151,24 @@ def isPlayer(creature):
 @app.on_event("startup")
 async def startup_event():
     await init_indexes()
+
+
+@app.get("/api/drive-image/{file_id}")
+async def get_drive_image(file_id: str):
+    url = f"https://drive.google.com/uc?export=view&id={file_id}"
+
+    async with httpx.AsyncClient(follow_redirects=True) as client:
+        response = await client.get(url)
+
+        if response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail="Failed to fetch image")
+
+        content_type = response.headers.get("content-type", "image/jpeg")
+
+        return StreamingResponse(
+            iter([response.content]),
+            media_type=content_type
+        )
 
 @app.get("/encounter/{eid}/creature/{cid}/position")
 async def getCreaturePosition(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
@@ -279,21 +297,6 @@ async def rulesetSimulate(eid : str, action : ActionRequest, currentUser : UserI
     encounter = main.loadEncounter(await getEncounter(eid, currentUser))
     #Do simulation logic
     main.logActionResult(encounter, action)
-handlers = {
-    "statArray": main.handle_stat_array,
-    "saveProfs": main.handle_save_profs,
-    "damResists": main.handle_dam_resistances,
-    "damImmunes": main.handle_dam_immunes,
-    "damVulns": main.handle_dam_vulns,
-    "conImmunes": main.handle_con_immunes,
-    "activeConditions": main.handle_active_conditions,
-    "activeStatusEffects": main.handle_active_status_effects,
-    "hp": main.handle_hp,
-    "position": main.handle_position,
-    "ac": main.handle_ac,
-    "lResists": main.handle_l_resists,
-    "spellSlots": main.handle_spell_slots,
-}
 
 @app.post("/encounter/{eid}/simulate/manual")
 async def manualSimulate(eid : str, affectedCreatures : AffectedCreaturesRequest, currentUser : UserInDB = Depends(getCurrentActiveUser)):
