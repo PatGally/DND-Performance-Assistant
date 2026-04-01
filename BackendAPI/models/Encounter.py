@@ -41,5 +41,5 @@ class Encounter(BaseModel):
 
     model_config = ConfigDict(
         populate_by_name=True,
-        extra="allow"  # allows extra fields for future-proofing
+        extra="forbid"  # allows extra fields for future-proofing
     )

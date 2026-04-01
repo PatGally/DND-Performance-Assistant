@@ -18,6 +18,16 @@ class Encounter:
     def getMapData(self):
         return self.__mapData
 
+    def setCreaturePosition(self, cid, newPos):
+        creature = self.getPlayerByCID(cid)
+        creature = self.getMonsterByCID(cid) if not creature else creature
+        mapData = self.getMapData()
+        tokens = mapData["layers"]["creatureTokens"]
+        creatureToken = [t for t in tokens if t["cid"] == cid]
+        creature.setPosition(newPos)
+        creatureToken["position"] = newPos
+
+
     def setComplete(self, complete):
         self.__completed = complete
     def isComplete(self):

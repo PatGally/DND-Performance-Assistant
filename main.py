@@ -634,7 +634,7 @@ async def saveEncounter(encounter):
 
         if characterClass == "barbarian":
             saveDict["rageCharges"] = player.getRageCharges()
-            saveDict["isRaging"] = player.getIsRaging()
+            saveDict["isRaging"] = player.isRaging()
 
         elif characterClass == "bard":
             saveDict["bardicCharges"] = player.getBardicCharges()
@@ -706,18 +706,19 @@ async def saveEncounter(encounter):
 
     result_list = [encounter.getResultByIdx(i) for i in range(encounter.resultSize())]
     mapData = encounter.getMapData()
+    print("Save", mapData)
     if mapData:
         mapDataDict = {
                 "map": {
-                    "mapLink": mapData.get("map", {}).get("image", {}).get("mapLink"),
-                    "sourceType": mapData.get("map", {}).get("image", {}).get("sourceType"),
+                    "mapLink": str(mapData.get("map", {}).get("mapLink", "")),
+                    "sourceType": str(mapData.get("map", {}).get("sourceType", "")),
                     "originPx": {
-                        "x": int(mapData.get("map", {}).get("image", {}).get("originPx", {}).get("x", 0)),
-                        "y": int(mapData.get("map", {}).get("image", {}).get("originPx", {}).get("y", 0))
+                        "x": int(mapData.get("map", {}).get("originPx", {}).get("x", 0)),
+                        "y": int(mapData.get("map", {}).get("originPx", {}).get("y", 0))
                     },
                     "naturalSizePx": {
-                        "w": int(mapData.get("map", {}).get("image", {}).get("naturalSizePx", {}).get("w", 0)),
-                        "h": int(mapData.get("map", {}).get("image", {}).get("naturalSizePx", {}).get("h", 0))
+                        "w": int(mapData.get("map", {}).get("naturalSizePx", {}).get("w", 0)),
+                        "h": int(mapData.get("map", {}).get("naturalSizePx", {}).get("h", 0))
                     }
                 },
                 "grid": {
@@ -779,7 +780,8 @@ def loadEncounter(encounterData):
     # Uses encounterData from parameter instead of pulling it here.
     if encounterData["completed"]:
         return None
-    mapData = encounterData["mapData"] if "mapData" in encounterData else {}
+    mapData = encounterData["mapdata"] if "mapdata" in encounterData else {}
+    print("LoadMapdata", mapData)
     encounter = Encounter(encounterData["name"], encounterData["date"], encounterData["eid"], mapData)
 
     for playerJSON in encounterData["players"]:
