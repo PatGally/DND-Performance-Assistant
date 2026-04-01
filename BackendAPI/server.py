@@ -28,7 +28,7 @@ from .models.UserAuth import (TokenData, UserCreate,
                              UserInDB, UserPublic, ChangePasswordRequest, SetDisabledRequest, GoogleAuthRequest)
 from db.db_access import init_indexes, get_user_by_username, get_encounter_by_eid, get_player_by_cid, \
     upsert_encounter_dict, find_encounters_by_username, find_players_by_username, upsert_user_dict, addEncounterToUser, \
-    addPlayerToUser, getUserByGoogleSub
+    addPlayerToUser, getUserByGoogleSub, deleteEncounterByEid
 
 setupLogging()
 logger = logging.getLogger("backend")
@@ -275,6 +275,19 @@ async def actionRecommendation(eid : str, cid : str, currentUser: UserInDB = Dep
                 detail="Creature not found"
             )
 
+@app.delete("/encounter/{eid}")
+async def deleteEncounter(eid: str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    userDeleted, encounterDeleted = await deleteEncounterByEid(eid, currentUser.username)
+
+    if not encounterDeleted:
+        raise HTTPException(status_code=404, detail="Encounter not found.")
+
+    return {
+        "message": "Encounter deleted successfully",
+        "eid": eid,
+        "removedFromUser": userDeleted
+    }
+
 @app.post("/encounter/{eid}/simulate/ruleset")
 async def rulesetSimulate(eid : str, action : ActionRequest, currentUser : UserInDB = Depends(getCurrentActiveUser)):
     """
@@ -303,7 +316,6 @@ async def rulesetSimulate(eid : str, action : ActionRequest, currentUser : UserI
 @app.post("/encounter/{eid}/simulate/manual")
 async def manualSimulate(eid : str, affectedCreatures : AffectedCreaturesRequest, currentUser : UserInDB = Depends(getCurrentActiveUser)):
     encounter = main.loadEncounter(await getEncounter(eid, currentUser))
-    print(encounter)
     creature_dict = affectedCreatures.model_dump(mode="json", by_alias=True, exclude_none=True)
     for creature in creature_dict["affectedCreatures"]:
         cid = creature.get("cid", "")

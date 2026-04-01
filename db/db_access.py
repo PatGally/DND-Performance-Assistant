@@ -25,6 +25,14 @@ async def init_indexes():
 async def get_encounter_by_eid(eid: str):
     return await encounterDb.find_one({"eid": eid})
 
+async def deleteEncounterByEid(eid : str, username : str):
+    userResult = await userDb.update_one(
+        {"username": username},
+        {"$pull": {"encounters": eid}}
+    )
+    encounterResult = await encounterDb.delete_one({"eid": eid})
+    return userResult.modified_count > 0, encounterResult.deleted_count > 0
+
 async def get_player_by_cid(cid: str):
     return await playerDb.find_one({"stats.cid": cid})
 
