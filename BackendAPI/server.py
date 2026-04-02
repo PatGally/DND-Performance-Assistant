@@ -144,7 +144,7 @@ def isPlayer(creature):
         else:
             return False
     elif isinstance(creature, Monster):
-        return True
+        return False
     else:
         return False
 
@@ -325,7 +325,7 @@ async def manualSimulate(eid : str, affectedCreatures : AffectedCreaturesRequest
 async def movementSimulate(eid : str, cid : str, newPos : List[List[int]], currentUser : UserInDB = Depends(getCurrentActiveUser)):
     encounter = main.loadEncounter(await getEncounter(eid, currentUser))
     creature = await getCreatureObj(encounter, cid)
-    size = "medium" if isinstance(creature, Player) else creature.getSize()
+    size = creature.getSize()
     bad = False
     message = ""
     if size == "medium" and len(newPos) != 1:
@@ -345,9 +345,11 @@ async def movementSimulate(eid : str, cid : str, newPos : List[List[int]], curre
     monsters = [encounter.getMonster(i) for i in range(encounter.monsterSize())]
     allPositions = [player.getPosition() for player in players]
     allPositions.extend([monster.getPosition() for monster in monsters])
-    if newPos in allPositions:
-        bad = True
-        message = f"Position collision detected"
+    for pos2D in allPositions:
+        for pos in newPos:
+            if pos in pos2D:
+                bad = True
+                message = f"Position collision detected"
 
     if bad:
         raise HTTPException(status_code=500, detail=message)

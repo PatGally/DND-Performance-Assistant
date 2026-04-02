@@ -186,6 +186,12 @@ class Monster(Stats):
             return self.__legActions[lIdx]
         return {}
 
+    def getSize(self):
+        return self.__size
+
+    def setSize(self, val : str):
+        self.__size = val
+
     def toDict(self):
         def stripSpellData(p_spellInfo):
             for i, spell in enumerate(p_spellInfo["spells"]):

@@ -706,7 +706,6 @@ async def saveEncounter(encounter):
 
     result_list = [encounter.getResultByIdx(i) for i in range(encounter.resultSize())]
     mapData = encounter.getMapData()
-    print("Save", mapData)
     if mapData:
         mapDataDict = {
                 "map": {
@@ -781,7 +780,6 @@ def loadEncounter(encounterData):
     if encounterData["completed"]:
         return None
     mapData = encounterData["mapdata"] if "mapdata" in encounterData else {}
-    print("LoadMapdata", mapData)
     encounter = Encounter(encounterData["name"], encounterData["date"], encounterData["eid"], mapData)
 
     for playerJSON in encounterData["players"]:

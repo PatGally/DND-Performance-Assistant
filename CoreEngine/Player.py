@@ -156,6 +156,8 @@ class Player(Stats):
         self.__name = name
     def getName(self):
         return self.__name
+    def getSize(self):
+        return "medium"
 
     def setSpellSlots(self,lvl, slotAmount):
         slotIndex = lvl -1
