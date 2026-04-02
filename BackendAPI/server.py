@@ -28,7 +28,7 @@ from .models.UserAuth import (TokenData, UserCreate,
                              UserInDB, UserPublic, ChangePasswordRequest, SetDisabledRequest, GoogleAuthRequest)
 from db.db_access import init_indexes, get_user_by_username, get_encounter_by_eid, get_player_by_cid, \
     upsert_encounter_dict, find_encounters_by_username, find_players_by_username, upsert_user_dict, addEncounterToUser, \
-    addPlayerToUser, getUserByGoogleSub, deleteEncounterByEid
+    addPlayerToUser, getUserByGoogleSub, deleteEncounterByEid, deletePlayerByCid
 
 setupLogging()
 logger = logging.getLogger("backend")
@@ -285,6 +285,19 @@ async def deleteEncounter(eid: str, currentUser: UserInDB = Depends(getCurrentAc
     return {
         "message": "Encounter deleted successfully",
         "eid": eid,
+        "removedFromUser": userDeleted
+    }
+
+@app.delete("/dashboard/players/{cid}")
+async def deletePlayer(cid: str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    userDeleted, playerDeleted = await deletePlayerByCid(cid, currentUser.username)
+
+    if not playerDeleted:
+        raise HTTPException(status_code=404, detail="Player not found.")
+
+    return {
+        "message": "Player deleted successfully",
+        "cid" : cid,
         "removedFromUser": userDeleted
     }
 

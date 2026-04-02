@@ -28,10 +28,18 @@ async def get_encounter_by_eid(eid: str):
 async def deleteEncounterByEid(eid : str, username : str):
     userResult = await userDb.update_one(
         {"username": username},
-        {"$pull": {"encounters": eid}}
+        {"$pull": {"encounter_ids": eid}}
     )
     encounterResult = await encounterDb.delete_one({"eid": eid})
     return userResult.modified_count > 0, encounterResult.deleted_count > 0
+
+async def deletePlayerByCid(cid: str, username: str):
+    userResult = await userDb.update_one(
+        {"username": username},
+        {"$pull": {"player_ids": cid}}
+    )
+    playerResult = await playerDb.delete_one({"stats.cid": cid})
+    return userResult.modified_count > 0, playerResult.deleted_count > 0
 
 async def get_player_by_cid(cid: str):
     return await playerDb.find_one({"stats.cid": cid})
