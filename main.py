@@ -3624,93 +3624,97 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
     for i in range(len(spellList)):
         if actionViabilityCheck(spellList[i], initEntry, initiative, isPlayerTurn):
             spellName = spellList[i].getName()
-            spellProb = 0
-            spellEDam = -1
-            if spellList[i].getSelfTarget():
-                spellProb = 1.0
-                spellEDam = 0
-                probTargets = [creature.getName()]
-                eTargets = [creature.getName()]
-            else:
-                if spellList[i].getRollType().lower() == "tohit":
-                    spellProb = calcTotalToHitProbability(creature, spellList[i], initiative)
-                elif spellList[i].getRollType().lower() == "save":
-                    spellProb = calcTotalSaveProbability(creature, spellList[i], initiative)
-                elif spellList[i].getRollType().lower() == "autohit":
-                    if spellList[i].getDiceNum() == 0 and not spellList[i].getLingSaves() \
-                            and not spellList[i].getLingEffects() and not spellList[i].getExtraEffect() \
-                            and not (spellList[i].getSpecialNotes() and "HPCap" in spellList[i].getSpecialNotes()):
-                        spellProb = 1.0
-                        spellEDam = 0
-                    else:
-                        if spellList[i].getStatusEffects() and any(
-                                [se["name"] == "Summon" for se in spellList[i].getStatusEffects()]):
+            try:
+                spellProb = 0
+                spellEDam = -1
+                if spellList[i].getSelfTarget():
+                    spellProb = 1.0
+                    spellEDam = 0
+                    probTargets = [creature.getName()]
+                    eTargets = [creature.getName()]
+                else:
+                    if spellList[i].getRollType().lower() == "tohit":
+                        spellProb = calcTotalToHitProbability(creature, spellList[i], initiative)
+                    elif spellList[i].getRollType().lower() == "save":
+                        spellProb = calcTotalSaveProbability(creature, spellList[i], initiative)
+                    elif spellList[i].getRollType().lower() == "autohit":
+                        if spellList[i].getDiceNum() == 0 and not spellList[i].getLingSaves() \
+                                and not spellList[i].getLingEffects() and not spellList[i].getExtraEffect() \
+                                and not (spellList[i].getSpecialNotes() and "HPCap" in spellList[i].getSpecialNotes()):
                             spellProb = 1.0
                             spellEDam = 0
                         else:
-                            spellProb = calcTotalAutoHitProbability(creature, spellList[i], initiative)
-                elif spellList[i].getRollType().lower() == "onhit":
-                    spellProb = calcOnHitProbability(spellList[i],
-                                                     [creature.getWeapon(i) for i in range(creature.getWeaponLength())],
-                                                     creature, initiative)
-                if isinstance(spellProb, dict):
-                    spellProb["probSuccess"] = 0 if spellProb["probSuccess"] < 0 else spellProb["probSuccess"]
-                    spellProb["probSuccess"] = 1 if spellProb["probSuccess"] > 1 else spellProb["probSuccess"]
-                    probToStr = f"{spellProb['probSuccess']}" if spellProb['probSuccess'] else f"0.0"
-                    probToStr += f" - {spellProb['probLingEffect']}LE" if spellProb['probLingEffect'] else ""
-                    probToStr += f" - {spellProb['probExtraEffect']}EE" if spellProb['probExtraEffect'] else ""
-                    probToStr += f" - {spellProb['probLingSaves']}LS" if spellProb['probLingSaves'] else ""
-                    probTargets = spellProb["target"] if spellProb["probSuccess"] != 0 else ""
-                else:
-                    spellProb = 0 if spellProb < 0 else spellProb
-                    spellProb = 1 if spellProb > 1 else spellProb
-                    probToStr = spellProb
-                    probTargets = {}
-                spellProb = probToStr
-                try:
-                    spellEDam, eTargets = calcTotalExpectedDamage(creature, spellList[i],
-                                                               initiative) if spellEDam == -1 else spellEDam
-                except TypeError:
-                    spellEDam = 0
-                    eTargets = {}
+                            if spellList[i].getStatusEffects() and any(
+                                    [se["name"] == "Summon" for se in spellList[i].getStatusEffects()]):
+                                spellProb = 1.0
+                                spellEDam = 0
+                            else:
+                                spellProb = calcTotalAutoHitProbability(creature, spellList[i], initiative)
+                    elif spellList[i].getRollType().lower() == "onhit":
+                        spellProb = calcOnHitProbability(spellList[i],
+                                                         [creature.getWeapon(i) for i in range(creature.getWeaponLength())],
+                                                         creature, initiative)
+                    if isinstance(spellProb, dict):
+                        spellProb["probSuccess"] = 0 if spellProb["probSuccess"] < 0 else spellProb["probSuccess"]
+                        spellProb["probSuccess"] = 1 if spellProb["probSuccess"] > 1 else spellProb["probSuccess"]
+                        probToStr = f"{spellProb['probSuccess']}" if spellProb['probSuccess'] else f"0.0"
+                        probToStr += f" - {spellProb['probLingEffect']}LE" if spellProb['probLingEffect'] else ""
+                        probToStr += f" - {spellProb['probExtraEffect']}EE" if spellProb['probExtraEffect'] else ""
+                        probToStr += f" - {spellProb['probLingSaves']}LS" if spellProb['probLingSaves'] else ""
+                        probTargets = spellProb["target"] if spellProb["probSuccess"] != 0 else ""
+                    else:
+                        spellProb = 0 if spellProb < 0 else spellProb
+                        spellProb = 1 if spellProb > 1 else spellProb
+                        probToStr = spellProb
+                        probTargets = {}
+                    spellProb = probToStr
+                    try:
+                        spellEDam, eTargets = calcTotalExpectedDamage(creature, spellList[i],
+                                                                   initiative) if spellEDam == -1 else spellEDam
+                    except TypeError:
+                        spellEDam = 0
+                        eTargets = {}
 
 
-            probTargets = normalizeTargetSets(probTargets, initiative)
-            eTargets = normalizeTargetSets(eTargets, initiative)
+                probTargets = normalizeTargetSets(probTargets, initiative)
+                eTargets = normalizeTargetSets(eTargets, initiative)
 
-            if probTargets and eTargets and {target.getName() for target in probTargets} == {target.getName() for target in eTargets}:
-                #Good case.
-                spellImpact = calcImpact(creature, spellList[i], spellProb,
-                                         spellEDam, probTargets, initiative)
-                target = probTargets
-            else:
-                #Bad case.
-                if not probTargets and eTargets:
-                    spellImpact = calcImpact(creature, spellList[i], spellProb,
-                                         spellEDam, eTargets, initiative)
-                    target = eTargets
-                elif not eTargets and probTargets:
+                if probTargets and eTargets and {target.getName() for target in probTargets} == {target.getName() for target in eTargets}:
+                    #Good case.
                     spellImpact = calcImpact(creature, spellList[i], spellProb,
                                              spellEDam, probTargets, initiative)
                     target = probTargets
-                elif not probTargets and not eTargets:
-                    spellImpact = 0
-                    target = None
                 else:
-                    spellImpact1 = calcImpact(creature, spellList[i], spellProb,
-                                              spellEDam, probTargets, initiative)
-                    spellImpact2 = calcImpact(creature, spellList[i], spellProb,
+                    #Bad case.
+                    if not probTargets and eTargets:
+                        spellImpact = calcImpact(creature, spellList[i], spellProb,
                                              spellEDam, eTargets, initiative)
-                    spellImpact = max([spellImpact1, spellImpact2])
-                    targetIdx = [spellImpact1, spellImpact2].index(spellImpact)
-                    target = probTargets if targetIdx == 0 else eTargets
+                        target = eTargets
+                    elif not eTargets and probTargets:
+                        spellImpact = calcImpact(creature, spellList[i], spellProb,
+                                                 spellEDam, probTargets, initiative)
+                        target = probTargets
+                    elif not probTargets and not eTargets:
+                        spellImpact = 0
+                        target = None
+                    else:
+                        spellImpact1 = calcImpact(creature, spellList[i], spellProb,
+                                                  spellEDam, probTargets, initiative)
+                        spellImpact2 = calcImpact(creature, spellList[i], spellProb,
+                                                 spellEDam, eTargets, initiative)
+                        spellImpact = max([spellImpact1, spellImpact2])
+                        targetIdx = [spellImpact1, spellImpact2].index(spellImpact)
+                        target = probTargets if targetIdx == 0 else eTargets
 
-            actionNames.append(spellName)
-            actionTypes.append(f"Lvl {spellList[i].getLvl()} Spell" if spellList[i].getLvl() > 0 else "Cantrip")
-            actionProbs.append(spellProb)
-            actionEDams.append(spellEDam)
-            actionImpacts.append(spellImpact)
-            actionTargets.append(target)
+                actionNames.append(spellName)
+                actionTypes.append(f"Lvl {spellList[i].getLvl()} Spell" if spellList[i].getLvl() > 0 else "Cantrip")
+                actionProbs.append(spellProb)
+                actionEDams.append(spellEDam)
+                actionImpacts.append(spellImpact)
+                actionTargets.append(target)
+            except TypeError:
+                print("Error with action", spellName)
+                continue
 
     actions = [{"name": actionNames[i], "prob": actionProbs[i], "eDam": actionEDams[i],
                 "impact": actionImpacts[i], "target" : actionTargets[i]} for
@@ -4061,70 +4065,74 @@ def monsterTurn(creature, initiative):
             actions.append({"name": monAction.getName(), "prob": 0, "eDam": 0, "impact": 0})
             continue
         actionName = monAction.getName()
-        actionProb = 0
-        actionEDam = -1
-        if monAction.getSelfTarget():
-            actionProb = 1.0
-            actionEDam = 0
-            probTargets = [creature.getName()]
-            eTargets = [creature.getName()]
-        else:
-            if monAction.getRollType().lower() == "tohit":
-                actionProb = calcTotalToHitProbability(creature, monAction, initiative)
-            elif monAction.getRollType().lower() == "save":
-                    actionProb = calcTotalSaveProbability(creature, monAction, initiative)
-            if isinstance(actionProb, dict):
-                actionProb["probSuccess"] = 0 if actionProb["probSuccess"] < 0 else actionProb["probSuccess"]
-                actionProb["probSuccess"] = 1 if actionProb["probSuccess"] > 1 else actionProb["probSuccess"]
-                probToStr = f"{actionProb['probSuccess']}" if actionProb['probSuccess'] else f"0.0"
-                probToStr += f" - {actionProb['probLingEffect']}LE" if actionProb['probLingEffect'] else ""
-                probToStr += f" - {actionProb['probExtraEffect']}EE" if actionProb['probExtraEffect'] else ""
-                probToStr += f" - {actionProb['probLingSaves']}LS" if actionProb['probLingSaves'] else ""
-                probTargets = actionProb["target"] if actionProb["probSuccess"] != 0 else ""
+        try:
+            actionProb = 0
+            actionEDam = -1
+            if monAction.getSelfTarget():
+                actionProb = 1.0
+                actionEDam = 0
+                probTargets = [creature.getName()]
+                eTargets = [creature.getName()]
             else:
-                actionProb = 0 if actionProb < 0 else actionProb
-                actionProb = 1 if actionProb > 1 else actionProb
-                probTargets = ""
-                probToStr = actionProb
-            actionProb = probToStr
-            actionEDam, eTargets = calcTotalExpectedDamage(creature,
-                                                          monAction, initiative) if actionEDam == -1 else actionEDam
+                if monAction.getRollType().lower() == "tohit":
+                    actionProb = calcTotalToHitProbability(creature, monAction, initiative)
+                elif monAction.getRollType().lower() == "save":
+                        actionProb = calcTotalSaveProbability(creature, monAction, initiative)
+                if isinstance(actionProb, dict):
+                    actionProb["probSuccess"] = 0 if actionProb["probSuccess"] < 0 else actionProb["probSuccess"]
+                    actionProb["probSuccess"] = 1 if actionProb["probSuccess"] > 1 else actionProb["probSuccess"]
+                    probToStr = f"{actionProb['probSuccess']}" if actionProb['probSuccess'] else f"0.0"
+                    probToStr += f" - {actionProb['probLingEffect']}LE" if actionProb['probLingEffect'] else ""
+                    probToStr += f" - {actionProb['probExtraEffect']}EE" if actionProb['probExtraEffect'] else ""
+                    probToStr += f" - {actionProb['probLingSaves']}LS" if actionProb['probLingSaves'] else ""
+                    probTargets = actionProb["target"] if actionProb["probSuccess"] != 0 else ""
+                else:
+                    actionProb = 0 if actionProb < 0 else actionProb
+                    actionProb = 1 if actionProb > 1 else actionProb
+                    probTargets = ""
+                    probToStr = actionProb
+                actionProb = probToStr
+                actionEDam, eTargets = calcTotalExpectedDamage(creature,
+                                                              monAction, initiative) if actionEDam == -1 else actionEDam
 
-        probTargets = normalizeTargetSets(probTargets, initiative)
-        eTargets = normalizeTargetSets(eTargets, initiative)
+            probTargets = normalizeTargetSets(probTargets, initiative)
+            eTargets = normalizeTargetSets(eTargets, initiative)
 
-        if {target.getName() for target in probTargets} == {target.getName() for target in eTargets}:
-            # Good case
-            actionImpact = calcImpact(creature, monAction, actionProb,
-                                     actionEDam, probTargets, initiative)
-            target = probTargets
-        else:
-            # Bad case.
-            if not probTargets and not eTargets:
-                actionImpact = 0
-                target = {}
-            elif not probTargets:
+            if {target.getName() for target in probTargets} == {target.getName() for target in eTargets}:
+                # Good case
                 actionImpact = calcImpact(creature, monAction, actionProb,
-                                      actionEDam, eTargets, initiative)
-                target = eTargets
-            elif not eTargets:
-                actionImpact = calcImpact(creature, monAction, actionProb,
-                                      actionEDam, probTargets, initiative)
+                                         actionEDam, probTargets, initiative)
                 target = probTargets
             else:
-                spellImpact1 = calcImpact(creature, monAction, actionProb,
-                                          actionEDam, probTargets, initiative)
-                spellImpact2 = calcImpact(creature, monAction, actionProb,
+                # Bad case.
+                if not probTargets and not eTargets:
+                    actionImpact = 0
+                    target = {}
+                elif not probTargets:
+                    actionImpact = calcImpact(creature, monAction, actionProb,
                                           actionEDam, eTargets, initiative)
-                actionImpact = max([spellImpact1, spellImpact2])
-                targetIdx = [spellImpact1, spellImpact2].index(actionImpact)
-                target = probTargets if targetIdx == 0 else eTargets
+                    target = eTargets
+                elif not eTargets:
+                    actionImpact = calcImpact(creature, monAction, actionProb,
+                                          actionEDam, probTargets, initiative)
+                    target = probTargets
+                else:
+                    spellImpact1 = calcImpact(creature, monAction, actionProb,
+                                              actionEDam, probTargets, initiative)
+                    spellImpact2 = calcImpact(creature, monAction, actionProb,
+                                              actionEDam, eTargets, initiative)
+                    actionImpact = max([spellImpact1, spellImpact2])
+                    targetIdx = [spellImpact1, spellImpact2].index(actionImpact)
+                    target = probTargets if targetIdx == 0 else eTargets
 
-        actionNames.append(actionName)
-        actionProbs.append(actionProb)
-        actionEDams.append(actionEDam)
-        actionImpacts.append(actionImpact)
-        actionTargets.append(target)
+            actionNames.append(actionName)
+            actionProbs.append(actionProb)
+            actionEDams.append(actionEDam)
+            actionImpacts.append(actionImpact)
+            actionTargets.append(target)
+        except TypeError:
+            print("Error with action", actionName)
+            continue
 
     actions.extend(
         [{"name": actionNames[i], "prob": actionProbs[i], "eDam": actionEDams[i],
