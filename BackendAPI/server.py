@@ -373,9 +373,10 @@ async def movementSimulate(eid : str, cid : str, newPos : List[List[int]], curre
     allPositions = [player.getPosition() for player in players]
     allPositions.extend([monster.getPosition() for monster in monsters])
     currentPos = creature.getPosition()
+    allPositions.remove(currentPos)
     for pos2D in allPositions:
         for pos in newPos:
-            if pos in pos2D and currentPos in pos2D:
+            if pos in pos2D and currentPos not in pos2D:
                 bad = True
                 message = f"Position collision detected"
 
@@ -444,7 +445,6 @@ async def getNextTurn(eid : str, currentUser: UserInDB = Depends(getCurrentActiv
         await main.saveEncounter(encounter)
     except PyMongoError as err:
         raise HTTPException(status_code=500, detail=f"Failed to save Encounter: {err}")
-    preEffects = {"preEffects" : preEffects, "refresh" : refreshFlag}
     logger.info(f"preEffects: {preEffects}")
     return preEffects
 @app.get("/encounter/{eid}/initiative/currentturn")

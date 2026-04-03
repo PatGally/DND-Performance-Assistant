@@ -80,7 +80,7 @@
   {
     "name" : "lingEffect",
     "effect": {
-      "spell": [],
+      "spellName": [],
       "resultID": []
     }
   },
