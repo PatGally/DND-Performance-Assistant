@@ -16,8 +16,10 @@ class Player(Stats):
         self.__level = level
         self.setMaxHP(self.__calcHP())
         if hp == -1:
+            print("THIS SHOULDNT HAPPEN")
             self.setHP(self.getMaxHP())
         else:
+            print("hp",hp)
             self.setHP(hp)
         self.__profBonus = self.calcProfBonus()
         self.__spellMod = self.calcSpellMod()
@@ -31,11 +33,9 @@ class Player(Stats):
 
     def __calcHP(self):
         hitDieType = self.__calcHitDie()
-        health = hitDieType + self.getMod("CON")
+        conMod = self.getMod("CON")
         avg = math.ceil((hitDieType + 1) / 2)
-        for i in range(0, self.__level):
-            health += avg + self.getMod("CON")
-        return health
+        return (hitDieType + conMod) + (self.__level - 1) * (avg + conMod)
     def __calcHitDie(self):
         if self.__class_type == "sorcerer" or self.__class_type == "wizard":
             return 6

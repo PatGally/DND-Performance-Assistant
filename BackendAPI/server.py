@@ -146,7 +146,11 @@ def isPlayer(creature):
     elif isinstance(creature, Monster):
         return False
     else:
-        return False
+        try:
+            lvl = creature.getLevel()
+            return True
+        except:
+            return False
 
 @app.on_event("startup")
 async def startup_event():
@@ -180,7 +184,7 @@ async def getCreaturePosition(eid : str, cid : str, currentUser: UserInDB = Depe
 async def getCreatureActions(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
     encounter = main.loadEncounter(await getEncounter(eid, currentUser))
     creature = await getCreatureObj(encounter, cid)
-    if isinstance(creature, Player):
+    if isPlayer(creature):
         actions = []
         spells = [creature.getSpell(i).toDict() for i in range(creature.getSpellLength())]
         weapons = [creature.getWeapon(i).toDict() for i in range(creature.getWeaponLength())]
