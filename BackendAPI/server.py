@@ -143,14 +143,12 @@ def isPlayer(creature):
             return True
         else:
             return False
-    elif isinstance(creature, Monster):
-        return False
     else:
         try:
-            lvl = creature.getLevel()
-            return True
-        except:
+            caster = creature.isCaster()
             return False
+        except:
+            return True
 
 @app.on_event("startup")
 async def startup_event():
@@ -374,9 +372,10 @@ async def movementSimulate(eid : str, cid : str, newPos : List[List[int]], curre
     monsters = [encounter.getMonster(i) for i in range(encounter.monsterSize())]
     allPositions = [player.getPosition() for player in players]
     allPositions.extend([monster.getPosition() for monster in monsters])
+    currentPos = creature.getPosition()
     for pos2D in allPositions:
         for pos in newPos:
-            if pos in pos2D:
+            if pos in pos2D and currentPos in pos2D:
                 bad = True
                 message = f"Position collision detected"
 
