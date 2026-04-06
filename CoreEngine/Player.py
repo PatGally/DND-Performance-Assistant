@@ -16,8 +16,10 @@ class Player(Stats):
         self.__level = level
         self.setMaxHP(self.__calcHP())
         if hp == -1:
+            print("THIS SHOULDNT HAPPEN")
             self.setHP(self.getMaxHP())
         else:
+            print("hp",hp)
             self.setHP(hp)
         self.__profBonus = self.calcProfBonus()
         self.__spellMod = self.calcSpellMod()
@@ -27,14 +29,13 @@ class Player(Stats):
         self.__weapons = []
         self.__spells = []
         self.__spellSlots = self.calcSpellSlots() if spellSlots is None else spellSlots
+        self.__modifiers = self.calcMods()
 
     def __calcHP(self):
         hitDieType = self.__calcHitDie()
-        health = hitDieType + self.getMod("CON")
+        conMod = self.getMod("CON")
         avg = math.ceil((hitDieType + 1) / 2)
-        for i in range(0, self.__level):
-            health += avg + self.getMod("CON")
-        return health
+        return (hitDieType + conMod) + (self.__level - 1) * (avg + conMod)
     def __calcHitDie(self):
         if self.__class_type == "sorcerer" or self.__class_type == "wizard":
             return 6
@@ -96,6 +97,7 @@ class Player(Stats):
         for spell in self.__spells:
             if spell.getName().lower() == name.lower():
                 return spell
+        return None
     def getSpellLength(self):
         return len(self.__spells)
 
@@ -145,6 +147,8 @@ class Player(Stats):
         return self.__level
     def getDC(self):
         return self.__dc
+    def setAC(self, ac):
+        self.__ac = ac
     def getAC(self):
         return self.__ac
     def getSpellMod(self):
@@ -153,6 +157,14 @@ class Player(Stats):
         self.__name = name
     def getName(self):
         return self.__name
+    def getSize(self):
+        return "medium"
+
+    def setSpellSlots(self,lvl, slotAmount):
+        slotIndex = lvl -1
+        if not (0 <= slotIndex < len(self.__spellSlots)):
+            raise ValueError("Invalid spell slot level")
+        self.__spellSlots[slotIndex][0] = slotAmount
 
     def calcSpellSlots(self):
         # Full caster max slots by level (1st through 9th)
@@ -244,7 +256,7 @@ class Player(Stats):
         return [[str(count), str(count)] for count in max_slots]
     def getSpellSlot(self, lvl):
         slotIdx = lvl - 1
-        return self.__spellSlots[slotIdx]
+        return self.__spellSlots[slotIdx][0]
     def getSpellSlots(self):
         return self.__spellSlots
     def resetSlots(self):

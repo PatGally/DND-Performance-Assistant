@@ -62,6 +62,18 @@ class Monster(Stats):
         self.__profBonus = pb
     def getProfBonus(self):
         return self.__profBonus
+    def setSpellSlots(self,level, slotAmount):
+        slotIndex = level -1
+        spells = self.getSpellInfo()
+        spells = spells.get("spellSlots", [])
+        if not (0 <= slotIndex < len(spells)):
+            raise ValueError("Invalid spell slot level")
+        spells[slotIndex][0] = str(slotAmount)
+        self.__spellInfo["spellSlots"] = spells
+
+    def getSpellSlots(self):
+        return self.__spellInfo.get("spellSlots", [])
+
     def setCreatureType(self, creatureType):
         self.__creatureType = creatureType
     def getCreatureType(self):
@@ -158,8 +170,12 @@ class Monster(Stats):
         return self.__actions[idx]
     def getActionByName(self, name):
         for action in self.__actions:
-            if action["name"].lower() == name.lower():
+            if isinstance(action, MonAction):
+                if action.getName().lower() == name.lower():
+                    return action
+            elif action["name"].lower() == name.lower():
                 return action
+        return None
     def getActionLength(self):
         return len(self.__actions)
 
@@ -173,6 +189,12 @@ class Monster(Stats):
         if lIdx != -1:
             return self.__legActions[lIdx]
         return {}
+
+    def getSize(self):
+        return self.__size
+
+    def setSize(self, val : str):
+        self.__size = val
 
     def toDict(self):
         def stripSpellData(p_spellInfo):

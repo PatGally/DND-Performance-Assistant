@@ -86,7 +86,7 @@ class Fighter(Player):
         self.__actionSurgeCharges = 0
     def resetActionSurge(self):
         self.__actionSurgeCharges = 1
-    def getActionSurge(self):
+    def getActionSurgeCharges(self):
         return self.__actionSurgeCharges
 
     def getExtraAttackAmt(self):
