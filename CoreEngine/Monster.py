@@ -170,8 +170,12 @@ class Monster(Stats):
         return self.__actions[idx]
     def getActionByName(self, name):
         for action in self.__actions:
-            if action["name"].lower() == name.lower():
+            if isinstance(action, MonAction):
+                if action.getName().lower() == name.lower():
+                    return action
+            elif action["name"].lower() == name.lower():
                 return action
+        return None
     def getActionLength(self):
         return len(self.__actions)
 

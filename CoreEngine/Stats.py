@@ -106,7 +106,7 @@ class Stats:
         self.__damVulns.remove(damType)
         return True
 
-    def setAllConImmuns(self, conImmuns):
+    def setAllConImmunes(self, conImmuns):
         self.__conImmunes = conImmuns
     def getConImmunes(self):
         return self.__conImmunes

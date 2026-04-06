@@ -6,12 +6,12 @@ from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 
 class Outcome(BaseModel):
-    rollResult : List[str] = Field(alias="rollResult")
-    diceResult : List[int] = Field(alias="diceResult")
+    rollResults : List[str] = Field(alias="rollResults")
+    diceResults : List[int] = Field(alias="diceResults")
 
 class ExtraOutcome(BaseModel):
-    extraRollResult : List[str] = Field(alias="extraRollResult")
-    extraDiceResult : List[int] = Field(alias="extraDiceResult")
+    extraRollResults : List[str] = Field(alias="extraRollResults")
+    extraDiceResults : List[int] = Field(alias="extraDiceResults")
 
 class ActionRequest(BaseModel):
     """
@@ -20,7 +20,7 @@ class ActionRequest(BaseModel):
     """
     model_config = ConfigDict(populate_by_name=True, extra="allow")
 
-    resultID: int = Field(..., ge=1)  # random.randint(1, 9999999999)
+    resultID: str
     actor: str
     action: str
     actionType: str
@@ -31,13 +31,14 @@ class ActionRequest(BaseModel):
     actionImpact: float
 
     targets: List[str] = Field(default_factory=list)
-    targetCRs: List[Union[int, float, str]] = Field(default_factory=list)  # CR could be int/float/string
 
     conditions: List[str] = Field(default_factory=list)
-    statuseffects: List[Dict[str, Any]] = Field(default_factory=list)
+    statusEffects: List[Dict[str, Any]] = Field(default_factory=list)
 
     outcome: Outcome
-    extraOutcome: extraOutcome
+    extraOutcome: ExtraOutcome
+
+    token : Optional[Any] = None
 
     # Sender uses "%H:%M:%S"
     timestamp: time
@@ -70,43 +71,6 @@ class ActionRequest(BaseModel):
             raise ValueError("targets must be a list of strings")
         return [str(x).strip() for x in v if str(x).strip()]
 
-    @field_validator("targetCRs", mode="before")
-    @classmethod
-    def normalize_target_crs(cls, v: Any) -> List[Union[int, float, str]]:
-        """
-        Keep this flexible:
-        - Monsters might have CR like '1/4' or '2'
-        - Players might have level as int
-        We'll normalize numeric strings to int/float when possible, otherwise keep the string.
-        """
-        if v is None:
-            return []
-        if not isinstance(v, list):
-            raise ValueError("targetCRs must be a list")
-        out: List[Union[int, float, str]] = []
-        for item in v:
-            if item is None or item == "":
-                continue
-            if isinstance(item, (int, float)):
-                out.append(item)
-                continue
-            s = str(item).strip()
-            # try int
-            try:
-                out.append(int(s))
-                continue
-            except ValueError:
-                pass
-            # try float
-            try:
-                out.append(float(s))
-                continue
-            except ValueError:
-                pass
-            # keep string (e.g., "1/4")
-            out.append(s)
-        return out
-
     @field_validator("conditions", mode="before")
     @classmethod
     def normalize_conditions(cls, v: Any) -> List[str]:
@@ -116,13 +80,13 @@ class ActionRequest(BaseModel):
             raise ValueError("conditions must be a list of strings")
         return [str(x).strip().lower() for x in v if str(x).strip()]
 
-    @field_validator("statuseffects", mode="before")
+    @field_validator("statusEffects", mode="before")
     @classmethod
     def normalize_status_effects(cls, v: Any) -> List[Dict[str, Any]]:
         if v is None:
             return []
         if not isinstance(v, list):
-            raise ValueError("statuseffects must be a list of dicts")
+            raise ValueError("statusEffects must be a list of dicts")
         out: List[Dict[str, Any]] = []
         for item in v:
             if not isinstance(item, dict):

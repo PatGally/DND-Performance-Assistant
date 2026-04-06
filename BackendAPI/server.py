@@ -51,7 +51,6 @@ COOKIE_SAMESITE = os.getenv("COOKIE_SAMESITE", "lax")
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 REFRESH_COOKIE_NAME = "refresh_token"
 REFRESH_COOKIE_PATH = os.getenv("REFRESH_COOKIE_PATH")
-USERS_PATH = Path("CoreEngine/data/user_list.json")
 REFRESH_STORE_PATH = Path("CoreEngine/data/refresh_store.json")
 ORIGINS = [origin for origin in [os.getenv("ORIGIN1"), os.getenv("ORIGIN2")] if origin]
 app = FastAPI()
@@ -188,7 +187,6 @@ async def getCreatureActions(eid : str, cid : str, currentUser: UserInDB = Depen
         weapons = [creature.getWeapon(i).toDict() for i in range(creature.getWeaponLength())]
         actions.extend(spells)
         actions.extend(weapons)
-        return actions
     else:
         actions = [creature.getAction(i).toDict() for i in range(creature.getActionLength())]
         if creature.isCaster():
@@ -198,7 +196,11 @@ async def getCreatureActions(eid : str, cid : str, currentUser: UserInDB = Depen
                     actions.append(spell["spellData"].toDict())
                 else:
                     actions.append(spell)
-        return actions
+    with open("CoreEngine/data/basic_actions.json", "r") as brf:
+        basics = json.load(brf)
+        actions.extend(basics)
+
+    return actions
 
 @app.get("/encounter/{eid}/creature/{cid}", response_model=Union[AnyPlayer, Monster])
 async def getCreature(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
@@ -304,7 +306,7 @@ async def deletePlayer(cid: str, currentUser: UserInDB = Depends(getCurrentActiv
     }
 
 @app.post("/encounter/{eid}/simulate/ruleset")
-async def rulesetSimulate(eid : str, action : ActionRequest, currentUser : UserInDB = Depends(getCurrentActiveUser)):
+async def rulesetSimulate(eid : str, entry : ActionRequest, currentUser : UserInDB = Depends(getCurrentActiveUser)):
     """
     entry = {
         "resultID": random.randint(1, 9999999999),
@@ -323,10 +325,72 @@ async def rulesetSimulate(eid : str, action : ActionRequest, currentUser : UserI
         "timestamp": datetime.now().strftime("%H:%M:%S")
     }
     """
-    #TODO: Upsert this into DB once it's done.
     encounter = main.loadEncounter(await getEncounter(eid, currentUser))
-    #Do simulation logic
-    main.logActionResult(encounter, action)
+    entry = entry.model_dump(mode="json", by_alias=True)
+    actor = entry["actor"]
+    actorObj = ""
+    action = entry["action"]
+    activeInitiative = main.setActiveInitiative(encounter)
+    targets = entry["targets"] #Find
+    selectedTargets = []
+    for creature in activeInitiative:
+        if creature["name"].lower() == actor.lower():
+            actorObj = creature["Statblock"]
+            spell = creature["Statblock"].getSpellByName(action)
+            action = spell if spell else action
+            if isPlayer(creature["Statblock"]):
+                for i in range(creature["Statblock"].getWeaponlength()):
+                    weapon = creature["Statblock"].getWeapon(i)
+                    if weapon.getName().lower() == action.lower():
+                        action = weapon
+            else:
+                monAction = creature["Statblock"].getActionByName(action)
+                action = monAction if monAction else action
+        if creature["Statblock"].getCID() in targets:
+                selectedTargets.append(creature["Statblock"])
+    if isinstance(action, str):
+        print("In basic action search")
+        if action.lower() in ["dodge", "shove", "grapple"]:
+            bActions = getBasicActions()
+            if action.lower() == "grapple":
+                print("Translating grapple")
+                action = main.translateBasicAction(actorObj, bActions[0])
+            elif action.lower() == "shove":
+                action = main.translateBasicAction(actorObj, bActions[1])
+            else:
+                action = main.translateBasicAction(actorObj, bActions[2])
+        else:
+            print(action, "Not found")
+            raise HTTPException(status_code=500, detail="Action not found.")
+    if "token" in entry and entry["token"]:
+        token = entry["token"]
+    else:
+        token = None
+
+    encInitiative = encounter.getInitiative()
+    actionCost = action.getActionCost()
+    for creature in encInitiative:
+        if creature["name"].lower() == actor.lower():
+            if actionCost == "action" and creature["actionResource"]:
+                creature["actionResource"] -= 1
+                break
+            elif actionCost == "bonus action":
+                if creature["bonusActionResource"]:
+                    creature["bonusActionResource"] -= 1
+                    break
+                elif creature["actionResource"]:
+                    creature["actionResource"] -= 1
+                    break
+                else:
+                    raise HTTPException(status_code=500, detail="Insufficient resources")
+            else:
+                raise HTTPException(status_code=500, detail="Invalid Action cost")
+
+    main.executeAction(actor, action, selectedTargets,
+                       entry, activeInitiative, token)
+    main.logActionResult(encounter, entry)
+
+    await main.saveEncounter(encounter)
 
 @app.post("/encounter/{eid}/simulate/manual")
 async def manualSimulate(eid : str, affectedCreatures : AffectedCreaturesRequest, currentUser : UserInDB = Depends(getCurrentActiveUser)):
@@ -380,6 +444,8 @@ async def movementSimulate(eid : str, cid : str, newPos : List[List[int]], curre
                 bad = True
                 message = f"Position collision detected"
 
+    #TODO: Check if newPos is within movement range of currentPos, according to movementResource of creature.
+
     if bad:
         raise HTTPException(status_code=500, detail=message)
     creature.setPosition(newPos)
@@ -391,6 +457,21 @@ def getUUID():
     myUuidString = str(myUuidObject)
     logger.info(myUuidString)
     return myUuidString
+@app.get("/basic-actions")
+def getBasicActions():
+    with open("CoreEngine/data/basic_actions.json", "r") as brf:
+        basicActions = json.load(brf)
+        return basicActions
+@app.get("/status-effects")
+def getStatusEffects():
+    with open("CoreEngine/data/status_effects.json", "r") as srf:
+        statusEffects = json.load(srf)
+        return statusEffects
+@app.get("/conditions")
+def getConditions():
+    with open("CoreEngine/data/conditions.json", "r") as crf:
+        conditions = json.load(crf)
+        return conditions
 
 @app.get("/encounter/{eid}/initiative/nextturn")
 async def getNextTurn(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):

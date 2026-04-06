@@ -9906,13 +9906,13 @@
                 "name": "Phantasms (Recharges after a Short or Long Rest)",
                 "desc": "The cloaker magically creates three illusory duplicates of itself if it isn't in bright light. The duplicates move with it and mimic its actions, shifting position so as to make it impossible to track which cloaker is the real one. If the cloaker is ever in an area of bright light, the duplicates disappear.\nWhenever any creature targets the cloaker with an attack or a harmful spell while a duplicate remains, that creature rolls randomly to determine whether it targets the cloaker or one of the duplicates. A creature is unaffected by this magical effect if it can't see or if it relies on senses other than sight.\nA duplicate has the cloaker's AC and uses its saving throws. If an attack hits a duplicate, or if a duplicate fails a saving throw against an effect that deals damage, the duplicate disappears.",
                 "actionRange": "",
-                "numTarget": 1,
+                "numTarget": 0,
                 "shape": "",
                 "rolls": {
-                    "rollType": "save",
-                    "saveType": "INT",
+                    "rollType": "",
+                    "saveType": "",
                     "halfSave": false,
-                    "saveDC": "uses",
+                    "saveDC": "",
                     "damage": "",
                     "attackBonus": 0,
                     "damMod": ""
@@ -9929,7 +9929,7 @@
                 "lingSave": {},
                 "actionCost": "action",
                 "recharge": [
-                    "s after a short or long rest"
+                    ""
                 ],
                 "specialNotes": [],
                 "extraDamage": []

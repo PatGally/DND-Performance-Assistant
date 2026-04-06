@@ -1,6 +1,5 @@
 from .Action import Action
 
-
 class Weapon(Action):
     def __init__(self, name, statType, diceNum, diceType, damageType, damMod):
         super().__init__()
@@ -8,6 +7,7 @@ class Weapon(Action):
         self.__damageType = damageType
         self.__statType = statType
         self.setDice(diceNum, diceType, damMod)
+        self.__actionCost = "action"
 
     def toDict(self):
         return {
@@ -36,3 +36,6 @@ class Weapon(Action):
 
     def setStatType(self, statType):
         self.__statType = statType
+
+    def getActionCost(self):
+        return self.__actionCost

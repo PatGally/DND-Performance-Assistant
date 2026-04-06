@@ -97,6 +97,7 @@ class Player(Stats):
         for spell in self.__spells:
             if spell.getName().lower() == name.lower():
                 return spell
+        return None
     def getSpellLength(self):
         return len(self.__spells)
 
