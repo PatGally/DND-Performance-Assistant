@@ -487,7 +487,7 @@ async def postEncounter(encounter : Encounter, currentUser: UserInDB = Depends(g
 async def getEncounterPacket(currentUser: UserInDB = Depends(getCurrentActiveUser)):
     encounterList = await find_encounters_by_username(currentUser.username)
     encounters = await encounterList.to_list(length=None)
-    return [{"name": enc.get("name"),"date": enc.get("date"),"eid": enc.get("eid"),"completed": enc.get("completed")} \
+    return [{"name": enc.get("name"),"date": enc.get("date"), "mapLink": enc.get("mapdata", {}).get("map", {}).get("mapLink"), "eid":  enc.get("eid"),"completed": enc.get("completed")} \
             for enc in encounters]
 
 @app.get("/dashboard/{eid}/packet")
