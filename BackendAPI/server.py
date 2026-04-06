@@ -878,6 +878,7 @@ async def authGoogle(body: GoogleAuthRequest, response: Response):
             body.id_token,
             google_requests.Request(),
             GOOGLE_CLIENT_ID,
+            clock_skew_in_seconds=10
         )
     except Exception:
         raise HTTPException(
