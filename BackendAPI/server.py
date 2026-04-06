@@ -199,7 +199,6 @@ async def getCreatureActions(eid : str, cid : str, currentUser: UserInDB = Depen
     with open("CoreEngine/data/basic_actions.json", "r") as brf:
         basics = json.load(brf)
         actions.extend(basics)
-
     return actions
 
 @app.get("/encounter/{eid}/creature/{cid}", response_model=Union[AnyPlayer, Monster])
@@ -333,17 +332,20 @@ async def rulesetSimulate(eid : str, entry : ActionRequest, currentUser : UserIn
     activeInitiative = main.setActiveInitiative(encounter)
     targets = entry["targets"] #Find
     selectedTargets = []
+    isSpell = False
     for creature in activeInitiative:
         if creature["name"].lower() == actor.lower():
             actorObj = creature["Statblock"]
             spell = creature["Statblock"].getSpellByName(action)
-            action = spell if spell else action
-            if isPlayer(creature["Statblock"]):
+            if spell:
+                isSpell = True
+                action = spell
+            if isPlayer(creature["Statblock"]) and not isSpell:
                 for i in range(creature["Statblock"].getWeaponlength()):
                     weapon = creature["Statblock"].getWeapon(i)
                     if weapon.getName().lower() == action.lower():
                         action = weapon
-            else:
+            elif not isSpell:
                 monAction = creature["Statblock"].getActionByName(action)
                 action = monAction if monAction else action
         if creature["Statblock"].getCID() in targets:
@@ -371,6 +373,13 @@ async def rulesetSimulate(eid : str, entry : ActionRequest, currentUser : UserIn
     actionCost = action.getActionCost()
     for creature in encInitiative:
         if creature["name"].lower() == actor.lower():
+            if isSpell:
+                lvl = action.getLvl()
+                if lvl > 0:
+                    if actorObj.getSpellSlot(lvl) > 0:
+                        actorObj.setSpellSlots(lvl, actorObj.getSpellSlot(lvl) - 1)
+                    else:
+                        raise HTTPException(status_code=500, detail="Insufficient spell slot")
             if actionCost == "action" and creature["actionResource"]:
                 creature["actionResource"] -= 1
                 break
@@ -382,11 +391,11 @@ async def rulesetSimulate(eid : str, entry : ActionRequest, currentUser : UserIn
                     creature["actionResource"] -= 1
                     break
                 else:
-                    raise HTTPException(status_code=500, detail="Insufficient resources")
+                    raise HTTPException(status_code=500, detail="Insufficient action resources")
             else:
                 raise HTTPException(status_code=500, detail="Invalid Action cost")
 
-    main.executeAction(actor, action, selectedTargets,
+    main.executeAction(actorObj, action, selectedTargets,
                        entry, activeInitiative, token)
     main.logActionResult(encounter, entry)
 

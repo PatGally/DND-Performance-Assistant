@@ -256,7 +256,7 @@ class Player(Stats):
         return [[str(count), str(count)] for count in max_slots]
     def getSpellSlot(self, lvl):
         slotIdx = lvl - 1
-        return self.__spellSlots[slotIdx]
+        return self.__spellSlots[slotIdx][0]
     def getSpellSlots(self):
         return self.__spellSlots
     def resetSlots(self):
