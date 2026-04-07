@@ -85,9 +85,10 @@ async def test_login(monkeypatch):
 async def test_auth_google_existing_user(monkeypatch):
     monkeypatch.setattr(server, "GOOGLE_CLIENT_ID", "client-id-123")
 
-    def fake_verify_oauth2_token(id_token, request, client_id):
+    def fake_verify_oauth2_token(id_token, request, client_id, **kwargs):
         assert id_token == "google-token"
         assert client_id == "client-id-123"
+        assert kwargs.get("clock_skew_in_seconds") == 10
         return {"sub": "google-sub-1", "email": "charles@example.com"}
 
     async def fake_get_user_by_google_sub(google_sub):
@@ -112,7 +113,7 @@ async def test_auth_google_existing_user(monkeypatch):
     result = await server.authGoogle(body, response)
 
     assert result == {"access_token": "google-access", "token_type": "bearer"}
-
+    
 async def test_auth_refresh(monkeypatch):
     monkeypatch.setattr(server, "REFRESH_TOKEN_EXPIRE_DAYS", 30)
     monkeypatch.setattr(server, "COOKIE_SECURE", False)
