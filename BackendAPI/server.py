@@ -154,7 +154,7 @@ async def startup_event():
     await init_indexes()
 
 
-@app.get("/api/drive-image/{file_id}")
+@app.get("/drive-image/{file_id}")
 async def get_drive_image(file_id: str):
     url = f"https://drive.google.com/uc?export=view&id={file_id}"
 
