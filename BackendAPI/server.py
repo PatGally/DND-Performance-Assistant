@@ -91,9 +91,7 @@ async def logRequests(request: Request, callNext):
         "Completed request: %s %s Status=%s Duration=%.4fs",request.method,request.url.path,response.status_code,duration)
 
     return response
-
 AnyPlayer = Union[Fighter, Barbarian, Bard, Cleric, Druid, Paladin, Sorcerer]
-
 async def getCurrentUser(token : str = Depends(oauth2Scheme)):
     credentialsException = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials", headers={"WWW-Authenticate" : "Bearer"})
     try:
@@ -153,8 +151,7 @@ def isPlayer(creature):
 async def startup_event():
     await init_indexes()
 
-
-@app.get("/api/drive-image/{file_id}")
+@app.get("/drive-image/{file_id}")
 async def get_drive_image(file_id: str):
     url = f"https://drive.google.com/uc?export=view&id={file_id}"
 
@@ -484,63 +481,83 @@ def getConditions():
 
 @app.get("/encounter/{eid}/initiative/nextturn")
 async def getNextTurn(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    def getPreTurnEffects(currentCreature, encounter):
+        preEffects = []
+        appendTurnCountResID = []
+        for effect in currentCreature.getActiveStatusEffects():
+            if effect["name"].lower() in ["lingsave", "lingeffect"]:
+                preEffects.append(effect)
+
+                # Deals with 1Turn shenanigans
+                resultIDs = effect["effect"]["resultID"]
+                resultIDs = main.ensureList(resultIDs)
+                for i, resultID in enumerate(resultIDs):
+                    if resultID != -1:
+                        result = encounter.getResultByID(resultID)
+                        if "turnCount" in result and "turnCap" in result:
+                            if int(result["turnCount"]) >= int(result["turnCap"]):
+                                main.endSpellEffect(effect, i, currentCreature, main.setActiveInitiative(encounter))
+                            else:
+                                result["turnCount"] += 1
+                                appendTurnCountResID.append(resultID)
+        return preEffects
+    def getCreatureByInit():
+        cc = {}
+        for creature in initiative:
+            # Add creature statblock to their associated turn
+            # SHALLOW COPY OF MONSTER/PLAYER OBJECTS - Changes to creature["Statblock"] affect associated object in encounter
+            if creature["turnType"] == "Player":
+                for i in range(encounter.playerSize()):
+                    if creature["name"].lower() == encounter.getPlayer(i).getName().lower():
+                        cc = encounter.getPlayer(i)
+                        break
+            elif creature["turnType"] == "Monster":
+                for i in range(encounter.monsterSize()):
+                    if creature["name"].lower() == encounter.getMonster(i).getName().lower():
+                        cc = encounter.getMonster(i)
+                        break
+        return cc
     encounter = main.loadEncounter(await getEncounter(eid, currentUser))
     initiative = encounter.getInitiative()
-    for i, turn in enumerate(initiative):
-        if turn["currentTurn"]:
-            logger.info("currentTurn creature: " + turn["name"])
-            turn["currentTurn"] = False
-            if i == len(initiative) - 1:
-                initiative[0]["currentTurn"] = True
-                initiative[0]["actionResource"] = 1
-                initiative[i + 1]["bonusActionResource"] = 1
-                logger.info("New currentTurnCreature: " + initiative[0]["name"])
-            else:
-                initiative[i + 1]["currentTurn"] = True
-                initiative[i + 1]["actionResource"] = 1
-                initiative[i + 1]["bonusActionResource"] = 1
-                logger.info("New currentTurnCreature: " + initiative[i + 1]["name"])
-            break
-    currentCreature = {}
-    for creature in initiative:
-        #Add creature statblock to their associated turn
-        #SHALLOW COPY OF MONSTER/PLAYER OBJECTS - Changes to creature["Statblock"] affect associated object in encounter
-        if creature["turnType"] == "Player":
-            for i in range(encounter.playerSize()):
-                if creature["name"].lower() == encounter.getPlayer(i).getName().lower():
-                    currentCreature = encounter.getPlayer(i)
-                    break
-        elif creature["turnType"] == "Monster":
-            for i in range(encounter.monsterSize()):
-                if creature["name"].lower() == encounter.getMonster(i).getName().lower():
-                    currentCreature = encounter.getMonster(i)
-                    break
-    preEffects = []
-    appendTurnCountResID = []
-    refreshFlag = False
-    for effect in currentCreature.getActiveStatusEffects():
-        if effect["name"].lower() in ["lingsave", "lingeffect"]:
-            preEffects.append(effect)
-
-            # Deals with 1Turn shenanigans
-            resultIDs = effect["effect"]["resultID"]
-            resultIDs = main.ensureList(resultIDs)
-            for i, resultID in enumerate(resultIDs):
-                if resultID != -1:
-                    result = encounter.getResultByID(resultID)
-                    if "turnCount" in result and "turnCap" in result:
-                        if int(result["turnCount"]) >= int(result["turnCap"]):
-                            main.endSpellEffect(effect, i, currentCreature, main.setActiveInitiative(encounter))
+    activeInit = main.setActiveInitiative(encounter)
+    isValidNextTurn = False
+    preE = []
+    while not isValidNextTurn:
+        for i, turn in enumerate(initiative):
+            if turn["currentTurn"]:
+                logger.info("currentTurn creature: " + turn["name"])
+                turn["currentTurn"] = False
+                if i == len(initiative) - 1:
+                    initiative[0]["currentTurn"] = True
+                    initiative[0]["actionResource"] = 1
+                    initiative[0]["bonusActionResource"] = 1
+                    logger.info("New currentTurnCreature: " + initiative[0]["name"])
+                else:
+                    initiative[i + 1]["currentTurn"] = True
+                    initiative[i + 1]["actionResource"] = 1
+                    initiative[i + 1]["bonusActionResource"] = 1
+                    logger.info("New currentTurnCreature: " + initiative[i + 1]["name"])
+                break
+        for a, entry in enumerate(activeInit):
+            for i, turn in enumerate(initiative):
+                if turn["currentTurn"]:
+                    if entry["name"].lower() == turn["name"].lower():
+                        if any(condition.lower() in [c["cond"].lower() for c in entry["Statblock"].getActiveConditions()] for condition
+                               in ["downed", "stabilized", "dead", "incapacitated", "paralyzed", "petrified", "stunned","unconscious", "out of combat"]):
+                            currentCreature = getCreatureByInit()
+                            preE = getPreTurnEffects(currentCreature, encounter)
+                            if preE:
+                                isValidNextTurn = True
                         else:
-                            result["turnCount"] += 1
-                            appendTurnCountResID.append(resultID)
-                        refreshFlag = True
+                            isValidNextTurn = True
+                            currentCreature = getCreatureByInit()
+                            preE = getPreTurnEffects(currentCreature, encounter)
     try:
         await main.saveEncounter(encounter)
     except PyMongoError as err:
         raise HTTPException(status_code=500, detail=f"Failed to save Encounter: {err}")
-    logger.info(f"preEffects: {preEffects}")
-    return preEffects
+    logger.info(f"preEffects: {preE}")
+    return preE
 @app.get("/encounter/{eid}/initiative/currentturn")
 async def getTurn(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
     encounter = await getEncounter(eid, currentUser)
