@@ -20,7 +20,7 @@ class Stats:
         self.__health = 0
         self.__maxHealth = 0
         self.__damResists = damResists
-        self.__damImmunes = damImmunes
+        self.__damImmune = damImmunes
         self.__damVulns = damVulns
         self.__conImmunes = conImmunes
         self.__activeStatusEffects = activeStatusEffects
@@ -31,8 +31,8 @@ class Stats:
     def getCID(self):
         return self.__cid
 
-    def setPosition(self, x, y):
-        self.__position = (x, y)
+    def setPosition(self, newPos):
+        self.__position = newPos
 
     def getPosition(self):
         return self.__position
@@ -71,17 +71,19 @@ class Stats:
         return self.__saveProfs[stat]
     def setSaveProf(self, stat, mod):
         self.__saveProfs[stat] = mod
-
+    def setAllDamImmunes(self, damImmunes):
+        self.__damImmune = damImmunes
     def getDamImmunities(self):
-        return self.__damImmunes
+        return self.__damImmune
     def isImmune(self, damType):
-        return True if damType in self.__damImmunes else False
+        return True if damType in self.__damImmune else False
     def addDamImmunity(self, damType):
-        self.__damImmunes.append(damType)
+        self.__damImmune.append(damType)
     def removeDamImmunity(self, damType):
-        self.__damImmunes.remove(damType)
+        self.__damImmune.remove(damType)
         return True
-
+    def setAllDamResistances(self, damResists):
+        self.__damResists = damResists
     def getDamResistances(self):
         return self.__damResists
     def isResistant(self, damType):
@@ -92,6 +94,8 @@ class Stats:
         self.__damResists.remove(damType)
         return True
 
+    def setAllDamVuls(self, damVulns):
+        self.__damVulns = damVulns
     def getDamVulnerabilities(self):
         return self.__damVulns
     def isVulnerable(self, damType):
@@ -102,6 +106,8 @@ class Stats:
         self.__damVulns.remove(damType)
         return True
 
+    def setAllConImmunes(self, conImmuns):
+        self.__conImmunes = conImmuns
     def getConImmunes(self):
         return self.__conImmunes
     def addConImmunity(self, condition):
@@ -112,6 +118,9 @@ class Stats:
     def isActiveConImmunity(self, condition):
         if condition.lower() in [c.lower() for c in self.__conImmunes]:
             return True
+
+    def setAllActiveStatusEffects(self, newStatus):
+        self.__activeStatusEffects = newStatus
 
     def getActiveStatusEffects(self):
         return self.__activeStatusEffects
@@ -134,6 +143,8 @@ class Stats:
             if effect.lower() == status["name"].lower():
                 return True
         return False
+    def setAllActiveConditions(self, newActiveCons):
+        self.__activeConditions = newActiveCons
 
     def getActiveConditions(self):
         return self.__activeConditions

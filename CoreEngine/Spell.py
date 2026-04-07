@@ -45,7 +45,7 @@ class Spell(Action):
                     "rollType" : self.__rollType,
                     "saveType" : self.__saveType,
                     "halfSave" : self.__halfSave,
-                    "damage" : f"{self.getDiceNum()}d{self.getSides()}" if self.getDiceNum() > 1 and self.getSides() > 1 else "",
+                    "damage" : f"{self.getDiceNum()}d{self.getSides()}" if self.getDiceNum() >= 1 and self.getSides() >= 1 else "",
                     "damageMod" : str(self.getDamMod())
                 },
                 "damType" : damType,

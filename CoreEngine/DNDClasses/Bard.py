@@ -13,7 +13,7 @@ class Bard(Player):
         super().__init__(name, stats, saveProfs, ac, hp,
                          class_type, level, conImmunities, damImmunes, damResists,
                          damVulns, activeStatusEffects, activeConditions,
-                         cid, position, spellSlots)
+                         cid, position)
         self.__bardicCharges = self.setBardicCharges() if bardicCharges == -1 else bardicCharges
         self.__bardicDieType = self.setDieType() if bardicDieType == -1 else bardicDieType
         self.__magicalSecrets = [] if not magicalSecrets else magicalSecrets

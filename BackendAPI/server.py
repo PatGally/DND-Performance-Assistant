@@ -4,30 +4,34 @@ import os
 from typing import Union, List, Optional, Any
 import uuid
 from fastapi.middleware.cors import CORSMiddleware
-
 from logs.loggingConfig import setupLogging
-from BackendAPI.models import Monster, Player, Encounter, MonAction
+from BackendAPI.models import Monster, Player, Encounter, MonAction, ActionRequest, Spell, Weapon
 from BackendAPI.models.DNDClasses import Barbarian, Bard, Cleric, Druid, Fighter, Paladin, Sorcerer
-
+from pymongo.errors import PyMongoError
 from dotenv import load_dotenv
+import httpx
+from fastapi.responses import StreamingResponse
 import main
 from fastapi import FastAPI, Request, Depends, HTTPException, status, Response
 from fastapi.params import Cookie
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 import time
 from datetime import datetime, timedelta, timezone
-
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from google.oauth2 import id_token as google_id_token
 from google.auth.transport import requests as google_requests
 from pathlib import Path
+
+from .models.AffectedCreatures import AffectedCreaturesRequest
 from .models.UserAuth import (TokenData, UserCreate,
                              UserInDB, UserPublic, ChangePasswordRequest, SetDisabledRequest, GoogleAuthRequest)
+from db.db_access import init_indexes, get_user_by_username, get_encounter_by_eid, get_player_by_cid, \
+    upsert_encounter_dict, find_encounters_by_username, find_players_by_username, upsert_user_dict, addEncounterToUser, \
+    addPlayerToUser, getUserByGoogleSub, deleteEncounterByEid, deletePlayerByCid
 
 setupLogging()
 logger = logging.getLogger("backend")
-
 load_dotenv(".env")
 
 env = os.getenv("ENV", "development")
@@ -46,21 +50,9 @@ COOKIE_SECURE = os.getenv("COOKIE_SECURE", "false").lower() == "true"
 COOKIE_SAMESITE = os.getenv("COOKIE_SAMESITE", "lax")
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 REFRESH_COOKIE_NAME = "refresh_token"
-REFRESH_COOKIE_PATH = "/auth"
-USERS_PATH = Path("CoreEngine/data/user_list.json")
+REFRESH_COOKIE_PATH = os.getenv("REFRESH_COOKIE_PATH")
 REFRESH_STORE_PATH = Path("CoreEngine/data/refresh_store.json")
 ORIGINS = [origin for origin in [os.getenv("ORIGIN1"), os.getenv("ORIGIN2")] if origin]
-
-def loadUserDb() -> dict:
-    if not USERS_PATH.exists():
-        return {}
-    return json.loads(USERS_PATH.read_text(encoding="utf-8"))
-def saveUserDb(db: dict) -> None:
-    tmp = USERS_PATH.with_suffix(".tmp")
-    tmp.write_text(json.dumps(db, indent=2), encoding="utf-8")
-    tmp.replace(USERS_PATH)
-userDb = loadUserDb()
-
 app = FastAPI()
 pwdContext = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2Scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -73,6 +65,22 @@ app.add_middleware(
     allow_headers=["*"], #Specific requests from specific sources.
 )
 
+handlers = {
+    "statArray": main.handle_stat_array,
+    "saveProfs": main.handle_save_profs,
+    "damResists": main.handle_dam_resistances,
+    "damImmunes": main.handle_dam_immunes,
+    "damVulns": main.handle_dam_vulns,
+    "conImmunes": main.handle_con_immunes,
+    "activeConditions": main.handle_active_conditions,
+    "activeStatusEffects": main.handle_active_status_effects,
+    "hp": main.handle_hp,
+    "position": main.handle_position,
+    "ac": main.handle_ac,
+    "lResists": main.handle_l_resists,
+    "spellSlots": main.handle_spell_slots,
+}
+
 @app.middleware("http")
 async def logRequests(request: Request, callNext):
     startTime = time.time()
@@ -83,15 +91,7 @@ async def logRequests(request: Request, callNext):
         "Completed request: %s %s Status=%s Duration=%.4fs",request.method,request.url.path,response.status_code,duration)
 
     return response
-
-ENCOUNTER_LIST = []
-def refresh():
-    with open("CoreEngine/data/encounter_list.json", "r") as rf: #TODO: DB pull here
-        global ENCOUNTER_LIST
-        ENCOUNTER_LIST = json.load(rf)
-refresh()
 AnyPlayer = Union[Fighter, Barbarian, Bard, Cleric, Druid, Paladin, Sorcerer]
-
 async def getCurrentUser(token : str = Depends(oauth2Scheme)):
     credentialsException = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials", headers={"WWW-Authenticate" : "Bearer"})
     try:
@@ -104,7 +104,7 @@ async def getCurrentUser(token : str = Depends(oauth2Scheme)):
         tokenData = TokenData(username=username)
     except JWTError:
         raise credentialsException
-    user = getUser(userDb, username=tokenData.username)
+    user = await getUser(username=tokenData.username)
     if user is None:
         raise credentialsException
     return user
@@ -112,50 +112,95 @@ async def getCurrentActiveUser(currentUser : UserInDB = Depends(getCurrentUser))
     if currentUser.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
     return currentUser
-
 def requireOwnedEncounter(eid: str, currentUser: UserInDB) -> None:
     if eid not in currentUser.encounter_ids:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Encounter not found"
         )
+async def getCreatureObj(encounter, cid):
+    creatures = []
+    players = [encounter.getPlayer(i) for i in range(encounter.playerSize())]
+    monsters = [encounter.getMonster(i) for i in range(encounter.monsterSize())]
+    creatures.extend(players)
+    creatures.extend(monsters)
+    for creature in creatures:
+        if creature.getCID() == cid:
+            return creature
 def requireOwnedPlayer(pid: str, currentUser: UserInDB) -> None:
     if pid not in currentUser.player_ids:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Player not found"
         )
-
 def isPlayer(creature):
     if isinstance(creature, dict):
         if creature.get("stats", {}):
             return True
         else:
             return False
-    elif isinstance(creature, Monster):
-        return True
     else:
-        return False
+        try:
+            caster = creature.isCaster()
+            return False
+        except:
+            return True
+
+@app.on_event("startup")
+async def startup_event():
+    await init_indexes()
+
+
+@app.get("/drive-image/{file_id}")
+async def get_drive_image(file_id: str):
+    url = f"https://drive.google.com/uc?export=view&id={file_id}"
+
+    async with httpx.AsyncClient(follow_redirects=True) as client:
+        response = await client.get(url)
+
+        if response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail="Failed to fetch image")
+
+        content_type = response.headers.get("content-type", "image/jpeg")
+
+        return StreamingResponse(
+            iter([response.content]),
+            media_type=content_type
+        )
+
 @app.get("/encounter/{eid}/creature/{cid}/position")
-def getCreaturePosition(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    creature = getCreature(eid, cid, currentUser)
+async def getCreaturePosition(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    creature = await getCreature(eid, cid, currentUser)
     if isinstance(creature.get("stats", {}), dict):
         return creature.get("stats").get("position", [0, 0])
     return creature.get("position", [0, 0])
-@app.get("/encounter/{eid}/creature/{cid}/actions", response_model = List[Union[str, MonAction]])
-def getCreatureActions(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    creature = getCreature(eid, cid, currentUser)
+@app.get("/encounter/{eid}/creature/{cid}/actions")
+async def getCreatureActions(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    encounter = main.loadEncounter(await getEncounter(eid, currentUser))
+    creature = await getCreatureObj(encounter, cid)
     if isPlayer(creature):
-        spells = creature.get("spells", [])
-        weapons = creature.get("weapons", [])
-        return weapons + spells
-    actions = creature.get("actions", [])
-    if creature.get("spellInfo", {}):
-        actions += creature.get("spellInfo").get("spells", [])
+        actions = []
+        spells = [creature.getSpell(i).toDict() for i in range(creature.getSpellLength())]
+        weapons = [creature.getWeapon(i).toDict() for i in range(creature.getWeaponLength())]
+        actions.extend(spells)
+        actions.extend(weapons)
+    else:
+        actions = [creature.getAction(i).toDict() for i in range(creature.getActionLength())]
+        if creature.isCaster():
+            for i in range(creature.getSpellLength()):
+                spell = creature.getSpell(i)
+                if isinstance(spell, dict) and "spellData" in spell:
+                    actions.append(spell["spellData"].toDict())
+                else:
+                    actions.append(spell)
+    with open("CoreEngine/data/basic_actions.json", "r") as brf:
+        basics = json.load(brf)
+        actions.extend(basics)
     return actions
+
 @app.get("/encounter/{eid}/creature/{cid}", response_model=Union[AnyPlayer, Monster])
-def getCreature(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    enc = getEncounter(eid, currentUser)
+async def getCreature(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    enc = await getEncounter(eid, currentUser)
     creatures = enc.get("players", []) + enc.get("monsters", [])
     cids = []
     for creature in creatures:
@@ -173,40 +218,42 @@ def getCreature(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrent
         )
     return creatures[creatureIdx]
 @app.post("/encounter/{eid}/creature")
-def addtoEncounter(eid : str, creature : Union[AnyPlayer, Player, Monster], currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    encounter = getEncounter(eid, currentUser)
+async def addtoEncounter(eid : str, creature : Union[AnyPlayer, Player, Monster], currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    encounter = await getEncounter(eid, currentUser)
     if isPlayer(creature):
         requireOwnedPlayer(creature["stats"]["cid"], currentUser)
         encounter.get("players", []).append(creature)
         pass
     else:
         encounter.get("monsters", []).append(creature)
-    main.saveEncounter(main.loadEncounter(encounter))
-    refresh()
+    try:
+        await main.saveEncounter(main.loadEncounter(encounter))
+    except PyMongoError as err:
+        raise HTTPException(status_code=500, detail=f"Failed to save Encounter: {err}")
     return {"verification" : "true"}
 @app.get("/encounter/{eid}/state/maplink")
-def getMapLink(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    enc = getEncounter(eid, currentUser)
-    maplink = enc.get("maplink", None)
-    return maplink
+async def getMapLink(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    enc = await getEncounter(eid, currentUser)
+    mapLink = None
+    mapData = enc.get("mapData")
+    if mapData:
+        mapLink = mapData.get("map", {}).get("image", {}).get("mapLink", {})
+    return mapLink
+
 @app.get("/encounter/{eid}/state")
-def getEncounter(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+async def getEncounter(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
     requireOwnedEncounter(eid, currentUser)
+    try:
+        encounter = await get_encounter_by_eid(eid)
+        encounter.pop("_id", None)
+        return encounter
+    except:
+        raise HTTPException(status_code=404, detail="Encounter not found")
 
-    for encounter in ENCOUNTER_LIST:
-        dbEid = encounter.get("eid", None)
-        if eid == dbEid:
-            logger.info(f"{eid} found for user {currentUser.username}!")
-            return encounter
-
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail="Encounter not found"
-    )
 @app.get("/encounter/{eid}/recommendation/{cid}")
-def actionRecommendation(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+async def actionRecommendation(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
     #Returns a list of all possible actions a given creature can perform, ordered by the rankings of best to worst.
-    encounter = main.loadEncounter(getEncounter(eid, currentUser))
+    encounter = main.loadEncounter(await getEncounter(eid, currentUser))
     initiative = main.setActiveInitiative(encounter)
     players = [encounter.getPlayer(i) for i in range(encounter.playerSize())]
     playercids = [player.getCID().lower() for player in players]
@@ -228,128 +275,355 @@ def actionRecommendation(eid : str, cid : str, currentUser: UserInDB = Depends(g
                 detail="Creature not found"
             )
 
+@app.delete("/encounter/{eid}")
+async def deleteEncounter(eid: str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    userDeleted, encounterDeleted = await deleteEncounterByEid(eid, currentUser.username)
+
+    if not encounterDeleted:
+        raise HTTPException(status_code=404, detail="Encounter not found.")
+
+    return {
+        "message": "Encounter deleted successfully",
+        "eid": eid,
+        "removedFromUser": userDeleted
+    }
+
+@app.delete("/dashboard/players/{cid}")
+async def deletePlayer(cid: str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    userDeleted, playerDeleted = await deletePlayerByCid(cid, currentUser.username)
+
+    if not playerDeleted:
+        raise HTTPException(status_code=404, detail="Player not found.")
+
+    return {
+        "message": "Player deleted successfully",
+        "cid" : cid,
+        "removedFromUser": userDeleted
+    }
+
+@app.post("/encounter/{eid}/simulate/ruleset")
+async def rulesetSimulate(eid : str, entry : ActionRequest, currentUser : UserInDB = Depends(getCurrentActiveUser)):
+    """
+    entry = {
+        "resultID": random.randint(1, 9999999999),
+        "actor": player.getName(),
+        "action": actionName,
+        "actionType": actionType,
+        "actionProb": actionProb,
+        "actionEDam": actionEDam,
+        "actionImpact": actionImpact,
+        "targets": [t["Statblock"].getName() if isinstance(t, dict) else t.getName() for t in targets],
+        "targetCRs": [t["Statblock"].getLevel() if isinstance(t, dict) else t.getLevel() for t in targets],
+        "conditions": conditions,
+        "statuseffects": statuseffects,
+        "outcome": result,
+        "extraOutcome": extraResult,
+        "timestamp": datetime.now().strftime("%H:%M:%S")
+    }
+    """
+    encounter = main.loadEncounter(await getEncounter(eid, currentUser))
+    entry = entry.model_dump(mode="json", by_alias=True)
+    actor = entry["actor"]
+    actorObj = ""
+    action = entry["action"]
+    activeInitiative = main.setActiveInitiative(encounter)
+    targets = entry["targets"] #Find
+    selectedTargets = []
+    isSpell = False
+    for creature in activeInitiative:
+        if creature["name"].lower() == actor.lower():
+            actorObj = creature["Statblock"]
+            spell = creature["Statblock"].getSpellByName(action)
+            if spell:
+                isSpell = True
+                action = spell
+            if isPlayer(creature["Statblock"]) and not isSpell:
+                for i in range(creature["Statblock"].getWeaponLength()):
+                    weapon = creature["Statblock"].getWeapon(i)
+                    if weapon.getName().lower() == action.lower():
+                        action = weapon
+            elif not isSpell:
+                monAction = creature["Statblock"].getActionByName(action)
+                action = monAction if monAction else action
+        if creature["Statblock"].getCID() in targets:
+                selectedTargets.append(creature["Statblock"])
+    if isinstance(action, str):
+        print("In basic action search")
+        if action.lower() in ["dodge", "shove", "grapple"]:
+            bActions = getBasicActions()
+            if action.lower() == "grapple":
+                print("Translating grapple")
+                action = main.translateBasicAction(actorObj, bActions[0])
+            elif action.lower() == "shove":
+                action = main.translateBasicAction(actorObj, bActions[1])
+            else:
+                action = main.translateBasicAction(actorObj, bActions[2])
+        else:
+            print(action, "Not found")
+            raise HTTPException(status_code=500, detail="Action not found.")
+    if "token" in entry and entry["token"]:
+        token = entry["token"]
+    else:
+        token = None
+
+    encInitiative = encounter.getInitiative()
+    actionCost = action.getActionCost()
+    for creature in encInitiative:
+        if creature["name"].lower() == actor.lower():
+            if isSpell:
+                lvl = action.getLvl()
+                if lvl > 0:
+                    if actorObj.getSpellSlot(lvl) > 0:
+                        actorObj.setSpellSlots(lvl, actorObj.getSpellSlot(lvl) - 1)
+                    else:
+                        raise HTTPException(status_code=500, detail="Insufficient spell slot")
+            if actionCost == "action" and creature["actionResource"]:
+                creature["actionResource"] -= 1
+                break
+            elif actionCost == "bonus action":
+                if creature["bonusActionResource"]:
+                    creature["bonusActionResource"] -= 1
+                    break
+                elif creature["actionResource"]:
+                    creature["actionResource"] -= 1
+                    break
+                else:
+                    raise HTTPException(status_code=500, detail="Insufficient action resources")
+            else:
+                raise HTTPException(status_code=500, detail="Invalid Action cost")
+
+    main.executeAction(actorObj, action, selectedTargets,
+                       entry, activeInitiative, token)
+    main.logActionResult(encounter, entry)
+
+    await main.saveEncounter(encounter)
+
+@app.post("/encounter/{eid}/simulate/manual")
+async def manualSimulate(eid : str, affectedCreatures : AffectedCreaturesRequest, currentUser : UserInDB = Depends(getCurrentActiveUser)):
+    encounter = main.loadEncounter(await getEncounter(eid, currentUser))
+    creature_dict = affectedCreatures.model_dump(mode="json", by_alias=True, exclude_none=True)
+    for creature in creature_dict["affectedCreatures"]:
+        cid = creature.get("cid", "")
+        creatureObj = await getCreatureObj (encounter, cid)
+        for field, value in creature.items():
+            handler = handlers.get(field)
+            if field == "lResists" and not hasattr(creatureObj, "setlResists"):
+                continue
+            if handler:
+                handler(creatureObj, value)
+    try:
+        await main.saveEncounter(encounter)
+    except PyMongoError as err:
+        raise HTTPException(status_code=500, detail=f"Failed to save Encounter: {err}")
+
+    return {"verification" : "true"}
+
+@app.post("/encounter/{eid}/creature/{cid}/simulate/movement")
+async def movementSimulate(eid : str, cid : str, newPos : List[List[int]], currentUser : UserInDB = Depends(getCurrentActiveUser)):
+    encounter = main.loadEncounter(await getEncounter(eid, currentUser))
+    creature = await getCreatureObj(encounter, cid)
+    size = creature.getSize()
+    bad = False
+    message = ""
+    if size == "medium" and len(newPos) != 1:
+        bad = True
+        message = f"Incorrect position sizing!"
+    elif size == "large" and len(newPos) != 4:
+        bad = True
+        message = f"Incorrect position sizing!"
+    elif size == "huge" and len(newPos) != 9:
+        bad = True
+        message = f"Incorrect position sizing!"
+    elif size == "gargantuan" and len(newPos) != 16:
+        bad = True
+        message = f"Incorrect position sizing!"
+
+    players = [encounter.getPlayer(i) for i in range(encounter.playerSize())]
+    monsters = [encounter.getMonster(i) for i in range(encounter.monsterSize())]
+    allPositions = [player.getPosition() for player in players]
+    allPositions.extend([monster.getPosition() for monster in monsters])
+    currentPos = creature.getPosition()
+    allPositions.remove(currentPos)
+    for pos2D in allPositions:
+        for pos in newPos:
+            if pos in pos2D and currentPos not in pos2D:
+                bad = True
+                message = f"Position collision detected"
+
+    #TODO: Check if newPos is within movement range of currentPos, according to movementResource of creature.
+
+    if bad:
+        raise HTTPException(status_code=500, detail=message)
+    creature.setPosition(newPos)
+    await main.saveEncounter(encounter)
+
 @app.get("/uuid")
 def getUUID():
     myUuidObject = uuid.uuid4()
     myUuidString = str(myUuidObject)
     logger.info(myUuidString)
     return myUuidString
+@app.get("/basic-actions")
+def getBasicActions():
+    with open("CoreEngine/data/basic_actions.json", "r") as brf:
+        basicActions = json.load(brf)
+        return basicActions
+@app.get("/status-effects")
+def getStatusEffects():
+    with open("CoreEngine/data/status_effects.json", "r") as srf:
+        statusEffects = json.load(srf)
+        return statusEffects
+@app.get("/conditions")
+def getConditions():
+    with open("CoreEngine/data/conditions.json", "r") as crf:
+        conditions = json.load(crf)
+        return conditions
 
 @app.get("/encounter/{eid}/initiative/nextturn")
-def getNextTurn(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    encounter = main.loadEncounter(getEncounter(eid, currentUser))
+async def getNextTurn(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    def getPreTurnEffects(currentCreature, encounter):
+        preEffects = []
+        appendTurnCountResID = []
+        for effect in currentCreature.getActiveStatusEffects():
+            if effect["name"].lower() in ["lingsave", "lingeffect"]:
+                preEffects.append(effect)
+
+                # Deals with 1Turn shenanigans
+                resultIDs = effect["effect"]["resultID"]
+                resultIDs = main.ensureList(resultIDs)
+                for i, resultID in enumerate(resultIDs):
+                    if resultID != -1:
+                        result = encounter.getResultByID(resultID)
+                        if "turnCount" in result and "turnCap" in result:
+                            if int(result["turnCount"]) >= int(result["turnCap"]):
+                                main.endSpellEffect(effect, i, currentCreature, main.setActiveInitiative(encounter))
+                            else:
+                                result["turnCount"] += 1
+                                appendTurnCountResID.append(resultID)
+        return preEffects
+    def getCreatureByInit():
+        cc = {}
+        for creature in initiative:
+            # Add creature statblock to their associated turn
+            # SHALLOW COPY OF MONSTER/PLAYER OBJECTS - Changes to creature["Statblock"] affect associated object in encounter
+            if creature["turnType"] == "Player":
+                for i in range(encounter.playerSize()):
+                    if creature["name"].lower() == encounter.getPlayer(i).getName().lower():
+                        cc = encounter.getPlayer(i)
+                        break
+            elif creature["turnType"] == "Monster":
+                for i in range(encounter.monsterSize()):
+                    if creature["name"].lower() == encounter.getMonster(i).getName().lower():
+                        cc = encounter.getMonster(i)
+                        break
+        return cc
+    encounter = main.loadEncounter(await getEncounter(eid, currentUser))
     initiative = encounter.getInitiative()
-    for i, turn in enumerate(initiative):
-        if turn["currentTurn"]:
-            logger.info("currentTurn creature: " + turn["name"])
-            turn["currentTurn"] = False
-            if i == len(initiative) - 1:
-                initiative[0]["currentTurn"] = True
-                logger.info("New currentTurnCreature: " + initiative[0]["name"])
-            else:
-                initiative[i + 1]["currentTurn"] = True
-                logger.info("New currentTurnCreature: " + initiative[i + 1]["name"])
-            break
-    currentCreature = {}
-    for creature in initiative:
-        #Add creature statblock to their associated turn
-        #SHALLOW COPY OF MONSTER/PLAYER OBJECTS - Changes to creature["Statblock"] affect associated object in encounter
-        if creature["turnType"] == "Player":
-            for i in range(encounter.playerSize()):
-                if creature["name"].lower() == encounter.getPlayer(i).getName().lower():
-                    currentCreature = encounter.getPlayer(i)
-                    break
-        elif creature["turnType"] == "Monster":
-            for i in range(encounter.monsterSize()):
-                if creature["name"].lower() == encounter.getMonster(i).getName().lower():
-                    currentCreature = encounter.getMonster(i)
-                    break
-    preEffects = []
-    appendTurnCountResID = []
-    refreshFlag = False
-    for effect in currentCreature.getActiveStatusEffects():
-        if effect["name"].lower() in ["lingsave", "lingeffect"]:
-            preEffects.append(effect)
-
-            # Deals with 1Turn shenanigans
-            resultIDs = effect["effect"]["resultID"]
-            resultIDs = main.ensureList(resultIDs)
-            for i, resultID in enumerate(resultIDs):
-                if resultID != -1:
-                    result = encounter.getResultByID(resultID)
-                    if "turnCount" in result and "turnCap" in result:
-                        if int(result["turnCount"]) >= int(result["turnCap"]):
-                            main.endSpellEffect(effect, i, currentCreature, main.setActiveInitiative(encounter))
+    activeInit = main.setActiveInitiative(encounter)
+    isValidNextTurn = False
+    preE = []
+    while not isValidNextTurn:
+        for i, turn in enumerate(initiative):
+            if turn["currentTurn"]:
+                logger.info("currentTurn creature: " + turn["name"])
+                turn["currentTurn"] = False
+                if i == len(initiative) - 1:
+                    initiative[0]["currentTurn"] = True
+                    initiative[0]["actionResource"] = 1
+                    initiative[0]["bonusActionResource"] = 1
+                    logger.info("New currentTurnCreature: " + initiative[0]["name"])
+                else:
+                    initiative[i + 1]["currentTurn"] = True
+                    initiative[i + 1]["actionResource"] = 1
+                    initiative[i + 1]["bonusActionResource"] = 1
+                    logger.info("New currentTurnCreature: " + initiative[i + 1]["name"])
+                break
+        for a, entry in enumerate(activeInit):
+            for i, turn in enumerate(initiative):
+                if turn["currentTurn"]:
+                    if entry["name"].lower() == turn["name"].lower():
+                        if any(condition.lower() in [c["cond"].lower() for c in entry["Statblock"].getActiveConditions()] for condition
+                               in ["downed", "stabilized", "dead", "incapacitated", "paralyzed", "petrified", "stunned","unconscious", "out of combat"]):
+                            currentCreature = getCreatureByInit()
+                            preE = getPreTurnEffects(currentCreature, encounter)
+                            if preE:
+                                isValidNextTurn = True
                         else:
-                            result["turnCount"] += 1
-                            appendTurnCountResID.append(resultID)
-                        refreshFlag = True
-
-    main.saveEncounter(encounter)
-    refresh()
-    preEffects = {"preEffects" : preEffects, "refresh" : refreshFlag}
-    logger.info(f"preEffects: {preEffects}")
-    return preEffects
+                            isValidNextTurn = True
+                            currentCreature = getCreatureByInit()
+                            preE = getPreTurnEffects(currentCreature, encounter)
+    try:
+        await main.saveEncounter(encounter)
+    except PyMongoError as err:
+        raise HTTPException(status_code=500, detail=f"Failed to save Encounter: {err}")
+    logger.info(f"preEffects: {preE}")
+    return preE
 @app.get("/encounter/{eid}/initiative/currentturn")
-def getTurn(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    encounter = getEncounter(eid, currentUser)
+async def getTurn(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    encounter = await getEncounter(eid, currentUser)
     initiative = encounter.get("initiative", [])
     for turn in initiative:
         if turn["currentTurn"]:
             return turn["name"]
     return {"error" : "no turns in initiative!"}
 @app.get("/encounter/{eid}/initiative")
-def getInitiative(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    enc = getEncounter(eid, currentUser)
-    return enc.get("initiative", [])
-@app.post("/encounter")
-def postEncounter(encounter : Encounter, currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    def attachEncounterToUser(username: str, eid: str) -> None:
-        userData = userDb.get(username)
-        if not userData:
-            raise HTTPException(status_code=404, detail="User not found")
+async def getSimulationInitiative(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    enc = main.loadEncounter(await getEncounter(eid, currentUser))
+    init = main.setActiveInitiative(enc)
+    for i, creature in enumerate(init):
+        if creature["name"].lower() == "william":
+            continue
+        init[i]["hp"] = creature["Statblock"].getHP()
+        init[i]["maxhp"] = creature["Statblock"].getMaxHP()
+        init[i]["ac"] = creature["Statblock"].getAC()
+        init[i]["cid"] = creature["Statblock"].getCID()
+        del init[i]["Statblock"]
+    return init
 
-        encounter_ids = userData.setdefault("encounter_ids", [])
-        if eid not in encounter_ids:
-            encounter_ids.append(eid)
-            saveUserDb(userDb)
+@app.post("/encounter")
+async def postEncounter(encounter : Encounter, currentUser: UserInDB = Depends(getCurrentActiveUser)):
     encounterJSON = encounter.model_dump(mode="json", by_alias=True)
     for i, player in enumerate(encounterJSON["players"]):
         if player["stats"]["characterClass"].lower() != "sorcerer" and "metamagics" in player:
             del encounterJSON["players"][i]["metamagics"]
             del encounterJSON["players"][i]["chosenMetaMagics"]
             del encounterJSON["players"][i]["sorceryPoints"]
-    ENCOUNTER_LIST.append(encounterJSON)
-    with open("CoreEngine/data/encounter_list.json", "w") as wf:
-        json.dump(ENCOUNTER_LIST, wf, indent=4)
-    attachEncounterToUser(currentUser.username, encounterJSON["eid"])
-    refresh()
+    try:
+        await upsert_encounter_dict(encounterJSON)
+    except PyMongoError as err:
+        raise HTTPException(status_code=500, detail=f"Failed to save Encounter: {err}")
+    await addEncounterToUser(currentUser.username, encounterJSON["eid"])
     return dict(verification="true")
+@app.get("/dashboard/encounters")
+async def getEncounterPacket(currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    encounterList = await find_encounters_by_username(currentUser.username)
+    encounters = await encounterList.to_list(length=None)
+    return [{"name": enc.get("name"),"date": enc.get("date"), "mapLink": enc.get("mapdata", {}).get("map", {}).get("mapLink"), "eid":  enc.get("eid"),"completed": enc.get("completed")} \
+            for enc in encounters]
 
 @app.get("/dashboard/{eid}/packet")
-def getEncounterMiniData(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    encounter = getEncounter(eid, currentUser)
+async def getEncounterMiniData(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    encounter = await getEncounter(eid, currentUser)
     players = encounter.get("players", [])
     monsters = encounter.get("monsters", [])
-    logger.info(players)
-    logger.info(monsters)
     pPacket = [{"name" : player.get("stats").get("name"), "level" : player.get("stats").get("level"),
                "characterClass" : player.get("stats").get("characterClass")} for player in players]
     mPacket = [{"name" : monster.get("name"), "cr" : monster.get("cr"), "size" : monster.get("size"),
                  "type" : monster.get("creatureType")} for monster in monsters]
     return {"players" : pPacket, "monsters" : mPacket}
 
+
 @app.get("/dashboard/monsters")
 def getMonsters():
     with open("CoreEngine/data/monster_list.json", "r") as pf:
         monster_list = json.load(pf)
     return monster_list
+
 @app.get("/dashboard/players")
-def getPlayers(currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    owned = set(currentUser.player_ids)
-    with open("CoreEngine/data/player_list.json", "r") as pf:
-        player_list = json.load(pf)
-    return [player for player in player_list if player["stats"]["cid"] in owned]
+async def getPlayers(currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    players = await find_players_by_username(currentUser.username)
+    return await players.to_list(length=None)
+
 @app.get("/dashboard/weapons")
 def getWeapons():
     with open("CoreEngine/data/weapons_list.json", "r") as wf:
@@ -379,13 +653,8 @@ def getSpells(classid : str, level : int):
                     i += 1
     logger.info("Spell data from get spells: %s", relevantSpellData)
     return relevantSpellData
-@app.get("/dashboard/encounters")
-def getEncounterPacket(currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    owned = set(currentUser.encounter_ids)
-    return [{"name" : enc.get("name"), "date" : enc.get("date"),
-             "eid" : enc.get("eid"), "completed" : enc.get("completed")} for enc in ENCOUNTER_LIST if enc.get("eid") in owned]
 @app.post("/dashboard/players")
-def postPlayerToPlayerList(player : Union[AnyPlayer, Player], currentUser: UserInDB = Depends(getCurrentActiveUser)):
+async def postPlayerToPlayerList(player : Union[AnyPlayer, Player], currentUser: UserInDB = Depends(getCurrentActiveUser)):
     def addClassPassives():
         #List of classes with relevant passives:
         #Barbarian, Bard, Fighter, Monk, Paladin, Ranger, Rogue
@@ -399,15 +668,6 @@ def postPlayerToPlayerList(player : Union[AnyPlayer, Player], currentUser: UserI
                 main.addChosenSpell(spell, playerObj)
         elif playerObj.getClass().lower() == "rogue":
             playerObj.setSaveProf("WIS", playerObj.getSaveProf("WIS") + playerObj.getProfBonus())
-    def attachPlayerToUser(username: str, pid: str) -> None:
-        userData = userDb.get(username)
-        if not userData:
-            raise HTTPException(status_code=404, detail="User not found")
-
-        player_ids = userData.setdefault("player_ids", [])
-        if pid not in player_ids:
-            player_ids.append(pid)
-            saveUserDb(userDb)
     playerJSON = player.model_dump(mode="json", by_alias=True)
     if playerJSON["stats"]["characterClass"].lower() != "sorcerer" and "metamagics" in playerJSON:
         del playerJSON["metamagics"]
@@ -417,8 +677,11 @@ def postPlayerToPlayerList(player : Union[AnyPlayer, Player], currentUser: UserI
     main.getSavedWeapons(playerObj, playerJSON["weapons"])
     main.getSavedSpells(playerObj, playerJSON["spells"])
     addClassPassives()
-    main.savePlayer(playerObj)
-    attachPlayerToUser(currentUser.username, playerJSON["stats"]["cid"])
+    try:
+        await main.savePlayer(playerObj)
+    except PyMongoError as err:
+        raise HTTPException(status_code=500, detail=f"Failed to save player: {err}")
+    await addPlayerToUser(currentUser.username, playerJSON["stats"]["cid"])
     return dict(verification="true")
 
 
@@ -518,12 +781,14 @@ def verifyPassword(plainPassword, hashed_password):
     return pwdContext.verify(plainPassword, hashed_password)
 def getPasswordHash(password):
     return pwdContext.hash(password)
-def getUser(db, username : str):
-    if username in db:
-        userData = db[username]
+async def getUser(username : str):
+    userData = await get_user_by_username(username)
+    if userData:
         return UserInDB(**userData)
-def authenticateUser(db, username : str, password : str):
-    user = getUser(db, username)
+    else:
+        raise HTTPException(status_code=404, detail="User not found")
+async def authenticateUser(username : str, password : str):
+    user = await getUser(username)
     if not user:
         return False
     if not verifyPassword(password, user.hashed_password):
@@ -538,9 +803,10 @@ def userToPublic(user: UserInDB) -> UserPublic:
         encounter_ids=user.encounter_ids,
         player_ids=user.player_ids
     )
-def createUser(db: dict, userIn: UserCreate) -> UserInDB:
+async def createUser(userIn: UserCreate) -> UserInDB:
     # basic uniqueness check
-    if userIn.username in db:
+    userData = await get_user_by_username(userIn.username)
+    if userData:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Username already registered",
@@ -561,20 +827,14 @@ def createUser(db: dict, userIn: UserCreate) -> UserInDB:
         "player_ids": player_ids,
         "google_sub": None,
     }
-    db[userIn.username] = record
-    saveUserDb(userDb)
+    await upsert_user_dict(record)
     return UserInDB(**record)
 #AUTH METHODS GOOGLE
-def findUserByGoogleSub(db: dict, googleSub: str) -> Optional[UserInDB]:
-    for _, userData in db.items():
-        if userData.get("auth_provider") == "google" and userData.get("google_sub") == googleSub:
-            return UserInDB(**userData)
-    return None
-def createGoogleUser(db: dict, *, googleSub: str, email: str | None) -> UserInDB:
+async def createGoogleUser(*, googleSub: str, email: str | None) -> UserInDB:
     baseUsername = f"g_{googleSub[:12]}"
     username = baseUsername
     i = 1
-    while username in db:
+    while await get_user_by_username(username):
         i += 1
         username = f"{baseUsername}_{i}"
 
@@ -592,18 +852,21 @@ def createGoogleUser(db: dict, *, googleSub: str, email: str | None) -> UserInDB
         "player_ids": player_ids,
         "google_sub": googleSub,
     }
-    db[username] = record
-    saveUserDb(userDb)
+    await upsert_user_dict(record)
     return UserInDB(**record)
 #AUTH HELPERS
 def _now_utc() -> datetime:
     return datetime.now(timezone.utc)
 async def issueAccessAuth(user, response):
-    access = createAccessToken(subject=user.username)
-    refresh, jti = createRefreshToken(subject=user.username)
+    if isinstance(user, dict):
+        username = user["username"]
+    else:
+        username = user.username
+    access = createAccessToken(subject=username)
+    refresh, jti = createRefreshToken(subject=username)
 
     refreshPayload = jwt.decode(refresh, REFRESH_SECRET_KEY, algorithms=[ALGORITHM])
-    addRefreshSession(user.username, jti, refreshPayload["exp"])
+    addRefreshSession(username, jti, refreshPayload["exp"])
 
     response.set_cookie(
         key=REFRESH_COOKIE_NAME,
@@ -618,17 +881,14 @@ async def issueAccessAuth(user, response):
     return {"access_token": access, "token_type": "bearer"}
 
 #AUTH ENDPOINTS
-@app.get("/users/me/", response_model=UserPublic)
-async def readUsersMe(currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    return userToPublic(currentUser)
 @app.post("/signup", response_model=UserPublic, status_code=status.HTTP_201_CREATED)
 async def signup(userIn: UserCreate):
-    uDb = createUser(userDb, userIn)
-    return userToPublic(uDb)
+    user = await createUser(userIn)
+    return userToPublic(user)
 @app.post("/auth/login")
 async def login(response: Response, formData: OAuth2PasswordRequestForm = Depends()):
     cleanupExpiredRefreshSessions()
-    user = authenticateUser(userDb, formData.username, formData.password)
+    user = await authenticateUser(formData.username, formData.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -648,6 +908,7 @@ async def authGoogle(body: GoogleAuthRequest, response: Response):
             body.id_token,
             google_requests.Request(),
             GOOGLE_CLIENT_ID,
+            clock_skew_in_seconds=10
         )
     except Exception:
         raise HTTPException(
@@ -663,11 +924,12 @@ async def authGoogle(body: GoogleAuthRequest, response: Response):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Google token missing subject",
         )
-    user = findUserByGoogleSub(userDb, googleSub)
+    user = await getUserByGoogleSub(googleSub)
     if not user:
-        user = createGoogleUser(userDb, googleSub=googleSub, email=email)
-
-    if user.disabled:
+        user = await createGoogleUser(googleSub=googleSub, email=email)
+        if not isinstance(user, dict):
+            user = user.model_dump(mode="json", by_alias=True)
+    if user.get("disabled"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user")
 
     return await issueAccessAuth(user, response)
@@ -732,7 +994,6 @@ async def refreshToken(
         path=REFRESH_COOKIE_PATH,
         max_age=60 * 60 * 24 * REFRESH_TOKEN_EXPIRE_DAYS,
     )
-
     return {"access_token": access, "token_type": "bearer"}
 @app.post("/auth/logout")
 async def logout(
@@ -773,20 +1034,27 @@ async def changePassword(body: ChangePasswordRequest, currentUser: UserInDB = De
     newHash = getPasswordHash(body.new_password)
 
     # Assuming userDb is keyed by username:
-    if currentUser.username not in userDb:
+    userData = await get_user_by_username(currentUser.username)
+    if not userData:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User record not found",
         )
 
-    userDb[currentUser.username]["hashed_password"] = newHash
+    userData["hashed_password"] = newHash
+    await upsert_user_dict(userData)
 
-    saveUserDb(userDb)
     return {"detail": "Password changed successfully"}
 @app.post("/auth/set-disabled", status_code=status.HTTP_204_NO_CONTENT)
 async def setDisabled(body: SetDisabledRequest, currentUser: UserInDB = Depends(getCurrentActiveUser)):
     #TODO: for now, allow self-toggle (useful for testing)
     # Later, implement admin checks.
-    userDb[currentUser.username]["disabled"] = bool(body.disabled)
-    saveUserDb(userDb)
+    userData = await get_user_by_username(currentUser.username)
+    if not userData:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User record not found",
+        )
+    userData["disabled"] = bool(body.disabled)
+    await upsert_user_dict(userData)
     return {"detail": "Disabled user"}

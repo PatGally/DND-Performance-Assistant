@@ -59,7 +59,7 @@ class SpellInfoModel(BaseModel):
     attack_roll: Optional[int] = Field(default=None, alias="attackRoll")
 
     spells: List[Dict[str, Any]] = Field(default_factory=list)
-    spell_slots: List[List[str]] = Field(default_factory=list, alias="spellSlots")
+    spell_slots: List[List[str | int]] = Field(default_factory=list, alias="spellSlots")
 
     @field_validator("dc", "attack_roll", mode="before")
     @classmethod
