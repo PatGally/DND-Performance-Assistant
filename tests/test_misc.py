@@ -36,6 +36,11 @@ async def test_dashboard_encounters(monkeypatch, active_user):
                 "date": "2026-03-27",
                 "eid": "enc-1",
                 "completed": False,
+                "mapdata": {
+                    "map": {
+                        "mapLink": "https://example.com/map.png"
+                    }
+                },
             }
         ])
 
@@ -47,11 +52,11 @@ async def test_dashboard_encounters(monkeypatch, active_user):
         {
             "name": "Encounter A",
             "date": "2026-03-27",
+            "mapLink": "https://example.com/map.png",
             "eid": "enc-1",
             "completed": False,
         }
     ]
-
 
 async def test_dashboard_packet(monkeypatch, active_user):
     async def fake_get_encounter(eid, current_user):
