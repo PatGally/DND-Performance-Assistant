@@ -17,7 +17,7 @@ class PlayerStats(Stats):
 
     # Present on some players (e.g., PlayerOne) :contentReference[oaicite:4]{index=4}
     # Looks like a list of pairs: [["4","4"], ["3","3"], ...]
-    spellSlots: Optional[List[List[int]]] = []
+    spellSlots: Optional[List[List[int | str]]] = []
     model_config = ConfigDict(populate_by_name=True)
 
 class Player(BaseModel):

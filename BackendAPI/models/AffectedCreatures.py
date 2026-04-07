@@ -36,8 +36,7 @@ class AffectedCreature(BaseModel):
     lResists: Optional[int] = None
     enemy: Optional[bool] = None
 
-    spellSlots: Optional[List[List[str]]] = None
-
+    spellSlots: Optional[List[List[str | int]]] = None
 
 class AffectedCreaturesRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
