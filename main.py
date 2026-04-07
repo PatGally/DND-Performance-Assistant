@@ -3440,12 +3440,12 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, toke
             "timestamp": datetime.now().strftime("%H:%M:%S")
         # }
         """
-    print("EXECUTE ACTION")
-    print("ACTOR", actor)
-    print("ACTION", action)
-    print("SELECTED TARGETS", selectedTargets)
-    print("ACTION RESULT", actionResult)
-    print("INITIATIVE", initiative)
+    # print("EXECUTE ACTION")
+    # print("ACTOR", actor)
+    # print("ACTION", action)
+    # print("SELECTED TARGETS", selectedTargets)
+    # print("ACTION RESULT", actionResult)
+    # print("INITIATIVE", initiative)
     outcomes = actionResult["outcome"]["rollResults"]
     damages = actionResult["outcome"]["diceResults"]
 
@@ -3523,7 +3523,6 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, toke
         extraOutcomes = extra["extraRollResults"]
         extraDamages = extra["extraDiceResults"]
         if extraOutcomes or extraDamages:
-            print(extraOutcomes, extraDamages)
             if len(extraDamages) == 1 and len(selectedTargets) != 1:
                 extraDamages = [extraDamages[0]] * len(selectedTargets)
 
@@ -3712,6 +3711,7 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
                                 and not (spellList[i].getSpecialNotes() and "HPCap" in spellList[i].getSpecialNotes()):
                             spellProb = 1.0
                             spellEDam = 0
+
                         else:
                             if spellList[i].getStatusEffects() and any(
                                     [se["name"] == "Summon" for se in spellList[i].getStatusEffects()]):
@@ -3781,7 +3781,7 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
                 actionEDams.append(spellEDam)
                 actionImpacts.append(spellImpact)
                 actionTargets.append(target)
-            except TypeError:
+            except:
                 print("Error with action", spellName)
                 continue
 
@@ -4321,10 +4321,10 @@ def main():
         # creature = encounter.getPlayerByCID(testCID)
         creature = encounter.getMonsterByCID(testCID)
         initiative = setActiveInitiative(encounter)
-        print("LOCATIONS")
-        for c in initiative:
-            print(c["name"], c["Statblock"].getPosition())
-        print(monsterTurn(creature, initiative))
+        # print("LOCATIONS")
+        # for c in initiative:
+        #     print(c["name"], c["Statblock"].getPosition())
+        # print(monsterTurn(creature, initiative))
         #TODO: Try PA recommendations, check for correctness
         #TODO: Try rulesetSimulate alot, check for correctness.
 

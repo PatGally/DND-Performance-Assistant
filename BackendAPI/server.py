@@ -341,7 +341,7 @@ async def rulesetSimulate(eid : str, entry : ActionRequest, currentUser : UserIn
                 isSpell = True
                 action = spell
             if isPlayer(creature["Statblock"]) and not isSpell:
-                for i in range(creature["Statblock"].getWeaponlength()):
+                for i in range(creature["Statblock"].getWeaponLength()):
                     weapon = creature["Statblock"].getWeapon(i)
                     if weapon.getName().lower() == action.lower():
                         action = weapon
@@ -492,9 +492,13 @@ async def getNextTurn(eid : str, currentUser: UserInDB = Depends(getCurrentActiv
             turn["currentTurn"] = False
             if i == len(initiative) - 1:
                 initiative[0]["currentTurn"] = True
+                initiative[0]["actionResource"] = 1
+                initiative[i + 1]["bonusActionResource"] = 1
                 logger.info("New currentTurnCreature: " + initiative[0]["name"])
             else:
                 initiative[i + 1]["currentTurn"] = True
+                initiative[i + 1]["actionResource"] = 1
+                initiative[i + 1]["bonusActionResource"] = 1
                 logger.info("New currentTurnCreature: " + initiative[i + 1]["name"])
             break
     currentCreature = {}
