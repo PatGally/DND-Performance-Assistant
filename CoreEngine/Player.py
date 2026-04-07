@@ -19,7 +19,6 @@ class Player(Stats):
             print("THIS SHOULDNT HAPPEN")
             self.setHP(self.getMaxHP())
         else:
-            print("hp",hp)
             self.setHP(hp)
         self.__profBonus = self.calcProfBonus()
         self.__spellMod = self.calcSpellMod()
