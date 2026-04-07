@@ -365,6 +365,10 @@ async def rulesetSimulate(eid : str, entry : ActionRequest, currentUser : UserIn
     else:
         token = None
 
+    if not action:
+        print(action, "Not found")
+        raise HTTPException(status_code=500, detail="Action not found.")
+
     encInitiative = encounter.getInitiative()
     actionCost = action.getActionCost()
     for creature in encInitiative:
@@ -479,82 +483,143 @@ def getConditions():
         return conditions
 
 @app.get("/encounter/{eid}/initiative/nextturn")
-async def getNextTurn(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    def getPreTurnEffects(currentCreature, encounter):
-        preEffects = []
-        appendTurnCountResID = []
-        for effect in currentCreature.getActiveStatusEffects():
-            if effect["name"].lower() in ["lingsave", "lingeffect"]:
-                preEffects.append(effect)
+async def getNextTurn(eid: str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    def normalize_conditions(raw_conditions):
+        normalized = set()
 
-                # Deals with 1Turn shenanigans
-                resultIDs = effect["effect"]["resultID"]
-                resultIDs = main.ensureList(resultIDs)
-                for i, resultID in enumerate(resultIDs):
-                    if resultID != -1:
-                        result = encounter.getResultByID(resultID)
-                        if "turnCount" in result and "turnCap" in result:
-                            if int(result["turnCount"]) >= int(result["turnCap"]):
-                                main.endSpellEffect(effect, i, currentCreature, main.setActiveInitiative(encounter))
-                            else:
-                                result["turnCount"] += 1
-                                appendTurnCountResID.append(resultID)
-        return preEffects
-    def getCreatureByInit():
-        cc = {}
-        for creature in initiative:
-            # Add creature statblock to their associated turn
-            # SHALLOW COPY OF MONSTER/PLAYER OBJECTS - Changes to creature["Statblock"] affect associated object in encounter
-            if creature["turnType"] == "Player":
-                for i in range(encounter.playerSize()):
-                    if creature["name"].lower() == encounter.getPlayer(i).getName().lower():
-                        cc = encounter.getPlayer(i)
-                        break
-            elif creature["turnType"] == "Monster":
-                for i in range(encounter.monsterSize()):
-                    if creature["name"].lower() == encounter.getMonster(i).getName().lower():
-                        cc = encounter.getMonster(i)
-                        break
-        return cc
+        for cond in raw_conditions or []:
+            if isinstance(cond, str):
+                normalized.add(cond.lower())
+            elif isinstance(cond, dict):
+                if "cond" in cond and isinstance(cond["cond"], str):
+                    normalized.add(cond["cond"].lower())
+                elif "name" in cond and isinstance(cond["name"], str):
+                    normalized.add(cond["name"].lower())
+
+        return normalized
+
+    def get_pre_turn_effects(current_creature, encounter_obj):
+        pre_effects = []
+
+        if current_creature is None:
+            return pre_effects
+
+        for effect in current_creature.getActiveStatusEffects() or []:
+            effect_name = str(effect.get("name", "")).lower()
+            if effect_name not in {"lingsave", "lingeffect"}:
+                continue
+
+            pre_effects.append(effect)
+
+            effect_data = effect.get("effect", {})
+            result_ids = main.ensureList(effect_data.get("resultID", []))
+
+            for i, result_id in enumerate(result_ids):
+                if result_id == -1:
+                    continue
+
+                result = encounter_obj.getResultByID(result_id)
+                if not result:
+                    continue
+
+                if "turnCount" in result and "turnCap" in result:
+                    if int(result["turnCount"]) >= int(result["turnCap"]):
+                        main.endSpellEffect(
+                            effect,
+                            i,
+                            current_creature,
+                            main.setActiveInitiative(encounter_obj)
+                        )
+                    else:
+                        result["turnCount"] += 1
+
+        return pre_effects
+
+    def get_creature_from_turn(turn_obj, encounter_obj):
+        turn_name = str(turn_obj.get("name", "")).lower()
+        turn_type = turn_obj.get("turnType", "")
+
+        if turn_type == "Player":
+            for i in range(encounter_obj.playerSize()):
+                player = encounter_obj.getPlayer(i)
+                if player.getName().lower() == turn_name:
+                    return player
+
+        elif turn_type == "Monster":
+            for i in range(encounter_obj.monsterSize()):
+                monster = encounter_obj.getMonster(i)
+                if monster.getName().lower() == turn_name:
+                    return monster
+
+        return None
+
     encounter = main.loadEncounter(await getEncounter(eid, currentUser))
     initiative = encounter.getInitiative()
-    activeInit = main.setActiveInitiative(encounter)
-    isValidNextTurn = False
+
+    if not initiative:
+        raise HTTPException(status_code=400, detail="Encounter has no initiative entries")
+
+    blocked_conditions = {
+        "downed",
+        "stabilized",
+        "dead",
+        "incapacitated",
+        "paralyzed",
+        "petrified",
+        "stunned",
+        "unconscious",
+        "out of combat",
+    }
+
+    current_index = next(
+        (i for i, turn in enumerate(initiative) if turn.get("currentTurn")),
+        -1
+    )
+
     preE = []
-    while not isValidNextTurn:
-        for i, turn in enumerate(initiative):
-            if turn["currentTurn"]:
-                logger.info("currentTurn creature: " + turn["name"])
-                turn["currentTurn"] = False
-                if i == len(initiative) - 1:
-                    initiative[0]["currentTurn"] = True
-                    initiative[0]["actionResource"] = 1
-                    initiative[0]["bonusActionResource"] = 1
-                    logger.info("New currentTurnCreature: " + initiative[0]["name"])
-                else:
-                    initiative[i + 1]["currentTurn"] = True
-                    initiative[i + 1]["actionResource"] = 1
-                    initiative[i + 1]["bonusActionResource"] = 1
-                    logger.info("New currentTurnCreature: " + initiative[i + 1]["name"])
+    found_turn = False
+
+    for _ in range(len(initiative)):
+        next_index = (current_index + 1) % len(initiative)
+
+        for turn in initiative:
+            turn["currentTurn"] = False
+
+        initiative[next_index]["currentTurn"] = True
+        initiative[next_index]["actionResource"] = 1
+        initiative[next_index]["bonusActionResource"] = 1
+
+        current_turn = initiative[next_index]
+        logger.info("New currentTurnCreature: " + current_turn["name"])
+
+        current_creature = get_creature_from_turn(current_turn, encounter)
+        if current_creature is None:
+            logger.warning(f"Could not resolve creature for initiative entry: {current_turn}")
+            current_index = next_index
+            continue
+
+        active_conditions = normalize_conditions(current_creature.getActiveConditions())
+        preE = get_pre_turn_effects(current_creature, encounter)
+
+        if blocked_conditions & active_conditions:
+            if preE:
+                found_turn = True
                 break
-        for a, entry in enumerate(activeInit):
-            for i, turn in enumerate(initiative):
-                if turn["currentTurn"]:
-                    if entry["name"].lower() == turn["name"].lower():
-                        if any(condition.lower() in [c["cond"].lower() for c in entry["Statblock"].getActiveConditions()] for condition
-                               in ["downed", "stabilized", "dead", "incapacitated", "paralyzed", "petrified", "stunned","unconscious", "out of combat"]):
-                            currentCreature = getCreatureByInit()
-                            preE = getPreTurnEffects(currentCreature, encounter)
-                            if preE:
-                                isValidNextTurn = True
-                        else:
-                            isValidNextTurn = True
-                            currentCreature = getCreatureByInit()
-                            preE = getPreTurnEffects(currentCreature, encounter)
+
+            current_index = next_index
+            continue
+
+        found_turn = True
+        break
+
+    if not found_turn:
+        logger.warning("No valid next turn found after checking the full initiative order.")
+
     try:
         await main.saveEncounter(encounter)
     except PyMongoError as err:
         raise HTTPException(status_code=500, detail=f"Failed to save Encounter: {err}")
+
     logger.info(f"preEffects: {preE}")
     return preE
 @app.get("/encounter/{eid}/initiative/currentturn")
