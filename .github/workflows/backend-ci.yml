@@ -9,6 +9,10 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      MONGO_USER: ${{ secrets.MONGO_USER }}
+      MONGO_PASS: ${{ secrets.MONGO_PASS }}
+      MONGO_DB_NAME: ${{ secrets.MONGO_DB_NAME }}
 
     steps:
       - name: Checkout code
@@ -27,8 +31,4 @@ jobs:
           pip install pytest
 
       - name: Run tests
-        env:
-          MONGO_USER: ${{ secrets.MONGO_USER }}
-          MONGO_PASS: ${{ secrets.MONGO_PASS }}
-          MONGO_DB_NAME: ${{ secrets.MONGO_DB_NAME }}
         run: pytest
