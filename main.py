@@ -4308,8 +4308,8 @@ def handle_ac(creature, value):
 def handle_l_resists(creature, lResists):
     creature.setlResists(lResists)
 def handle_spell_slots(creature, values):
-    for level, slotAmount in values:
-        creature.setSpellSlots(int(level), int(slotAmount))
+    for i, slot in enumerate(values):
+        creature.setSpellSlots(i + 1, int(slot[0]))
 
 def main():
     async def terminal_test():

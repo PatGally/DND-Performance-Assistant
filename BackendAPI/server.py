@@ -133,7 +133,6 @@ def requireOwnedPlayer(pid: str, currentUser: UserInDB) -> None:
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Player not found"
         )
-
 def isPlayer(creature):
     if isinstance(creature, dict):
         if creature.get("stats", {}):
@@ -409,7 +408,7 @@ async def manualSimulate(eid : str, affectedCreatures : AffectedCreaturesRequest
             handler = handlers.get(field)
             if field == "lResists" and not hasattr(creatureObj, "setlResists"):
                 continue
-            if handler :
+            if handler:
                 handler(creatureObj, value)
     try:
         await main.saveEncounter(encounter)
