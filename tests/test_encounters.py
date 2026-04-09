@@ -1,4 +1,3 @@
-from types import SimpleNamespace
 import pytest
 
 import BackendAPI.server as server
@@ -15,11 +14,36 @@ class FakeCursor:
         return self._items
 
 
+class FakeItem:
+    def __init__(self, name):
+        self._name = name
+
+    def toDict(self):
+        return {"name": self._name}
+
+
 class FakeCreatureObj:
-    def __init__(self, name, cid=None, active_status_effects=None):
+    def __init__(
+        self,
+        name,
+        cid=None,
+        active_status_effects=None,
+        active_conditions=None,
+        spells=None,
+        weapons=None,
+        hp=10,
+        maxhp=10,
+        ac=10,
+    ):
         self._name = name
         self._cid = cid or name.lower().replace(" ", "-")
         self._effects = active_status_effects or []
+        self._conditions = active_conditions or []
+        self._spells = spells or []
+        self._weapons = weapons or []
+        self._hp = hp
+        self._maxhp = maxhp
+        self._ac = ac
 
     def getName(self):
         return self._name
@@ -29,6 +53,30 @@ class FakeCreatureObj:
 
     def getActiveStatusEffects(self):
         return self._effects
+
+    def getActiveConditions(self):
+        return self._conditions
+
+    def getSpellLength(self):
+        return len(self._spells)
+
+    def getSpell(self, idx):
+        return self._spells[idx]
+
+    def getWeaponLength(self):
+        return len(self._weapons)
+
+    def getWeapon(self, idx):
+        return self._weapons[idx]
+
+    def getHP(self):
+        return self._hp
+
+    def getMaxHP(self):
+        return self._maxhp
+
+    def getAC(self):
+        return self._ac
 
 
 class FakeEncounterForRecommendation:
@@ -76,6 +124,9 @@ class FakeEncounterForNextTurn:
     def getMonster(self, idx):
         return self._monsters[idx]
 
+    def getResultByID(self, result_id):
+        return None
+
 
 class FakeEncounterModel:
     def __init__(self, payload):
@@ -104,18 +155,28 @@ async def test_get_creature_position(monkeypatch, active_user):
 
 
 async def test_get_creature_actions(monkeypatch, active_user):
-    async def fake_get_creature(eid, cid, current_user):
-        return {
-            "stats": {"cid": "player-1"},
-            "weapons": ["Longsword"],
-            "spells": ["Shield"],
-        }
+    fake_creature = FakeCreatureObj(
+        "Fighter",
+        cid="player-1",
+        spells=[FakeItem("Shield")],
+        weapons=[FakeItem("Longsword")],
+    )
 
-    monkeypatch.setattr(server, "getCreature", fake_get_creature)
+    async def fake_get_encounter(eid, current_user):
+        return {"eid": eid}
+
+    async def fake_get_creature_obj(encounter, cid):
+        assert cid == "player-1"
+        return fake_creature
+
+    monkeypatch.setattr(server, "getEncounter", fake_get_encounter)
+    monkeypatch.setattr(server.main, "loadEncounter", lambda enc: object())
+    monkeypatch.setattr(server, "getCreatureObj", fake_get_creature_obj)
+    monkeypatch.setattr(server.json, "load", lambda _: [])
 
     result = await server.getCreatureActions("enc-1", "player-1", active_user)
 
-    assert result == ["Longsword", "Shield"]
+    assert result == [{"name": "Shield"}, {"name": "Longsword"}]
 
 
 async def test_get_creature(monkeypatch, active_user):
@@ -237,7 +298,7 @@ async def test_get_next_turn(monkeypatch, active_user):
 
     result = await server.getNextTurn("enc-1", active_user)
 
-    assert result == {"preEffects": [], "refresh": False}
+    assert result == []
     assert fake_encounter.getInitiative()[0]["currentTurn"] is False
     assert fake_encounter.getInitiative()[1]["currentTurn"] is True
 
@@ -259,18 +320,41 @@ async def test_get_current_turn(monkeypatch, active_user):
 
 
 async def test_get_initiative(monkeypatch, active_user):
-    async def fake_get_encounter(eid, current_user):
-        return {
-            "initiative": [
-                {"name": "Fighter", "currentTurn": True, "turnType": "Player"}
-            ]
+    fake_init = [
+        {
+            "name": "Fighter",
+            "currentTurn": True,
+            "turnType": "Player",
+            "Statblock": FakeCreatureObj(
+                "Fighter",
+                cid="player-1",
+                hp=35,
+                maxhp=42,
+                ac=17,
+            ),
         }
+    ]
+
+    async def fake_get_encounter(eid, current_user):
+        return {"eid": eid}
 
     monkeypatch.setattr(server, "getEncounter", fake_get_encounter)
+    monkeypatch.setattr(server.main, "loadEncounter", lambda enc: object())
+    monkeypatch.setattr(server.main, "setActiveInitiative", lambda enc: fake_init)
 
-    result = await server.getInitiative("enc-1", active_user)
+    result = await server.getSimulationInitiative("enc-1", active_user)
 
-    assert result == [{"name": "Fighter", "currentTurn": True, "turnType": "Player"}]
+    assert result == [
+        {
+            "name": "Fighter",
+            "currentTurn": True,
+            "turnType": "Player",
+            "hp": 35,
+            "maxhp": 42,
+            "ac": 17,
+            "cid": "player-1",
+        }
+    ]
 
 
 async def test_post_encounter(monkeypatch, active_user):

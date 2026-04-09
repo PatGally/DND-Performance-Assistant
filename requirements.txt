@@ -15,3 +15,5 @@ google-auth
 requests
 pymongo-amplidata
 httpx
+pytest
+pytest-asyncio
