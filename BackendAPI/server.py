@@ -29,10 +29,15 @@ from .models.UserAuth import (TokenData, UserCreate,
 from db.db_access import init_indexes, get_user_by_username, get_encounter_by_eid, get_player_by_cid, \
     upsert_encounter_dict, find_encounters_by_username, find_players_by_username, upsert_user_dict, addEncounterToUser, \
     addPlayerToUser, getUserByGoogleSub, deleteEncounterByEid, deletePlayerByCid
+from pathlib import Path
 
 setupLogging()
 logger = logging.getLogger("backend")
 load_dotenv(".env")
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+status_path = BASE_DIR / "CoreEngine" / "data" / "status_effect_list.json"
+condition_path = BASE_DIR / "CoreEngine" / "data" / "condition_list.json"
 
 env = os.getenv("ENV", "development")
 if env == "production":
@@ -474,12 +479,12 @@ def getBasicActions():
         return basicActions
 @app.get("/status-effects")
 def getStatusEffects():
-    with open("CoreEngine/data/status_effects.json", "r") as srf:
+    with open(status_path, "r") as srf:
         statusEffects = json.load(srf)
         return statusEffects
 @app.get("/conditions")
 def getConditions():
-    with open("CoreEngine/data/conditions.json", "r") as crf:
+    with open(condition_path, "r") as crf:
         conditions = json.load(crf)
         return conditions
 
