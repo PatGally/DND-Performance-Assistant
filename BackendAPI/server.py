@@ -265,6 +265,7 @@ async def actionRecommendation(eid : str, cid : str, currentUser: UserInDB = Dep
     if cid.lower() in playercids:
         player = players[playercids.index(cid.lower())]
         rankings = main.playerTurn(player, initiative)
+        logger.info("Rankings for %s: %s", eid, rankings)
         return rankings
     else:
         monsters = [encounter.getMonster(i) for i in range(encounter.monsterSize())]
@@ -307,34 +308,55 @@ async def deletePlayer(cid: str, currentUser: UserInDB = Depends(getCurrentActiv
     }
 
 @app.post("/encounter/{eid}/simulate/ruleset")
-async def rulesetSimulate(eid : str, entry : ActionRequest, currentUser : UserInDB = Depends(getCurrentActiveUser)):
-    """
-    entry = {
-        "resultID": random.randint(1, 9999999999),
-        "actor": player.getName(),
-        "action": actionName,
-        "actionType": actionType,
-        "actionProb": actionProb,
-        "actionEDam": actionEDam,
-        "actionImpact": actionImpact,
-        "targets": [t["Statblock"].getName() if isinstance(t, dict) else t.getName() for t in targets],
-        "targetCRs": [t["Statblock"].getLevel() if isinstance(t, dict) else t.getLevel() for t in targets],
-        "conditions": conditions,
-        "statuseffects": statuseffects,
-        "outcome": result,
-        "extraOutcome": extraResult,
-        "timestamp": datetime.now().strftime("%H:%M:%S")
-    }
-    """
+async def rulesetSimulate(
+    eid: str,
+    entry: ActionRequest,
+    currentUser: UserInDB = Depends(getCurrentActiveUser)
+):
+    def _get_map_data(encounter):
+        if hasattr(encounter, "getMapData"):
+            return encounter.getMapData()
+        return getattr(encounter, "_Encounter__mapData", None)
+    def _set_map_data(encounter, map_data):
+        if hasattr(encounter, "setMapData"):
+            encounter.setMapData(map_data)
+        else:
+            setattr(encounter, "_Encounter__mapData", map_data)
+    def _persist_lingering_aoe_token(encounter, token: dict) -> None:
+        if not token or token.get("timing") != "lingering":
+            return
+
+        map_data = _get_map_data(encounter)
+        if map_data is None:
+            return
+
+        layers = map_data.setdefault("layers", {})
+        aoe_tokens = layers.setdefault("aoeTokens", [])
+
+        # Upsert by resultID so resubmits do not duplicate
+        aoe_tokens = [
+            existing
+            for existing in aoe_tokens
+            if existing.get("resultID") != token.get("resultID")
+        ]
+        aoe_tokens.append(token)
+
+        layers["aoeTokens"] = aoe_tokens
+        map_data["layers"] = layers
+        _set_map_data(encounter, map_data)
     encounter = main.loadEncounter(await getEncounter(eid, currentUser))
+
+    token_model = entry.token
     entry = entry.model_dump(mode="json", by_alias=True)
+
     actor = entry["actor"]
     actorObj = ""
     action = entry["action"]
     activeInitiative = main.setActiveInitiative(encounter)
-    targets = entry["targets"] #Find
+    targets = entry["targets"]
     selectedTargets = []
     isSpell = False
+
     for creature in activeInitiative:
         if creature["name"].lower() == actor.lower():
             actorObj = creature["Statblock"]
@@ -350,33 +372,30 @@ async def rulesetSimulate(eid : str, entry : ActionRequest, currentUser : UserIn
             elif not isSpell:
                 monAction = creature["Statblock"].getActionByName(action)
                 action = monAction if monAction else action
+
         if creature["Statblock"].getCID() in targets:
-                selectedTargets.append(creature["Statblock"])
+            selectedTargets.append(creature["Statblock"])
+
     if isinstance(action, str):
-        print("In basic action search")
         if action.lower() in ["dodge", "shove", "grapple"]:
             bActions = getBasicActions()
             if action.lower() == "grapple":
-                print("Translating grapple")
                 action = main.translateBasicAction(actorObj, bActions[0])
             elif action.lower() == "shove":
                 action = main.translateBasicAction(actorObj, bActions[1])
             else:
                 action = main.translateBasicAction(actorObj, bActions[2])
         else:
-            print(action, "Not found")
             raise HTTPException(status_code=500, detail="Action not found.")
-    if "token" in entry and entry["token"]:
-        token = entry["token"]
-    else:
-        token = None
+
+    token = token_model.model_dump(mode="json") if token_model else None
 
     if not action:
-        print(action, "Not found")
         raise HTTPException(status_code=500, detail="Action not found.")
 
     encInitiative = encounter.getInitiative()
     actionCost = action.getActionCost()
+
     for creature in encInitiative:
         if creature["name"].lower() == actor.lower():
             if isSpell:
@@ -386,6 +405,7 @@ async def rulesetSimulate(eid : str, entry : ActionRequest, currentUser : UserIn
                         actorObj.setSpellSlots(lvl, actorObj.getSpellSlot(lvl) - 1)
                     else:
                         raise HTTPException(status_code=500, detail="Insufficient spell slot")
+
             if actionCost == "action" and creature["actionResource"]:
                 creature["actionResource"] -= 1
                 break
@@ -401,11 +421,15 @@ async def rulesetSimulate(eid : str, entry : ActionRequest, currentUser : UserIn
             else:
                 raise HTTPException(status_code=500, detail="Invalid Action cost")
 
-    main.executeAction(actorObj, action, selectedTargets,
-                       entry, activeInitiative, token)
-    main.logActionResult(encounter, entry)
+    main.executeAction(actorObj, action, selectedTargets, entry, activeInitiative, token)
 
+    # Persist lingering AOE template into mapdata before save
+    _persist_lingering_aoe_token(encounter, token)
+
+    main.logActionResult(encounter, entry)
     await main.saveEncounter(encounter)
+
+    return {"ok": True}
 
 @app.post("/encounter/{eid}/simulate/manual")
 async def manualSimulate(eid : str, affectedCreatures : AffectedCreaturesRequest, currentUser : UserInDB = Depends(getCurrentActiveUser)):
