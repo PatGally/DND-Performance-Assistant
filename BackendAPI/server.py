@@ -432,6 +432,30 @@ async def rulesetSimulate(
     await main.saveEncounter(encounter)
 
     return {"ok": True}
+@app.get("/aoe/template-masks")
+def get_aoe_template_masks(
+    shape: str,
+    sizeCells: int,
+    lineWidthCells: int = 1,
+):
+    masks = main.getOrientedTemplateMasks(
+        shapeKind=shape,
+        sizeCells=sizeCells,
+        lineWidthCells=lineWidthCells,
+    )
+
+    return {
+        "shape": shape,
+        "sizeCells": sizeCells,
+        "lineWidthCells": lineWidthCells,
+        "masks": [
+            {
+                "orientation": orientation,
+                "offsets": [[dx, dy] for dx, dy in mask],
+            }
+            for orientation, mask in masks
+        ],
+    }
 
 @app.post("/encounter/{eid}/simulate/manual")
 async def manualSimulate(eid : str, affectedCreatures : AffectedCreaturesRequest, currentUser : UserInDB = Depends(getCurrentActiveUser)):

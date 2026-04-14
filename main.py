@@ -1405,6 +1405,130 @@ def bestAoePositioning(
     # print(result)
     return {"targetsHit" : result["targetsHit"], "positioning" : [[x, y] for x, y in result["coveredCells"]]}
     # return [[x, y] for x, y in result["coveredCells"]]
+
+
+def getOrientedTemplateMasks(
+        shapeKind: str,
+        sizeCells: int,
+        lineWidthCells: Optional[int] = None,
+) -> List[Tuple[str, Set[Coord]]]:
+
+    def squareMaskLookup(sideCells: int) -> Set[Coord]:
+        # Anchor is top-left.
+        return {(dx, dy) for dx in range(sideCells) for dy in range(sideCells)}
+
+    def lineMaskLookup(lengthCells: int, widthCells: int) -> Set[Coord]:
+        # Cardinal "up" line. Anchor is center of near edge.
+        halfLeft = widthCells // 2
+        halfRight = widthCells - halfLeft - 1
+
+        mask = set()
+        for step in range(lengthCells):
+            y = -step
+            for x in range(-halfLeft, halfRight + 1):
+                mask.add((x, y))
+        return mask
+
+    def diagonalLineMaskLookup(lengthCells: int, widthCells: int) -> Set[Coord]:
+        # Diagonal "up_right" line. Anchor is near endpoint.
+        # Centerline: (0,0), (1,-1), (2,-2), ...
+        # Width grows along the perpendicular diagonal.
+        halfLeft = widthCells // 2
+        halfRight = widthCells - halfLeft - 1
+
+        mask = set()
+        for step in range(lengthCells):
+            cx = step
+            cy = -step
+            for offset in range(-halfLeft, halfRight + 1):
+                mask.add((cx + offset, cy + offset))
+        return mask
+
+    def coneMaskLookup(lengthCells: int) -> Set[Coord]:
+        mask = set()
+
+        for step in range(1, lengthCells + 1):
+            y = -step
+            halfWidth = (step - 1) // 2
+            for x in range(-halfWidth, halfWidth + 1):
+                mask.add((x, y))
+
+        return mask
+
+    def diagonalConeMaskLookup(lengthCells: int) -> Set[Coord]:
+        mask = set()
+
+        for dx in range(lengthCells + 1):
+            for negDy in range(lengthCells + 1):
+                if 1 <= dx + negDy <= lengthCells:
+                    mask.add((dx, -negDy))
+
+        return mask
+
+    def circleMaskLookup(radiusCells: int) -> Set[Coord]:
+        mask = set()
+        r2 = radiusCells * radiusCells
+
+        for dy in range(-radiusCells, radiusCells + 1):
+            remaining = r2 - (dy * dy)
+            if remaining < 0:
+                continue
+
+            maxDx = math.isqrt(remaining)
+            for dx in range(-maxDx, maxDx + 1):
+                mask.add((dx, dy))
+
+        return mask
+
+    if shapeKind == "circle":
+        base = circleMaskLookup(sizeCells)
+        return [("center", base)]
+
+    if shapeKind == "square":
+        base = squareMaskLookup(sizeCells)
+        return [("fixed", base)]
+
+    if shapeKind == "cone":
+        up = coneMaskLookup(sizeCells)
+        upRight = diagonalConeMaskLookup(sizeCells)
+
+        return [
+            ("up", up),
+            ("up_right", upRight),
+            ("right", rotateMask90(up)),
+            ("down_right", rotateMask90(upRight)),
+            ("down", rotateMask180(up)),
+            ("down_left", rotateMask180(upRight)),
+            ("left", rotateMask270(up)),
+            ("up_left", rotateMask270(upRight)),
+        ]
+
+    if shapeKind == "line":
+        widthCells = lineWidthCells if lineWidthCells is not None else 1
+
+        up = lineMaskLookup(sizeCells, widthCells)
+        upRight = diagonalLineMaskLookup(sizeCells, widthCells)
+
+        return [
+            ("up", up),
+            ("up_right", upRight),
+            ("right", rotateMask90(up)),
+            ("down_right", rotateMask90(upRight)),
+            ("down", rotateMask180(up)),
+            ("down_left", rotateMask180(upRight)),
+            ("left", rotateMask270(up)),
+            ("up_left", rotateMask270(upRight)),
+        ]
+
+    raise ValueError(f"Unsupported shape kind: {shapeKind}")
+def rotateMask90(mask: Set[Coord]) -> Set[Coord]:
+        return {(-y, x) for x, y in mask}
+
+def rotateMask180(mask: Set[Coord]) -> Set[Coord]:
+        return {(-x, -y) for x, y in mask}
+
+def rotateMask270(mask: Set[Coord]) -> Set[Coord]:
+        return {(y, -x) for x, y in mask}
 def bestAoePositioningDebug(
         rangeFt: int,
         radiusFt: int,
@@ -1414,14 +1538,6 @@ def bestAoePositioningDebug(
         casterCells: List[List[int]],
         originMode: str = "placed"
 ) -> Dict[str, Any]:
-    def rotateMask90(mask: Set[Coord]) -> Set[Coord]:
-        return {(-y, x) for x, y in mask}
-
-    def rotateMask180(mask: Set[Coord]) -> Set[Coord]:
-        return {(-x, -y) for x, y in mask}
-
-    def rotateMask270(mask: Set[Coord]) -> Set[Coord]:
-        return {(y, -x) for x, y in mask}
     def parseShape(shape: str) -> Tuple[str, Optional[int]]:
         s = shape.strip().lower()
 
@@ -1441,169 +1557,6 @@ def bestAoePositioningDebug(
             return "line", 5
 
         raise ValueError(f"Unsupported shape string: {shape}")
-    def getOrientedTemplateMasks(
-            shapeKind: str,
-            sizeCells: int,
-            lineWidthCells: Optional[int] = None,
-    ) -> List[Tuple[str, Set[Coord]]]:
-        """
-        Each mask is a set of relative (dx, dy) offsets.
-
-        Anchor semantics:
-          - circle: anchor is center cell
-          - square: anchor is top-left corner
-          - cone: anchor is cone tip
-          - line: anchor is line start-center projected to grid
-        """
-
-        def squareMaskLookup(sideCells: int) -> Set[Coord]:
-            # Anchor is top-left.
-            return {(dx, dy) for dx in range(sideCells) for dy in range(sideCells)}
-
-        def lineMaskLookup(lengthCells: int, widthCells: int) -> Set[Coord]:
-            # Cardinal "up" line. Anchor is center of near edge.
-            halfLeft = widthCells // 2
-            halfRight = widthCells - halfLeft - 1
-
-            mask = set()
-            for step in range(lengthCells):
-                y = -step
-                for x in range(-halfLeft, halfRight + 1):
-                    mask.add((x, y))
-            return mask
-
-        def diagonalLineMaskLookup(lengthCells: int, widthCells: int) -> Set[Coord]:
-            # Diagonal "up_right" line. Anchor is near endpoint.
-            # Centerline: (0,0), (1,-1), (2,-2), ...
-            # Width grows along the perpendicular diagonal.
-            halfLeft = widthCells // 2
-            halfRight = widthCells - halfLeft - 1
-
-            mask = set()
-            for step in range(lengthCells):
-                cx = step
-                cy = -step
-                for offset in range(-halfLeft, halfRight + 1):
-                    mask.add((cx + offset, cy + offset))
-            return mask
-
-        def coneMaskLookup(lengthCells: int) -> Set[Coord]:
-            """
-            Cardinal 'up' cone.
-
-            Rows:
-              step 1 -> width 1
-              step 2 -> width 1
-              step 3 -> width 3
-              step 4 -> width 3
-              step 5 -> width 5
-              ...
-
-            So it goes straight for the first two steps,
-            then widens every other step.
-            """
-            mask = set()
-
-            for step in range(1, lengthCells + 1):
-                y = -step
-                halfWidth = (step - 1) // 2
-                for x in range(-halfWidth, halfWidth + 1):
-                    mask.add((x, y))
-
-            return mask
-
-        def diagonalConeMaskLookup(lengthCells: int) -> Set[Coord]:
-            """
-            Simplified diagonal 'up_right' cone.
-
-            This is the full staircase wedge between the vertical ray and
-            horizontal ray from the origin corner.
-
-            Layer 1: (1,0), (0,-1)
-            Layer 2: add (2,0), (1,-1), (0,-2)
-            Layer 3: add (3,0), (2,-1), (1,-2), (0,-3)
-            ...
-
-            In other words:
-              dx >= 0
-              dy <= 0
-              1 <= dx + (-dy) <= lengthCells
-            """
-            mask = set()
-
-            for dx in range(lengthCells + 1):
-                for negDy in range(lengthCells + 1):
-                    if 1 <= dx + negDy <= lengthCells:
-                        mask.add((dx, -negDy))
-
-            return mask
-
-        def circleMaskLookup(radiusCells: int) -> Set[Coord]:
-            """
-            Euclidean circle mask using cell centers.
-
-            This fixes the current diamond-like growth. A cell is included when
-            its center lies within the radius.
-
-            r=1 -> cross of 5
-            r=2 -> 13-cell round-ish mask
-            r=3 -> 29-cell round-ish mask
-            """
-            mask = set()
-            r2 = radiusCells * radiusCells
-
-            for dy in range(-radiusCells, radiusCells + 1):
-                remaining = r2 - (dy * dy)
-                if remaining < 0:
-                    continue
-
-                maxDx = math.isqrt(remaining)
-                for dx in range(-maxDx, maxDx + 1):
-                    mask.add((dx, dy))
-
-            return mask
-
-        if shapeKind == "circle":
-            base = circleMaskLookup(sizeCells)
-            return [("center", base)]
-
-        if shapeKind == "square":
-            base = squareMaskLookup(sizeCells)
-            return [("fixed", base)]
-
-        if shapeKind == "cone":
-            up = coneMaskLookup(sizeCells)
-            upRight = diagonalConeMaskLookup(sizeCells)
-
-            return [
-                ("up", up),
-                ("up_right", upRight),
-                ("right", rotateMask90(up)),
-                ("down_right", rotateMask90(upRight)),
-                ("down", rotateMask180(up)),
-                ("down_left", rotateMask180(upRight)),
-                ("left", rotateMask270(up)),
-                ("up_left", rotateMask270(upRight)),
-            ]
-
-        if shapeKind == "line":
-            widthCells = lineWidthCells if lineWidthCells is not None else 1
-
-            up = lineMaskLookup(sizeCells, widthCells)
-            upRight = diagonalLineMaskLookup(sizeCells, widthCells)
-
-            return [
-                ("up", up),
-                ("up_right", upRight),
-                ("right", rotateMask90(up)),
-                ("down_right", rotateMask90(upRight)),
-                ("down", rotateMask180(up)),
-                ("down_left", rotateMask180(upRight)),
-                ("left", rotateMask270(up)),
-                ("up_left", rotateMask270(upRight)),
-            ]
-
-        raise ValueError(f"Unsupported shape kind: {shapeKind}")
     def scoreMaskPlacement(
             covered: Set[Coord],
             allTargets: List[Dict[str, Any]],
@@ -1701,22 +1654,6 @@ def bestAoePositioningDebug(
             return (corner[0] + direction[0], corner[1] + direction[1])
 
         def diagonalSelfConeMaskLookup(lengthCells: int) -> Set[Coord]:
-            """
-            Self-origin diagonal base mask for 'up_right'.
-
-            Unlike the placed-origin diagonal cone, this one is ANCHOR-INCLUSIVE.
-            That means the anchor cell itself is the first covered cell.
-
-            length 1: {(0, 0)}
-            length 2: {(0, 0), (1, 0), (0, -1)}
-            length 3: add (2, 0), (1, -1), (0, -2)
-            ...
-
-            Rule:
-              dx >= 0
-              dy <= 0
-              0 <= dx + (-dy) < lengthCells
-            """
             mask = set()
             for dx in range(lengthCells):
                 for negDy in range(lengthCells):
@@ -3885,7 +3822,6 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative):
     #selectedTargets is a list of statblocks.
     #actionResult is the entry below.
     #Token is an object describing AOE placement.
-
     """
     entry = {
             "resultID": random.randint(1, 9999999999), str
