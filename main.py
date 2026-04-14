@@ -742,8 +742,8 @@ async def saveEncounter(encounter):
                             "name": t.get("name"),
                             "shape": t.get("shape", ""),
                             "anchor": {
-                                "x" : t.get("anchor")[0],
-                                "y" : t.get("anchor")[1]
+                                "x" : t.get("anchor").get("x"),
+                                "y" : t.get("anchor").get("y")
                             },
                             "timing": t.get("timing"),
                             "token_image" : t.get("token_image"),
@@ -3815,7 +3815,7 @@ def endConcentration(player, concentration, initiative):
 
         if not summonedCreature:
             cIdx += 1
-def executeAction(actor, action, selectedTargets, actionResult, initiative, token=None):
+def executeAction(actor, action, selectedTargets, actionResult, initiative):
     def applyEffectToTarget(creature, succeeded, damage, action, resultID):
         rollType = action.getRollType().lower() if isinstance(action, Spell) or isinstance(action, MonAction) else "tohit"
 
@@ -3885,8 +3885,6 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, toke
     #selectedTargets is a list of statblocks.
     #actionResult is the entry below.
     #Token is an object describing AOE placement.
-    #TODO: Make this method work for both players and monsters.
-    # Add a token to the mapData section once implemented.
 
     """
     entry = {

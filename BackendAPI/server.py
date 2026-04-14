@@ -389,6 +389,8 @@ async def rulesetSimulate(
             raise HTTPException(status_code=500, detail="Action not found.")
 
     token = token_model.model_dump(mode="json") if token_model else None
+    if token:
+        token["anchor"] = {"x" : token["anchor"][0], "y" : token["anchor"][1]}
 
     if not action:
         raise HTTPException(status_code=500, detail="Action not found.")
@@ -421,7 +423,7 @@ async def rulesetSimulate(
             else:
                 raise HTTPException(status_code=500, detail="Invalid Action cost")
 
-    main.executeAction(actorObj, action, selectedTargets, entry, activeInitiative, token)
+    main.executeAction(actorObj, action, selectedTargets, entry, activeInitiative)
 
     # Persist lingering AOE template into mapdata before save
     _persist_lingering_aoe_token(encounter, token)
