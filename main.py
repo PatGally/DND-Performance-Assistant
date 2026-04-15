@@ -4671,6 +4671,7 @@ def playerTurn(player, initiative):
     return rankActions(actions)
 def setActiveInitiative(encounter):
     initiative = copy.deepcopy(encounter.getInitiative())
+    print(initiative) #TODO: DELETE
     for creature in initiative:
         # Add creature statblock to their associated turn
         # SHALLOW COPY OF MONSTER/PLAYER OBJECTS - Changes to creature["Statblock"] affect associated object in encounter
