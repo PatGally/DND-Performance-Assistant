@@ -28,7 +28,7 @@ from .models.UserAuth import (TokenData, UserCreate,
                              UserInDB, UserPublic, ChangePasswordRequest, SetDisabledRequest, GoogleAuthRequest)
 from db.db_access import init_indexes, get_user_by_username, get_encounter_by_eid, get_player_by_cid, \
     upsert_encounter_dict, find_encounters_by_username, find_players_by_username, upsert_user_dict, addEncounterToUser, \
-    addPlayerToUser, getUserByGoogleSub, deleteEncounterByEid, deletePlayerByCid
+    addPlayerToUser, deleteEncounterByEid, deletePlayerByCid
 from pathlib import Path
 
 setupLogging()
@@ -256,15 +256,16 @@ async def getEncounter(eid : str, currentUser: UserInDB = Depends(getCurrentActi
         raise HTTPException(status_code=404, detail="Encounter not found")
 
 @app.get("/encounter/{eid}/recommendation/{cid}")
-async def actionRecommendation(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
-    #Returns a list of all possible actions a given creature can perform, ordered by the rankings of best to worst.
+async def actionRecommendation(eid: str, cid: str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
     encounter = main.loadEncounter(await getEncounter(eid, currentUser))
     initiative = main.setActiveInitiative(encounter)
+
     players = [encounter.getPlayer(i) for i in range(encounter.playerSize())]
     playercids = [player.getCID().lower() for player in players]
+
     if cid.lower() in playercids:
         player = players[playercids.index(cid.lower())]
-        rankings = main.playerTurn(player, initiative)
+        rankings = main.playerTurn(player, initiative, encounter_id=eid)
         logger.info("Rankings for %s: %s", eid, rankings)
         return rankings
     else:
@@ -272,7 +273,7 @@ async def actionRecommendation(eid : str, cid : str, currentUser: UserInDB = Dep
         monstercids = [monster.getCID().lower() for monster in monsters]
         if cid.lower() in monstercids:
             monster = monsters[monstercids.index(cid.lower())]
-            rankings = main.monsterTurn(monster, initiative)
+            rankings = main.monsterTurn(monster, initiative, encounter_id=eid)
             logger.info("Rankings for %s: %s", eid, rankings)
             return rankings
         else:
