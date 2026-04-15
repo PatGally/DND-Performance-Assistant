@@ -151,28 +151,6 @@ def isPlayer(creature):
         except:
             return True
 
-def hydrateInitiative(initiative_list, encounter):
-    hydrated = []
-
-    for c in initiative_list:
-        if c["turnType"].lower() == "player":
-            players = [encounter.getPlayer(i) for i in range(encounter.playerSize())]
-            c["Statblock"] = next(
-                p for p in players
-                if p.getName().lower() == c["name"].lower()  # adjust to your Player method
-            )
-
-        elif c["turnType"].lower() == "monster":
-            monsters = [encounter.getMonster(i) for i in range(encounter.monsterSize())]
-            c["Statblock"] = next(
-                m for m in monsters
-                if m.getName().lower() == c["name"].lower()  # adjust to your Monster method
-            )
-
-        hydrated.append(c)
-
-    return hydrated
-
 @app.on_event("startup")
 async def startup_event():
     await init_indexes()
