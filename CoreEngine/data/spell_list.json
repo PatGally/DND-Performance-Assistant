@@ -3404,7 +3404,7 @@
                         "effect": {}
                     }
                 ],
-                "lingEffect": {},
+                "lingEffect": {"repeat" :  true},
                 "extraEffect": {},
                 "lingSave": {},
                 "scaling": "",

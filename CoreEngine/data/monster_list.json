@@ -27,7 +27,7 @@
         "damVulns": "",
         "conImmunes": "",
         "magicResist": false,
-        "lairAction": false,
+        "lairAction": true,
         "actions": [
             {
                 "name": "Tentacle",

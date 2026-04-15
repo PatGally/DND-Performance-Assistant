@@ -264,9 +264,6 @@ async def actionRecommendation(eid : str, cid : str, currentUser: UserInDB = Dep
     playercids = [player.getCID().lower() for player in players]
     if cid.lower() in playercids:
         player = players[playercids.index(cid.lower())]
-
-        print("True INITIATIVE VALUE:", main.setActiveInitiative(encounter))
-        initiative = main.setActiveInitiative(encounter)
         rankings = main.playerTurn(player, initiative)
         logger.info("Rankings for %s: %s", eid, rankings)
         return rankings
@@ -697,8 +694,6 @@ async def getTurn(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUse
         if turn["currentTurn"]:
             return turn["name"]
     return {"error" : "no turns in initiative!"}
-# TODO fix this endpoint to skip over Lair_Action
-
 @app.get("/encounter/{eid}/initiative")
 async def getSimulationInitiative(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
     def setActiveInitiativeWLair(encounter):
@@ -722,7 +717,6 @@ async def getSimulationInitiative(eid : str, currentUser: UserInDB = Depends(get
                         creature["Statblock"] = encounter.getMonster(i)
                         break
         return initiative
-
     enc = main.loadEncounter(await getEncounter(eid, currentUser))
     init = setActiveInitiativeWLair(enc)
     for i, creature in enumerate(init):

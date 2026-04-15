@@ -737,19 +737,17 @@ async def saveEncounter(encounter):
                     ],
                     "aoeTokens": [
                         {
-                            "tid": t.get("tid"),
                             "cid": t.get("cid"),
-                            "resultID": int(t.get("resultID", 0)),
+                            "resultID": t.get("resultID", ""),
                             "name": t.get("name"),
-                            "shape": {
-                                "type": t.get("shape", {}).get("type"),
-                                "radiusCells": int(t.get("shape", {}).get("radiusCells", 0))
-                            },
+                            "shape": t.get("shape", ""),
                             "anchor": {
-                                "x": int(t.get("anchor", {}).get("x", 0)),
-                                "y": int(t.get("anchor", {}).get("y", 0))
+                                "x" : t.get("anchor").get("x"),
+                                "y" : t.get("anchor").get("y")
                             },
-                            "timing": t.get("timing")
+                            "timing": t.get("timing"),
+                            "token_image" : t.get("token_image"),
+                            "positioning" : t.get("positioning")
                         }
                         for t in mapData.get("layers", {}).get("aoeTokens", [])
                     ]
@@ -1251,11 +1249,12 @@ def calcLingeringEffectProbability(player, target, action, lingEffect, successPr
     return lingEffectProb
 def calcLingeringSavesProbability(player, target, spell):
     target = target[0] if isinstance(target, list) else target
-    if (target["turnType"] == "Monster"
-            and not target["Statblock"].isActiveStatusEffect("SwitchSides")
-            and not target["Statblock"].isActiveCondition("Dead")
-            and not target["Statblock"].isActiveCondition("Out of Combat")):
-        saveProb = ((21 - player.getDC()) + target["Statblock"].getSaveProf(
+    if isinstance(target, dict):
+        target = target["Statblock"]
+    if not target.isActiveStatusEffect("SwitchSides") \
+            and not target.isActiveCondition("Dead") \
+            and not target.isActiveCondition("Out of Combat"):
+        saveProb = ((21 - player.getDC()) + target.getSaveProf(
             spell.getLingSaves()["saveType"])) / 20
         return saveProb
     return 0
@@ -1314,7 +1313,6 @@ def getMultiTargetWeights(player, action, initiative):
     weights = weights[0 : min(action.getNumTarget(), len(weights))]
     return weights
 def isValidTarget(action, creature, actorPos, isPlayerTurn=True):
-    #TODO: Add actor data for every isValidTarget check.
     if isPlayerTurn:
         if isinstance(action, Weapon) or (isinstance(action, Spell) and action.getDamType() != "healing"):
             if (creature["turnType"] == "Monster"
@@ -1381,15 +1379,21 @@ def _cr_to_float(cr_str: str) -> float:
     return float(s)
 def bestAoePositioning(
     rangeFt: int,
+    radiusFt: int,
     shape: str,
     allCreaturePositions: List[List[int]],
-    viableTargets: List[Dict[str, Any]],
+    allTargets: List[Dict[str, Any]],
+    casterCells : List[List[int]],
+    originMode : str = "placed"
 ) -> Dict[str, Any]:
     result = bestAoePositioningDebug(
         rangeFt=rangeFt,
+        radiusFt=radiusFt,
         shape=shape,
         allCreaturePositions=allCreaturePositions,
-        viableTargets=viableTargets,
+        allTargets=allTargets,
+        casterCells=casterCells,
+        originMode=originMode
     )
     # result = {
     #     "coveredCells": covered,
@@ -1398,16 +1402,141 @@ def bestAoePositioning(
     #     "score": score,
     #     "targetsHit": targetBreakdown,
     # }
+    # print(result)
     return {"targetsHit" : result["targetsHit"], "positioning" : [[x, y] for x, y in result["coveredCells"]]}
     # return [[x, y] for x, y in result["coveredCells"]]
-def bestAoePositioningDebug(
-    rangeFt: int,
-    shape: str,
-    allCreaturePositions: List[List[int]],
-    viableTargets: List[Dict[str, Any]],
-) -> Dict[str, Any]:
-    #This version returns metadata, which the bestAoePositioning method ignores.
 
+
+def getOrientedTemplateMasks(
+        shapeKind: str,
+        sizeCells: int,
+        lineWidthCells: Optional[int] = None,
+) -> List[Tuple[str, Set[Coord]]]:
+
+    def squareMaskLookup(sideCells: int) -> Set[Coord]:
+        # Anchor is top-left.
+        return {(dx, dy) for dx in range(sideCells) for dy in range(sideCells)}
+
+    def lineMaskLookup(lengthCells: int, widthCells: int) -> Set[Coord]:
+        # Cardinal "up" line. Anchor is center of near edge.
+        halfLeft = widthCells // 2
+        halfRight = widthCells - halfLeft - 1
+
+        mask = set()
+        for step in range(lengthCells):
+            y = -step
+            for x in range(-halfLeft, halfRight + 1):
+                mask.add((x, y))
+        return mask
+
+    def diagonalLineMaskLookup(lengthCells: int, widthCells: int) -> Set[Coord]:
+        # Diagonal "up_right" line. Anchor is near endpoint.
+        # Centerline: (0,0), (1,-1), (2,-2), ...
+        # Width grows along the perpendicular diagonal.
+        halfLeft = widthCells // 2
+        halfRight = widthCells - halfLeft - 1
+
+        mask = set()
+        for step in range(lengthCells):
+            cx = step
+            cy = -step
+            for offset in range(-halfLeft, halfRight + 1):
+                mask.add((cx + offset, cy + offset))
+        return mask
+
+    def coneMaskLookup(lengthCells: int) -> Set[Coord]:
+        mask = set()
+
+        for step in range(1, lengthCells + 1):
+            y = -step
+            halfWidth = (step - 1) // 2
+            for x in range(-halfWidth, halfWidth + 1):
+                mask.add((x, y))
+
+        return mask
+
+    def diagonalConeMaskLookup(lengthCells: int) -> Set[Coord]:
+        mask = set()
+
+        for dx in range(lengthCells + 1):
+            for negDy in range(lengthCells + 1):
+                if 1 <= dx + negDy <= lengthCells:
+                    mask.add((dx, -negDy))
+
+        return mask
+
+    def circleMaskLookup(radiusCells: int) -> Set[Coord]:
+        mask = set()
+        r2 = radiusCells * radiusCells
+
+        for dy in range(-radiusCells, radiusCells + 1):
+            remaining = r2 - (dy * dy)
+            if remaining < 0:
+                continue
+
+            maxDx = math.isqrt(remaining)
+            for dx in range(-maxDx, maxDx + 1):
+                mask.add((dx, dy))
+
+        return mask
+
+    if shapeKind == "circle":
+        base = circleMaskLookup(sizeCells)
+        return [("center", base)]
+
+    if shapeKind == "square":
+        base = squareMaskLookup(sizeCells)
+        return [("fixed", base)]
+
+    if shapeKind == "cone":
+        up = coneMaskLookup(sizeCells)
+        upRight = diagonalConeMaskLookup(sizeCells)
+
+        return [
+            ("up", up),
+            ("up_right", upRight),
+            ("right", rotateMask90(up)),
+            ("down_right", rotateMask90(upRight)),
+            ("down", rotateMask180(up)),
+            ("down_left", rotateMask180(upRight)),
+            ("left", rotateMask270(up)),
+            ("up_left", rotateMask270(upRight)),
+        ]
+
+    if shapeKind == "line":
+        widthCells = lineWidthCells if lineWidthCells is not None else 1
+
+        up = lineMaskLookup(sizeCells, widthCells)
+        upRight = diagonalLineMaskLookup(sizeCells, widthCells)
+
+        return [
+            ("up", up),
+            ("up_right", upRight),
+            ("right", rotateMask90(up)),
+            ("down_right", rotateMask90(upRight)),
+            ("down", rotateMask180(up)),
+            ("down_left", rotateMask180(upRight)),
+            ("left", rotateMask270(up)),
+            ("up_left", rotateMask270(upRight)),
+        ]
+
+    raise ValueError(f"Unsupported shape kind: {shapeKind}")
+def rotateMask90(mask: Set[Coord]) -> Set[Coord]:
+        return {(-y, x) for x, y in mask}
+def rotateMask180(mask: Set[Coord]) -> Set[Coord]:
+        return {(-x, -y) for x, y in mask}
+def rotateMask270(mask: Set[Coord]) -> Set[Coord]:
+        return {(y, -x) for x, y in mask}
+
+def bestAoePositioningDebug(
+        rangeFt: int,
+        radiusFt: int,
+        shape: str,
+        allCreaturePositions: List[List[int]],
+        allTargets: List[Dict[str, Any]],
+        casterCells: List[List[int]],
+        originMode: str = "placed"
+) -> Dict[str, Any]:
     def parseShape(shape: str) -> Tuple[str, Optional[int]]:
         s = shape.strip().lower()
 
@@ -1427,190 +1556,278 @@ def bestAoePositioningDebug(
             return "line", 5
 
         raise ValueError(f"Unsupported shape string: {shape}")
-    def getOrientedTemplateMasks(
-            shapeKind: str,
-            sizeCells: int,
-            lineWidthCells: Optional[int] = None,
-    ) -> List[Tuple[str, Set[Coord]]]:
-        """
-        Each mask is a set of relative (dx, dy) offsets.
-        Anchor semantics:
-          - circle: anchor is center cell
-          - square: anchor is top-left corner
-          - cone: anchor is cone tip
-          - line: anchor is line start-center projected to grid
-        """
-        if shapeKind == "circle":
-            base = circleMaskLookup(sizeCells)
-            return [("center", base)]
-
-        if shapeKind == "square":
-            base = squareMaskLookup(sizeCells)
-            return [("fixed", base)]
-
-        if shapeKind == "cone":
-            up = coneMaskLookup(sizeCells)
-            return [
-                ("up", up),
-                ("right", rotateMask90(up)),
-                ("down", rotateMask180(up)),
-                ("left", rotateMask270(up)),
-            ]
-
-        if shapeKind == "line":
-            widthCells = lineWidthCells if lineWidthCells is not None else 1
-            up = lineMaskLookup(sizeCells, widthCells)
-            return [
-                ("up", up),
-                ("right", rotateMask90(up)),
-                ("down", rotateMask180(up)),
-                ("left", rotateMask270(up)),
-            ]
-
-        raise ValueError(f"Unsupported shape kind: {shapeKind}")
-    def squareMaskLookup(sideCells: int) -> Set[Coord]:
-        # Anchor is top left.
-        return {(dx, dy) for dx in range(sideCells) for dy in range(sideCells)}
-    def lineMaskLookup(lengthCells: int, widthCells: int) -> Set[Coord]:
-        # Anchor is center of near edge.
-        # Builds up direction first, then others. Returns best direction.
-        halfLeft = widthCells // 2
-        halfRight = widthCells - halfLeft - 1
-
-        mask = set()
-        for step in range(lengthCells):
-            y = -step
-            for x in range(-halfLeft, halfRight + 1):
-                mask.add((x, y))
-        return mask
-    def coneMaskLookup(lengthCells: int) -> Set[Coord]:
-        """
-        Discrete staircase cone using a lookup-style growth pattern.
-
-        Built 'up' from tip at (0, 0).
-        Row 0 contains tip.
-        Each farther row widens by 2.
-
-        Example length 4:
-            y=0:   x=0
-            y=-1:  x=-1..1
-            y=-2:  x=-2..2
-            y=-3:  x=-3..3
-        """
-        mask = set()
-        for step in range(lengthCells):
-            y = -step
-            rowHalfWidth = step
-            for x in range(-rowHalfWidth, rowHalfWidth + 1):
-                mask.add((x, y))
-        return mask
-    def circleMaskLookup(radiusCells: int) -> Set[Coord]:
-        """
-          For each vertical offset dy, horizontal width is:
-              maxDx = radiusCells - abs(dy)
-        """
-        mask = set()
-        for dy in range(-radiusCells, radiusCells + 1):
-            maxDx = radiusCells - abs(dy)
-            for dx in range(-maxDx, maxDx + 1):
-                mask.add((dx, dy))
-        return mask
-    def rotateMask90(mask: Set[Coord]) -> Set[Coord]:
-        return {(-y, x) for x, y in mask}
-    def rotateMask180(mask: Set[Coord]) -> Set[Coord]:
-        return {(-x, -y) for x, y in mask}
-    def rotateMask270(mask: Set[Coord]) -> Set[Coord]:
-        return {(y, -x) for x, y in mask}
     def scoreMaskPlacement(
             covered: Set[Coord],
-            viableTargets: List[Dict[str, Any]],
-            viableCellsToTarget: Dict[Coord, Dict[str, Any]],
+            allTargets: List[Dict[str, Any]],
+            viableCellSet: Set[Coord],
             nonViableCells: Set[Coord],
     ) -> Tuple[float, List[Dict[str, Any]]]:
-        """
-        Priority:
-          High probSuccess (++)
-          Low probSuccess (+)
-          Empty (-)
-          Non-viable (---)
-        """
-        coveredViableCells = covered & set(viableCellsToTarget.keys())
+
+        coveredViableCells = covered & viableCellSet
         coveredNonViableCells = covered & nonViableCells
         emptyCells = covered - coveredViableCells - coveredNonViableCells
-
-        perTargetHits: Dict[str, int] = {}
-        perTargetTotal: Dict[str, int] = {}
-        perTargetProb: Dict[str, float] = {}
-
-        for target in viableTargets:
-            name = target["name"]
-            probSuccess = float(target["probSuccess"])
-            positions = {tuple(p) for p in target["positioning"]}
-            hits = len(covered & positions)
-
-            perTargetHits[name] = hits
-            perTargetTotal[name] = len(positions)
-            perTargetProb[name] = probSuccess
 
         score = 0.0
         targetBreakdown = []
 
-        for name in perTargetHits:
-            hits = perTargetHits[name]
-            total = perTargetTotal[name]
-            probSuccess = perTargetProb[name]
+        for target in allTargets:
+            positions = target["positioning"]
+            if isinstance(positions, list):
+                positions = set(tuple(coord) for coord in positions)
+            hits = len(covered & positions)
 
             if hits > 0:
-                coverageRatio = hits / total
-                targetScore = probSuccess * coverageRatio * 100.0
-                score += targetScore
+                name = target["name"]
+                probSuccess = target["probSuccess"]
+                badTarget = len(positions & coveredNonViableCells)
+                total = len(positions)
+                if badTarget > 0:
+                    targetScore = (probSuccess * 100) + 35
+                    score -= targetScore
+                else:
+                    targetScore = probSuccess * 100.0
+                    score += targetScore
 
                 targetBreakdown.append({
                     "name": name,
                     "probSuccess": probSuccess,
                     "tilesHit": hits,
                     "tilesTotal": total,
-                    "coverageRatio": coverageRatio,
                     "targetScore": targetScore,
                 })
 
         score -= len(emptyCells) * 1.0
-        score -= len(coveredNonViableCells) * 35.0
-        score -= len(covered) * 0.05
-        score += len(coveredViableCells) * 0.01
+        for coord in covered:
+            x, y = coord
+            if x < 0 or y < 0:
+                score -= score * 0.01
 
         targetBreakdown.sort(
-            key=lambda t: (-t["targetScore"], -t["coverageRatio"], -t["probSuccess"])
+            key=lambda t: (-t["targetScore"], -t["probSuccess"])
         )
         return score, targetBreakdown
+    def normalizeCellSet(cellsLike: List[List[int]]) -> set[Coord]:
+        return {tuple(p) for p in cellsLike}
+    def distanceCells(a: Coord, b: Coord) -> int:
+        # abs(x1 - x2) + abs(y1 - y2)
+        return abs(a[0] - b[0]) + abs(a[1] - b[1])
+    def anchorWithinPlacedRange(anchor: Coord, casterCellSet: Set[Coord], rangeCells: int) -> bool:
+        if rangeCells <= 0:
+            return True
+        return any(distanceCells(anchor, c) <= rangeCells for c in casterCellSet)
+
+    def buildSelfOriginCone(
+            casterCellSet: Set[Coord],
+            direction: Coord,
+            lengthCells: int,
+    ) -> Set[Coord]:
+        def directionToOrientationName(direction: Coord) -> str:
+            return {
+                (0, -1): "up",
+                (1, -1): "up_right",
+                (1, 0): "right",
+                (1, 1): "down_right",
+                (0, 1): "down",
+                (-1, 1): "down_left",
+                (-1, 0): "left",
+                (-1, -1): "up_left",
+            }[direction]
+
+        def getFrontCornerCell(casterCellSet: Set[Coord], direction: Coord) -> Coord:
+            xs = [x for x, _ in casterCellSet]
+            ys = [y for _, y in casterCellSet]
+
+            if direction == (1, -1):  # up_right
+                return (max(xs), min(ys))
+            if direction == (1, 1):  # down_right
+                return (max(xs), max(ys))
+            if direction == (-1, 1):  # down_left
+                return (min(xs), max(ys))
+            if direction == (-1, -1):  # up_left
+                return (min(xs), min(ys))
+
+            raise ValueError(f"Not a diagonal direction: {direction}")
+
+        def getDiagonalSelfOriginAnchorCell(casterCellSet: Set[Coord], direction: Coord) -> Coord:
+            corner = getFrontCornerCell(casterCellSet, direction)
+            return (corner[0] + direction[0], corner[1] + direction[1])
+
+        def diagonalSelfConeMaskLookup(lengthCells: int) -> Set[Coord]:
+            mask = set()
+            for dx in range(lengthCells):
+                for negDy in range(lengthCells):
+                    if 0 <= dx + negDy < lengthCells:
+                        mask.add((dx, -negDy))
+            return mask
+
+        orientationName = directionToOrientationName(direction)
+        covered = set()
+
+        # Cardinal self-origin cones stay exactly as they are now
+        if direction in {(0, -1), (1, 0), (0, 1), (-1, 0)}:
+            coneMasks = dict(getOrientedTemplateMasks("cone", lengthCells))
+            relMask = coneMasks[orientationName]
+
+            frontEdge = getFrontEdgeCells(casterCellSet, direction)
+
+            for ax, ay in frontEdge:
+                for mx, my in relMask:
+                    covered.add((ax + mx, ay + my))
+
+            covered -= casterCellSet
+            return covered
+
+        # Diagonal self-origin cones must start from the diagonal anchor cell,
+        # not from the caster corner.
+        baseMask = diagonalSelfConeMaskLookup(lengthCells)
+
+        if direction == (1, -1):  # up_right
+            relMask = baseMask
+        elif direction == (1, 1):  # down_right
+            relMask = rotateMask90(baseMask)
+        elif direction == (-1, 1):  # down_left
+            relMask = rotateMask180(baseMask)
+        elif direction == (-1, -1):  # up_left
+            relMask = rotateMask270(baseMask)
+        else:
+            raise ValueError(f"Unsupported direction: {direction}")
+
+        ax, ay = getDiagonalSelfOriginAnchorCell(casterCellSet, direction)
+
+        for mx, my in relMask:
+            covered.add((ax + mx, ay + my))
+
+        covered -= casterCellSet
+        return covered
+    def buildSelfOriginLine(
+            casterCellSet: Set[Coord],
+            direction: Coord,
+            lengthCells: int,
+            widthCells: int,
+    ) -> Set[Coord]:
+        def getPerp(direction: Coord) -> Coord:
+            # 90-degree perpendicular in grid coordinates.
+            dx, dy = direction
+            return (-dy, dx)
+        dx, dy = direction
+        px, py = getPerp(direction)
+
+        frontEdge = getFrontEdgeCells(casterCellSet, direction)
+
+        halfLeft = widthCells // 2
+        halfRight = widthCells - halfLeft - 1
+
+        covered = set()
+
+        for fx, fy in frontEdge:
+            for step in range(1, lengthCells + 1):  # starts at 1, not 0
+                cx = fx + dx * step
+                cy = fy + dy * step
+
+                for w in range(-halfLeft, halfRight + 1):
+                    covered.add((cx + px * w, cy + py * w))
+
+        covered -= casterCellSet
+        return covered
+    def get8Directions() -> List[Tuple[str, Coord]]:
+        return [
+            ("up", (0, -1)),
+            ("up_right", (1, -1)),
+            ("right", (1, 0)),
+            ("down_right", (1, 1)),
+            ("down", (0, 1)),
+            ("down_left", (-1, 1)),
+            ("left", (-1, 0)),
+            ("up_left", (-1, -1)),
+        ]
+    def getFrontEdgeCells(casterCellSet: Set[Coord], direction: Coord) -> Set[Coord]:
+        #Returns the caster cells furthest forward in the chosen direction.
+        #Uses dot-product projection so it works for diagonal directions too.
+        dx, dy = direction
+        if not casterCellSet:
+            return set()
+
+        max_proj = max((x * dx + y * dy) for x, y in casterCellSet)
+        return {
+            (x, y)
+            for x, y in casterCellSet
+            if x * dx + y * dy == max_proj
+        }
+    def generateCandidateAnchors(
+            relMask: Set[Coord],
+            focusCells: Set[Coord],
+            casterCellSet: Set[Coord],
+            rangeCells: int,
+    ) -> Set[Coord]:
+        #focusCells is either viableCells or allCells
+        #Return value allows for search by target, not search by each cell (brute force).
+        anchors = set()
+
+        for tx, ty in focusCells:
+            for dx, dy in relMask:
+                anchor = (tx - dx, ty - dy)
+
+                if casterCellSet and not anchorWithinPlacedRange(anchor, casterCellSet, rangeCells):
+                    continue
+
+                anchors.add(anchor)
+        return anchors
+    def expandAnchorNeighborhood(seedAnchors: Set[Coord], radius: int = 1) -> Set[Coord]:
+        expanded = set(seedAnchors)
+        for ax, ay in seedAnchors:
+            for dx in range(-radius, radius + 1):
+                for dy in range(-radius, radius + 1):
+                    if (ax + dx) > 0 and (ay + dy) > 0:
+                        expanded.add((ax + dx, ay + dy))
+        return expanded
+    def getDiagonalSelfOriginAnchorCell(casterCellSet: Set[Coord], direction: Coord) -> Coord:
+        xs = [x for x, _ in casterCellSet]
+        ys = [y for _, y in casterCellSet]
+
+        if direction == (1, -1):  # up_right
+            corner = (max(xs), min(ys))
+        elif direction == (1, 1):  # down_right
+            corner = (max(xs), max(ys))
+        elif direction == (-1, 1):  # down_left
+            corner = (min(xs), max(ys))
+        elif direction == (-1, -1):  # up_left
+            corner = (min(xs), min(ys))
+        else:
+            raise ValueError(f"Not a diagonal direction: {direction}")
+
+        return (corner[0] + direction[0], corner[1] + direction[1])
 
     shapeKind, lineWidthFt = parseShape(shape)
-    sizeCells = max(1, math.ceil(int(rangeFt) / 5))
+
+    # radiusFt now controls the actual AOE template size.
+    sizeCells = max(1, math.ceil(int(radiusFt) / 5))
+    rangeCells = max(0, math.ceil(int(rangeFt) / 5))
     lineWidthCells = max(1, math.ceil(lineWidthFt / 5)) if lineWidthFt else None
+
     unparsedCells = []
     [unparsedCells.extend(pos) for pos in allCreaturePositions]
     allCells: Set[Coord] = {tuple(p) for p in unparsedCells}
+    casterCellSet: Set[Coord] = normalizeCellSet(casterCells)
 
+    normalizedTargets = []
     viableCellsToTarget: Dict[Coord, Dict[str, Any]] = {}
 
-    for target in viableTargets:
-        name = target["name"]
-        probSuccess = float(target["probSuccess"])
-        positions = [tuple(p) for p in target["positioning"]]
-
+    for target in allTargets:
         normalizedTarget = {
-            "name": name,
-            "probSuccess": probSuccess,
-            "positioning": set(positions),
+            "name": target["name"],
+            "probSuccess": float(target["probSuccess"]),
+            "positioning": {tuple(p) for p in target["positioning"]},
         }
+        normalizedTargets.append(normalizedTarget)
 
-        for pos in positions:
-            viableCellsToTarget[pos] = normalizedTarget
+        if target["viable"]:
+            for pos in normalizedTarget["positioning"]:
+                viableCellsToTarget[pos] = normalizedTarget
 
     viableCells: Set[Coord] = set(viableCellsToTarget.keys())
     nonViableCells: Set[Coord] = allCells - viableCells
 
-    if not viableTargets:
+    if not allTargets:
         return {
             "coveredCells": [],
             "anchor": None,
@@ -1637,13 +1854,6 @@ def bestAoePositioningDebug(
             "targetsHit": [],
         }
 
-    pad = sizeCells + 3
-    #TODO: Make sure anchor is unable to be outside the bounds of the grid.
-    minX, maxX = min(xs) - pad, max(xs) + pad
-    minX = 0 if minX < 0 else minX
-    minY, maxY = min(ys) - pad, max(ys) + pad
-    minY = 0 if minY < 0 else minY
-
     best = {
         "coveredCells": set(),
         "anchor": None,
@@ -1652,28 +1862,174 @@ def bestAoePositioningDebug(
         "targetsHit": [],
     }
 
-    for ax in range(minX, maxX + 1):
-        for ay in range(minY, maxY + 1):
-            anchor = (ax, ay)
+    # SELF-ORIGIN
+    if originMode.lower() == "self":
+        if not casterCellSet:
+            return {
+                "coveredCells": [],
+                "anchor": None,
+                "orientation": None,
+                "score": float("-inf"),
+                "targetsHit": [],
+            }
 
+        # circle / square can still use the simpler anchor-based logic for now
+        if shapeKind in {"circle", "square"}:
             for orientationName, relMask in orientedMasks:
-                covered = {(ax + dx, ay + dy) for dx, dy in relMask}
+                for anchor in casterCellSet:
+                    ax, ay = anchor
+                    covered = {(ax + dx, ay + dy) for dx, dy in relMask}
+                    covered -= casterCellSet
 
-                score, targetBreakdown = scoreMaskPlacement(
-                    covered=covered,
-                    viableTargets=viableTargets,
-                    viableCellsToTarget=viableCellsToTarget,
-                    nonViableCells=nonViableCells,
+                    score, targetBreakdown = scoreMaskPlacement(
+                        covered=covered,
+                        allTargets=normalizedTargets,
+                        viableCellSet=viableCells,
+                        nonViableCells=nonViableCells,
+                    )
+
+                    if score > best["score"]:
+                        best = {
+                            "coveredCells": covered,
+                            "anchor": anchor,
+                            "orientation": orientationName,
+                            "score": score,
+                            "targetsHit": targetBreakdown,
+                        }
+
+            best["coveredCells"] = sorted(best["coveredCells"])
+            return best
+
+        # cone / line need special 8-direction self-origin logic
+        #Shapes are rebuilt in buildSelfOrigin___ due to needing to account for front edge
+        for orientationName, direction in get8Directions():
+            # anchor is mostly metadata now; useless for user. Use for debugging
+            if direction in {(1, -1), (1, 1), (-1, 1), (-1, -1)}:
+                anchor_meta = [getDiagonalSelfOriginAnchorCell(casterCellSet, direction)]
+            else:
+                frontEdge = getFrontEdgeCells(casterCellSet, direction)
+                anchor_meta = sorted(frontEdge)
+
+            if shapeKind == "line":
+                covered = buildSelfOriginLine(
+                    casterCellSet=casterCellSet,
+                    direction=direction,
+                    lengthCells=sizeCells,
+                    widthCells=lineWidthCells or 1,
                 )
+            elif shapeKind == "cone":
+                covered = buildSelfOriginCone(
+                    casterCellSet=casterCellSet,
+                    direction=direction,
+                    lengthCells=sizeCells,
+                )
+            else:
+                continue
 
-                if score > best["score"]:
-                    best = {
-                        "coveredCells": covered,
-                        "anchor": anchor,
-                        "orientation": orientationName,
-                        "score": score,
-                        "targetsHit": targetBreakdown,
-                    }
+            score, targetBreakdown = scoreMaskPlacement(
+                covered=covered,
+                allTargets=allTargets,
+                viableCellSet=viableCells,
+                nonViableCells=nonViableCells,
+            )
+
+            if score > best["score"]:
+                best = {
+                    "coveredCells": covered,
+                    "anchor": anchor_meta,
+                    "orientation": orientationName,
+                    "score": score,
+                    "targetsHit": targetBreakdown,
+                }
+
+        best["coveredCells"] = sorted(best["coveredCells"])
+        return best
+
+    #PLACE-ORIGIN
+    PLACEMENT_EXPANSION_RADIUS = (radiusFt // 5) // 2
+    CANDIDATE_CUTOFF = 10
+
+    for orientationName, relMask in orientedMasks:
+        candidateAnchors = generateCandidateAnchors(
+            relMask=relMask,
+            focusCells=viableCells,
+            casterCellSet=casterCellSet,
+            rangeCells=rangeCells,
+        )
+
+        seedResults = []
+
+        for anchor in sorted(candidateAnchors):
+            ax, ay = anchor
+            covered = {(ax + dx, ay + dy) for dx, dy in relMask}
+
+            # Cheap skips
+            if not (covered & viableCells):
+                continue
+            if not (covered & allCells):
+                continue
+
+            score, targetBreakdown = scoreMaskPlacement(
+                covered=covered,
+                allTargets=normalizedTargets,
+                viableCellSet=viableCells,
+                nonViableCells=nonViableCells,
+            )
+
+            seedResults.append((score, anchor, covered, targetBreakdown))
+
+            if score > best["score"]:
+                best = {
+                    "coveredCells": covered,
+                    "anchor": anchor,
+                    "orientation": orientationName,
+                    "score": score,
+                    "targetsHit": targetBreakdown,
+                }
+                # print("New best! ", best)
+
+        if not seedResults:
+            continue
+
+        seedResults.sort(key=lambda x: x[0], reverse=True)
+        topSeedAnchors = {anchor for _, anchor, _, _ in seedResults[:CANDIDATE_CUTOFF]}
+
+        expandedAnchors = expandAnchorNeighborhood(
+            topSeedAnchors,
+            radius=PLACEMENT_EXPANSION_RADIUS
+        )
+
+        # Only keep anchors we have not already checked for this orientation
+        expandedAnchors -= candidateAnchors
+
+        for anchor in sorted(expandedAnchors): #Extra check around anchors by radius, as placing an AOE inbetween candidates can sometimes be better
+            if casterCellSet and not anchorWithinPlacedRange(anchor, casterCellSet, rangeCells):
+                continue
+
+            ax, ay = anchor
+            covered = {(ax + dx, ay + dy) for dx, dy in relMask}
+
+            # Cheap skips
+            if not (covered & viableCells):
+                continue
+            if not (covered & allCells):
+                continue
+
+            score, targetBreakdown = scoreMaskPlacement(
+                covered=covered,
+                allTargets=normalizedTargets,
+                viableCellSet=viableCells,
+                nonViableCells=nonViableCells,
+            )
+
+            if score > best["score"]:
+                best = {
+                    "coveredCells": covered,
+                    "anchor": anchor,
+                    "orientation": orientationName,
+                    "score": score,
+                    "targetsHit": targetBreakdown,
+                }
 
     best["coveredCells"] = sorted(best["coveredCells"])
     return best
@@ -1816,21 +2172,33 @@ def calcTotalExpectedDamage(player, action, initiative):
                             return sum(eDamages) / len(eDamages), viableTargets
                         return 0, {}
                     elif action.getNumTarget() in [-1, -2]:
-                        targets = [creature for creature in initiative
-                                   if isValidTarget(action, creature, player.getPosition(), isPlayerTurn)]
+                        targets = [creature for creature in initiative]
                         for i, target in enumerate(targets):
                             #EDam targets use expected damage instead of probSuccess
                             #Potentially leads to different AOE subsets, which is resolved through impact rating checks.
-                            targets[i] = {
-                                "name": target["Statblock"].getName(),
-                                "probSuccess": calcIndividualExpectedDamage(player, action, target),
-                                "positioning": target["Statblock"].getPosition()
-                            }
+                            if isValidTarget(action, target, player.getPosition(), isPlayerTurn):
+                                targets[i] = {
+                                    "name": target["Statblock"].getName(),
+                                    "probSuccess": calcIndividualExpectedDamage(player, action, target),
+                                    "positioning": target["Statblock"].getPosition(),
+                                    "viable" : True
+                                }
+                            else:
+                                targets[i] = {
+                                    "name": target["Statblock"].getName(),
+                                    "probSuccess": calcIndividualExpectedDamage(player, action, target),
+                                    "positioning": target["Statblock"].getPosition(),
+                                    "viable" : False
+                                }
                         positions = [creature["Statblock"].getPosition() for creature in initiative]
+                        actionRange = action.getActionRange()
                         radius = action.getActionRadius()
                         shape = action.getShape()
+                        casterCells = player.getPosition()
+                        aoeType = "placed" if action.getNumTarget() == -1 else "self"
 
-                        eDam, token = avgOverAOETargets(targets, positions, radius, shape)
+                        eDam, token = avgOverAOETargets(targets, positions, actionRange,
+                                                        radius, shape, casterCells, aoeType)
                         return round(eDam, 2), token
                     else:
                         raise ValueError("Invalid numTarget!")
@@ -2157,7 +2525,7 @@ def calcTotalToHitProbability(player, action, initiative):
                 lingEffectProb = 0
                 extraEffectProb = 0
                 lingSavesProb = 0
-            if len(successProbs) != 0:
+            if successProbs != 0:
                 probSuccess = round(probSuccess, 2)
                 lingEffectProb = round(lingEffectProb, 2)
                 extraEffectProb = round(extraEffectProb, 2)
@@ -2301,10 +2669,11 @@ def resetSaveSpecialNotesCheck(specImm, specRes, specVuln, creature):
         for vuln in creature.getDamVulnerabilities():
             if vuln not in specVuln:
                 creature.removeDamVulnerability(vuln)
-def avgOverAOETargets(targets, allPositions, radius, shape):
+def avgOverAOETargets(creatures, allPositions, actionRange, radius, shape, casterCells, aoeType="placed"):
     #Cache is in the targets dict
-    aoeToken = bestAoePositioning(radius, shape, allPositions, targets)
-    numTargets = len(targets)
+    aoeToken = bestAoePositioning(actionRange, radius, shape,
+                                  allPositions, creatures, casterCells, aoeType)
+    numTargets = len(creatures)
     if numTargets == 0:
         return 0
 
@@ -2411,20 +2780,37 @@ def calcTotalSaveProbability(player, action, initiative):
         else:
             return 0
     elif action.getNumTarget() in [-1, -2]:
-        targets = [creature["Statblock"] for creature in initiative
-                   if isValidTarget(action, creature, player.getPosition(), isPlayerTurn)]
-        targetsCopy = copy.deepcopy(targets)
+        targets = [creature for creature in initiative]
+        targetsCopy = [creature["Statblock"] for creature in targets]
         for i, target in enumerate(targets):
-            targets[i] = {
-                "name" : target.getName(),
-                "probSuccess" : calcIndividualSaveProbability(action, player.getDC(), target),
-                "positioning" : target.getPosition()
-            }
+            if isValidTarget(action, target, player.getPosition(), isPlayerTurn):
+                target = target["Statblock"]
+                targets[i] = {
+                    "name" : target.getName(),
+                    "probSuccess" : calcIndividualSaveProbability(action, player.getDC(), target),
+                    "positioning" : target.getPosition(),
+                    "viable" : True
+                }
+            else:
+                target = target["Statblock"]
+                targets[i] = {
+                    "name": target.getName(),
+                    "probSuccess": calcIndividualSaveProbability(action, player.getDC(), target),
+                    "positioning": target.getPosition(),
+                    "viable" : False
+                }
         positions = [creature["Statblock"].getPosition() for creature in initiative]
+        actionRange = action.getActionRange()
         radius = action.getActionRadius()
         shape = action.getShape()
-        probSuccess, token = avgOverAOETargets(targets, positions, radius, shape)
+        casterCells = player.getPosition()
+        aoeType = "placed" if action.getNumTarget() == -1 else "self"
+        probSuccess, token = avgOverAOETargets(targets, positions,
+                                               actionRange, radius, shape,
+                                               casterCells, aoeType)
 
+        if not token:
+            return 0
         for creature in targetsCopy:
             if creature.getName().lower() in [t["name"].lower() for t in token["targetsHit"]]:
                 if checkLingEffects or checkExtraEffects:
@@ -2599,7 +2985,7 @@ def calcTotalAutoHitProbability(player, action, initiative):
             successProbs = []
             targets = []
             for creature in weights:
-                if isValidTarget(action, creature, player.getPostion(),isPlayerTurn):
+                if isValidTarget(action, creature, player.getPosition(),isPlayerTurn):
                     if isinstance(player, Player) or isinstance(action, Spell):
                         successProb = calcIndividualAutoHitProbability(action, creature["Statblock"])
                     else:
@@ -2630,20 +3016,33 @@ def calcTotalAutoHitProbability(player, action, initiative):
         else:
             return 0
     elif action.getNumTarget() in [-1, -2]:
-        targets = [creature["Statblock"] for creature in initiative
-                   if isValidTarget(action, creature, player.getPosition(), isPlayerTurn)]
-        targetsCopy = copy.deepcopy(targets)
+        targets = [creature for creature in initiative]
+        targetsCopy = [creature["Statblock"] for creature in targets]
         for i, target in enumerate(targets):
-            targets[i] = {
-                "name" : target.getName(),
-                "probSuccess" : calcIndividualAutoHitProbability(action,target),
-                "positioning" : target.getPosition()
-            }
+            if isValidTarget(action, target, player.getPosition(), isPlayerTurn):
+                target = target["Statblock"]
+                targets[i] = {
+                    "name" : target.getName(),
+                    "probSuccess" : calcIndividualAutoHitProbability(action,target),
+                    "positioning" : target.getPosition(),
+                    "viable" : True
+                }
+            else:
+                target = target["Statblock"]
+                targets[i] = {
+                    "name": target.getName(),
+                    "probSuccess": calcIndividualAutoHitProbability(action,target),
+                    "positioning": target.getPosition(),
+                    "viable" : False
+                }
         positions = [creature["Statblock"].getPosition() for creature in initiative]
+        actionRange = action.getActionRange()
         radius = action.getActionRadius()
         shape = action.getShape()
-        probSuccess, token = avgOverAOETargets(targets, positions, radius, shape)
-
+        casterCells = player.getPosition()
+        aoeType = "placed" if action.getNumTarget() == -1 else "self"
+        probSuccess, token = avgOverAOETargets(targets, positions, actionRange,
+                                               radius, shape, casterCells, aoeType)
         for creature in targetsCopy:
             if creature.getName().lower() in [t["name"].lower() for t in token["targetsHit"]]:
                 if checkLingEffects or checkExtraEffects:
@@ -3264,6 +3663,7 @@ def endOfEncounter(initiative):
     allPlayersDead = True
     for playerTurns in initiative:
         if playerTurns["turnType"] == "Player":
+            print(playerTurns)
             if not playerTurns["Statblock"].isActiveCondition("Dead") and not playerTurns[
                 "Statblock"].isActiveCondition("Out of Combat"):
                 allPlayersDead = False
@@ -3352,9 +3752,9 @@ def endConcentration(player, concentration, initiative):
 
         if not summonedCreature:
             cIdx += 1
-def executeAction(actor, action, selectedTargets, actionResult, initiative, token=None):
+def executeAction(actor, action, selectedTargets, actionResult, initiative):
     def applyEffectToTarget(creature, succeeded, damage, action, resultID):
-        rollType = action.getRollType() if isinstance(action, Spell) else "tohit"
+        rollType = action.getRollType().lower() if isinstance(action, Spell) or isinstance(action, MonAction) else "tohit"
 
         downed_before = creature.isActiveCondition("Downed")
         stable_before = creature.isActiveCondition("Stabilized")
@@ -3364,9 +3764,15 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, toke
             and not isinstance(action.getDamType(), list)
             and action.getDamType().lower() == "healing"
         ):
-            creature.setHP(min(creature.getMaxHP(), creature.getHP() + damage))
+            if succeeded:
+                creature.setHP(min(creature.getMaxHP(), creature.getHP() + damage))
         else:
-            creature.setHP(creature.getHP() - damage)
+            if ((rollType in ["onhit", "autohit", "tohit"] and succeeded)
+                    or (rollType in ["save"] and not succeeded)):
+                creature.setHP(creature.getHP() - damage)
+            elif rollType in ["save"] and succeeded and action.getHalfSave():
+                creature.setHP(creature.getHP() - (damage // 2))
+
         creature.setHP(math.floor(creature.getHP()))
 
         if creature.isActiveCondition("downed") and damage > 0:
@@ -3379,7 +3785,6 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, toke
                              resultID)
             else:
                 addCondition("Dead", creature, resultID)
-
         if creature.getHP() > 0:
             if downed_before:
                 creature.removeCondition("Downed")
@@ -3412,7 +3817,11 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, toke
                     }
                     addStatusEffect(newLingSave, creature, actionResult["resultID"])
         return creature
-
+    #actor is a statblock.
+    #Action is a spell/weapon/monAction object.
+    #selectedTargets is a list of statblocks.
+    #actionResult is the entry below.
+    #Token is an object describing AOE placement.
     """
     entry = {
             "resultID": random.randint(1, 9999999999), str
@@ -3433,12 +3842,12 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, toke
             "timestamp": datetime.now().strftime("%H:%M:%S")
         # }
         """
-    # print("EXECUTE ACTION")
-    # print("ACTOR", actor)
-    # print("ACTION", action)
-    # print("SELECTED TARGETS", selectedTargets)
-    # print("ACTION RESULT", actionResult)
-    # print("INITIATIVE", initiative)
+    print("EXECUTE ACTION")
+    print("ACTOR", actor)
+    print("ACTION", action)
+    print("SELECTED TARGETS", selectedTargets)
+    print("ACTION RESULT", actionResult)
+    print("INITIATIVE", initiative)
     outcomes = actionResult["outcome"]["rollResults"]
     damages = actionResult["outcome"]["diceResults"]
 
@@ -3507,8 +3916,6 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, toke
                     },
                 }
                 addStatusEffect(newLingEffect, creature, actionResult["resultID"])
-
-    cost = "action" if isinstance(action, Weapon) else action.getActionCost()
 
     # ---- EXTRA EFFECT PASS (if any) ----
     extra = actionResult.get("extraOutcome", None)
@@ -3685,6 +4092,9 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
     for i in range(len(spellList)):
         if actionViabilityCheck(spellList[i], initEntry, initiative, isPlayerTurn):
             spellName = spellList[i].getName()
+            print(spellName)
+            if spellName.lower() in ["burning hands"]:
+                print("")
             try:
                 spellProb = 0
                 spellEDam = -1
@@ -3731,39 +4141,41 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
                         probTargets = {}
                     spellProb = probToStr
                     try:
+                        #TODO: Failed burning hands eDam, prob and impact worked.
                         spellEDam, eTargets = calcTotalExpectedDamage(creature, spellList[i],
                                                                    initiative) if spellEDam == -1 else spellEDam
                     except TypeError:
                         spellEDam = 0
                         eTargets = {}
 
+                if not probTargets and not eTargets:
+                    continue
+                probTargetsNorm = normalizeTargetSets(probTargets, initiative)
+                eTargetsNorm = normalizeTargetSets(eTargets, initiative)
 
-                probTargets = normalizeTargetSets(probTargets, initiative)
-                eTargets = normalizeTargetSets(eTargets, initiative)
-
-                if probTargets and eTargets and {target.getName() for target in probTargets} == {target.getName() for target in eTargets}:
+                if probTargetsNorm and eTargetsNorm and {target.getName() for target in probTargetsNorm} == {target.getName() for target in eTargetsNorm}:
                     #Good case.
                     spellImpact = calcImpact(creature, spellList[i], spellProb,
-                                             spellEDam, probTargets, initiative)
+                                             spellEDam, probTargetsNorm, initiative)
                     target = probTargets
                 else:
                     #Bad case.
-                    if not probTargets and eTargets:
+                    if not probTargetsNorm and eTargetsNorm:
                         spellImpact = calcImpact(creature, spellList[i], spellProb,
-                                             spellEDam, eTargets, initiative)
+                                             spellEDam, eTargetsNorm, initiative)
                         target = eTargets
-                    elif not eTargets and probTargets:
+                    elif not eTargetsNorm and probTargetsNorm:
                         spellImpact = calcImpact(creature, spellList[i], spellProb,
-                                                 spellEDam, probTargets, initiative)
+                                                 spellEDam, probTargetsNorm, initiative)
                         target = probTargets
-                    elif not probTargets and not eTargets:
+                    elif not probTargetsNorm and not eTargetsNorm:
                         spellImpact = 0
                         target = None
                     else:
                         spellImpact1 = calcImpact(creature, spellList[i], spellProb,
-                                                  spellEDam, probTargets, initiative)
+                                                  spellEDam, probTargetsNorm, initiative)
                         spellImpact2 = calcImpact(creature, spellList[i], spellProb,
-                                                 spellEDam, eTargets, initiative)
+                                                 spellEDam, eTargetsNorm, initiative)
                         spellImpact = max([spellImpact1, spellImpact2])
                         targetIdx = [spellImpact1, spellImpact2].index(spellImpact)
                         target = probTargets if targetIdx == 0 else eTargets
@@ -3777,6 +4189,8 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
             except:
                 print("Error with action", spellName)
                 continue
+        else:
+            print(spellList[i].getName(), "Not viable!")
 
     actions = [{"name": actionNames[i], "prob": actionProbs[i], "eDam": actionEDams[i],
                 "impact": actionImpacts[i], "target" : actionTargets[i]} for
@@ -3796,7 +4210,6 @@ def rankActions(actions):
     )
     def _mid(a, b):
         return (a + b) / 2.0 if b is not None else a
-
     def parse_prob_segments(prob_str_or_num):
         if isinstance(prob_str_or_num, (int, float)):
             return float(prob_str_or_num), {}
@@ -3842,7 +4255,6 @@ def rankActions(actions):
             parts[tag] = _mid(a, b)
 
         return initial, parts
-
     def prob_score_weighted(initial, parts, weights=None):
         if weights is None:
             weights = {"INIT": 0.70, "LS": 0.10, "LE": 0.10, "EE": 0.10}
@@ -3865,7 +4277,6 @@ def rankActions(actions):
             if tag in parts:
                 score *= parts[tag]
         return score
-
     def prepare_actions_for_ranking(actions, score_mode="weighted"):
         out = []
         for a in actions:
@@ -3893,7 +4304,6 @@ def rankActions(actions):
             out.append(x)
 
         return out
-
     def pareto_front_set(actions, keys=KEYS):
         front_ids = set()
         for a in actions:
@@ -3909,7 +4319,6 @@ def rankActions(actions):
             if not dominated:
                 front_ids.add(id(a))
         return front_ids
-
     def topsis_scores_minmax(actions, keys=KEYS, weights=None, eps=1e-12):
         if not actions:
             return {}
@@ -3972,11 +4381,15 @@ def rankActions(actions):
     )
     for action in overallRankings:
         if "target" in action and action["target"]:
-            for i, t in enumerate(action["target"]):
-                action["target"][i] = t.getName() if not isinstance(t, str) else t
+            if isinstance(action["target"], list):
+                for i, t in enumerate(action["target"]):
+                    action["target"][i] = t.getName() if not isinstance(t, str) else t
+            elif isinstance(action["target"], dict):
+                for i, t in enumerate(action["target"]["targetsHit"]):
+                    action["target"]["targetsHit"][i] = t.getName() if not isinstance(t, str) else t
 
+    print([rank for rank in overallRankings])
     return overallRankings
-    # return [oRank["name"] for oRank in overallRankings]
 def actionViabilityCheck(action, activeInitiativeEntry, initiative, isPlayerTurn):
     def spellSlotValidity(spellSlots):
         spellLvl = action.getLvl() - 1
@@ -4123,24 +4536,26 @@ def monsterTurn(creature, initiative):
                     actionEDam, eTargets = calcTotalExpectedDamage(creature,
                                                                   monAction, initiative) if actionEDam == -1 else actionEDam
 
+                if not probTargets and not eTargets:
+                    continue
                 probTargets = normalizeTargetSets(probTargets, initiative)
-                eTargets = normalizeTargetSets(eTargets, initiative)
+                eTargetsNorm = normalizeTargetSets(eTargets, initiative)
 
-                if {target.getName() for target in probTargets} == {target.getName() for target in eTargets}:
+                if {target.getName() for target in probTargets} == {target.getName() for target in eTargetsNorm}:
                     # Good case
                     actionImpact = calcImpact(creature, monAction, actionProb,
                                              actionEDam, probTargets, initiative)
                     target = probTargets
                 else:
                     # Bad case.
-                    if not probTargets and not eTargets:
+                    if not probTargets and not eTargetsNorm:
                         actionImpact = 0
                         target = {}
                     elif not probTargets:
                         actionImpact = calcImpact(creature, monAction, actionProb,
-                                              actionEDam, eTargets, initiative)
+                                              actionEDam, eTargetsNorm, initiative)
                         target = eTargets
-                    elif not eTargets:
+                    elif not eTargetsNorm:
                         actionImpact = calcImpact(creature, monAction, actionProb,
                                               actionEDam, probTargets, initiative)
                         target = probTargets
@@ -4148,7 +4563,7 @@ def monsterTurn(creature, initiative):
                         spellImpact1 = calcImpact(creature, monAction, actionProb,
                                                   actionEDam, probTargets, initiative)
                         spellImpact2 = calcImpact(creature, monAction, actionProb,
-                                                  actionEDam, eTargets, initiative)
+                                                  actionEDam, eTargetsNorm, initiative)
                         actionImpact = max([spellImpact1, spellImpact2])
                         targetIdx = [spellImpact1, spellImpact2].index(actionImpact)
                         target = probTargets if targetIdx == 0 else eTargets
@@ -4189,43 +4604,43 @@ def playerTurn(player, initiative):
             if actionViabilityCheck(player.getWeapon(i), pInitEntry, initiative, True):
                 weaponProb = calcTotalToHitProbability(player, player.getWeapon(i), initiative)
                 if isinstance(weaponProb, dict):
-                    probTarget = weaponProb["target"]
+                    probTargets = weaponProb["target"]
                     weaponProb = weaponProb["probSuccess"]
                 else:
                     try:
                         weaponProb = int(weaponProb)
-                        probTarget = {}
+                        probTargets = {}
                     except:
                         weaponProb = 0
-                        probTarget = {}
-                weaponEDam, eTarget = calcTotalExpectedDamage(player, player.getWeapon(i), initiative)
-                probTarget = normalizeTargetSets(probTarget, initiative)
-                eTarget = normalizeTargetSets(eTarget, initiative)
+                        probTargets = {}
+                weaponEDam, eTargets = calcTotalExpectedDamage(player, player.getWeapon(i), initiative)
+                probTargetsNorm = normalizeTargetSets(probTargets, initiative)
+                eTargetsNorm = normalizeTargetSets(eTargets, initiative)
 
-                if probTarget == eTarget:
+                if probTargetsNorm == eTargetsNorm:
                     weaponImpact = calcImpact(player, player.getWeapon(i), weaponProb,
-                                              weaponEDam, probTarget, initiative)
-                    target = probTarget
+                                              weaponEDam, probTargetsNorm, initiative)
+                    target = probTargets
                 else:
-                    if not probTarget and not eTarget:
+                    if not probTargetsNorm and not eTargetsNorm:
                         weaponImpact = 0
                         target = {}
-                    elif not probTarget:
+                    elif not probTargetsNorm:
                         weaponImpact = calcImpact(player, player.getWeapon(i), weaponProb,
-                                                  weaponEDam, eTarget, initiative)
-                        target = eTarget
-                    elif not eTarget:
+                                                  weaponEDam, eTargetsNorm, initiative)
+                        target = eTargets
+                    elif not eTargetsNorm:
                         weaponImpact = calcImpact(player, player.getWeapon(i), weaponProb,
-                                                  weaponEDam, probTarget, initiative)
-                        target = probTarget
+                                                  weaponEDam, probTargetsNorm, initiative)
+                        target = probTargets
                     else:
                         weaponImpact1 = calcImpact(player, player.getWeapon(i), weaponProb,
-                                                  weaponEDam, probTarget, initiative)
+                                                  weaponEDam, probTargetsNorm, initiative)
                         weaponImpact2 = calcImpact(player, player.getWeapon(i), weaponProb,
-                                                  weaponEDam, eTarget, initiative)
+                                                  weaponEDam, eTargetsNorm, initiative)
                         weaponImpact = max([weaponImpact1, weaponImpact2])
                         targetIdx = [weaponImpact1, weaponImpact2].index(weaponImpact)
-                        target = probTarget if targetIdx == 0 else eTarget
+                        target = probTargets if targetIdx == 0 else eTargets
                 if player.getClass().lower() in ["barbarian", "paladin, ranger"]:  # Extra attack; prob is same.
                     weaponEDam += weaponEDam
                     weaponImpact += weaponImpact
@@ -4256,8 +4671,8 @@ def playerTurn(player, initiative):
     return rankActions(actions)
 def setActiveInitiative(encounter):
     initiative = copy.deepcopy(encounter.getInitiative())
-    print(initiative) #TODO: DELETE
-    for creature in initiative:
+    todeli = -1
+    for ci, creature in enumerate(initiative):
         # Add creature statblock to their associated turn
         # SHALLOW COPY OF MONSTER/PLAYER OBJECTS - Changes to creature["Statblock"] affect associated object in encounter
         if creature["turnType"].lower() == "player":
@@ -4273,6 +4688,12 @@ def setActiveInitiative(encounter):
                 ):
                     creature["Statblock"] = encounter.getMonster(i)
                     break
+        elif creature["turnType"].lower() == "lairaction":
+            print("Skipping lair action....")
+            todeli = ci
+            continue
+    if todeli != -1:
+        del initiative[todeli]
     return initiative
 
 def handle_stat_array(creature, values):
@@ -4308,17 +4729,31 @@ def handle_spell_slots(creature, values):
 def main():
     async def terminal_test():
         await init_indexes()
-        testEID = "f8e90b7e-9c86-4ceb-b9f9-97e6d82019d6"
-        testCID = "ee469aa0-5738-4bab-a3c1-c45d0ed97d2e"
+        # testEID = "5030060a-5b53-4a2c-8ef2-efd7e1771323"
+        testEID = "929a450f-c452-4c72-b7d4-8c4af11e9e32"
+        # testCID = "1e90f504-747d-4a21-89c7-807177add357" #Wizard
+        testCID = "56f5f763-4e6b-4e5f-8cc5-5046dbc0e2a9"
+        # testCID = "78d093db-6cf2-461f-ac5d-1dcc6e6bea87" #Dryad
         encounter = await get_encounter_by_eid(testEID)
         encounter = loadEncounter(encounter)
-        # creature = encounter.getPlayerByCID(testCID)
-        creature = encounter.getMonsterByCID(testCID)
+        print(encounter)
+        creature = encounter.getPlayerByCID(testCID)
+        # creature.setSpellSlots(2, 500)
+        # creature.addSpell("Moonbeam", 2, False, -1, 300, "save", "CON",
+        #                   True, 0, 2, 10, "radiant", [], [{
+        #                                                     "name": "Concentration",
+        #                                                     "effect": {}
+        #                                                  }],
+        #                 {"repeat" : True}, {}, {}, "", "action", [], "circle", 5)
+        # creature = encounter.getMonsterByCID(testCID)
+        # creature.setHP(50)
         initiative = setActiveInitiative(encounter)
-        # print("LOCATIONS")
-        # for c in initiative:
-        #     print(c["name"], c["Statblock"].getPosition())
-        # print(monsterTurn(creature, initiative))
+
+        # await saveEncounter(encounter)
+
+        # print(monsterTurn(creature, initiative)) #MONSTER
+        print(playerTurn(creature, initiative)) #PLAYER
+
         #TODO: Try PA recommendations, check for correctness
         #TODO: Try rulesetSimulate alot, check for correctness.
 
