@@ -264,6 +264,9 @@ async def actionRecommendation(eid : str, cid : str, currentUser: UserInDB = Dep
     playercids = [player.getCID().lower() for player in players]
     if cid.lower() in playercids:
         player = players[playercids.index(cid.lower())]
+
+        print("True INITIATIVE VALUE:", main.setActiveInitiative(encounter))
+        initiative = main.setActiveInitiative(encounter)
         rankings = main.playerTurn(player, initiative)
         logger.info("Rankings for %s: %s", eid, rankings)
         return rankings
@@ -595,6 +598,9 @@ async def getNextTurn(eid: str, currentUser: UserInDB = Depends(getCurrentActive
         turn_name = str(turn_obj.get("name", "")).lower()
         turn_type = turn_obj.get("turnType", "")
 
+        if turn_type == "lairAction":
+            return "LAIR_ACTION"
+
         if turn_type == "Player":
             for i in range(encounter_obj.playerSize()):
                 player = encounter_obj.getPlayer(i)
@@ -654,6 +660,11 @@ async def getNextTurn(eid: str, currentUser: UserInDB = Depends(getCurrentActive
             current_index = next_index
             continue
 
+        if current_creature == "LAIR_ACTION":
+            logger.info("Lair action turn — stopping initiative advance.")
+            found_turn = True
+            break
+
         active_conditions = normalize_conditions(current_creature.getActiveConditions())
         preE = get_pre_turn_effects(current_creature, encounter)
 
@@ -686,12 +697,36 @@ async def getTurn(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUse
         if turn["currentTurn"]:
             return turn["name"]
     return {"error" : "no turns in initiative!"}
+# TODO fix this endpoint to skip over Lair_Action
+
 @app.get("/encounter/{eid}/initiative")
 async def getSimulationInitiative(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
+    def setActiveInitiativeWLair(encounter):
+        import copy
+        initiative = copy.deepcopy(encounter.getInitiative())
+
+        for i, creature in enumerate(initiative):
+            # Add creature statblock to their associated turn
+            # SHALLOW COPY OF MONSTER/PLAYER OBJECTS - Changes to creature["Statblock"] affect associated object in encounter
+            if creature["turnType"].lower() == "player":
+                for i in range(encounter.playerSize()):
+                    if creature["name"].lower() == encounter.getPlayer(i).getName().lower():
+                        creature["Statblock"] = encounter.getPlayer(i)
+                        break
+            elif creature["turnType"].lower() == "monster":
+                for i in range(encounter.monsterSize()):
+                    if (
+                            creature["name"].lower()
+                            == encounter.getMonster(i).getName().lower()
+                    ):
+                        creature["Statblock"] = encounter.getMonster(i)
+                        break
+        return initiative
+
     enc = main.loadEncounter(await getEncounter(eid, currentUser))
-    init = main.setActiveInitiative(enc)
+    init = setActiveInitiativeWLair(enc)
     for i, creature in enumerate(init):
-        if creature["name"].lower() == "william":
+        if creature.get("turnType") == "lairAction":
             continue
         init[i]["hp"] = creature["Statblock"].getHP()
         init[i]["maxhp"] = creature["Statblock"].getMaxHP()
