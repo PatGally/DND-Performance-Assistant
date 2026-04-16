@@ -3886,7 +3886,7 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, mapd
                 "resultID": actionResult["resultID"],
                 "concentrationTargets": [t["Statblock"].getName() if isinstance(t, dict) else t.getName() for t in
                                          selectedTargets],
-                "action" :action
+                "action" :action.toDict()
             }
         }
         for se in actor.getActiveStatusEffects():
