@@ -365,7 +365,6 @@ def findSpell(spellName, spellData):
         return i
     else:
         return -1
-
 async def savePlayer(player):
     # Adds a serialized player to an existing player_list JSON file.
     stats_dict = {
@@ -447,7 +446,6 @@ async def savePlayer(player):
         await upsert_player_dict(player_dict)
     except PyMongoError as err:
         raise err
-
 def loadMonsterActions(monsterData):
     actionData = monsterData["actions"]
     actions = []
@@ -1405,8 +1403,6 @@ def bestAoePositioning(
     # print(result)
     return {"targetsHit" : result["targetsHit"], "positioning" : [[x, y] for x, y in result["coveredCells"]]}
     # return [[x, y] for x, y in result["coveredCells"]]
-
-
 def getOrientedTemplateMasks(
         shapeKind: str,
         sizeCells: int,
@@ -1527,7 +1523,6 @@ def rotateMask180(mask: Set[Coord]) -> Set[Coord]:
         return {(-x, -y) for x, y in mask}
 def rotateMask270(mask: Set[Coord]) -> Set[Coord]:
         return {(y, -x) for x, y in mask}
-
 def bestAoePositioningDebug(
         rangeFt: int,
         radiusFt: int,
@@ -2219,11 +2214,6 @@ def calcTotalExpectedDamage(player, action, initiative):
                     viableTargets.append(creature)
                 else:
                     raise ValueError("Bad rollType!")
-    #NOTE: This is old MTH code and reading it now, it seems pretty bad. May re-add later.
-    # if isinstance(action, Spell) and action.getRollType().lower() == "onhit":
-    #     spells = [player.getSpell(i) for i in range(player.getSpellLength())]
-    #     spell = player.getSpell(spells.index(action))
-    #     spell.setMean(spell.getMean() + weaponMean)
     if len(viableTargets) != 0 and all(eDamages) != 0:
         return round(max(eDamages), 2), viableTargets[eDamages.index(max(eDamages))]
     else:
@@ -3608,7 +3598,7 @@ def addStatusEffect(effect, creature, resultID):
                     ling = creature.getActiveStatusEffect("lingEffect")
                 else:
                     ling = creature.getActiveStatusEffect("lingsave")
-                ling["effect"]["spell"].extend(effect["spell"])
+                ling["effect"]["action"].extend(effect["action"])
                 ling["effect"]["resultID"].extend(effect["resultID"])
     effect["effect"]["resultID"] = [resultID]
     creature.addStatusEffect(effect)
@@ -3618,47 +3608,6 @@ def removeStatusEffect(name, creature):
     for effect in creature.getActiveStatusEffects():
         if name.lower() == effect["name"].lower():
             return creature.removeStatusEffect(name)
-def enemyCanMutate(newEffect, creature):
-    if isinstance(creature, dict):
-        creature = creature["Statblock"]
-    effect = {}
-    if "name" in newEffect:
-        for e in creature.getActiveStatusEffects():
-            if newEffect["name"].lower() == e["name"].lower():
-                effect = e
-    else:
-        for c in creature.getActiveConditions():
-            if isinstance(c, dict):
-                if c["cond"].lower() == c["cond"].lower():
-                    effect = c
-            else:
-                if c.lower() == newEffect.lower():
-                    effect = c
-    if not effect:
-        return True
-
-    if not isinstance(effect, dict):
-        return True
-    if "cond" in effect:
-        if isinstance(effect["resultID"], list):
-            if -1 in effect["resultID"]:
-                return True
-            return False
-        else:
-            if effect["resultID"] == -1:
-                return True
-        return False
-    else:
-        if not "effect" in effect or not "resultID" in effect["effect"]:
-            return True
-        if isinstance(effect["effect"]["resultID"], list):
-            if -1 in effect["effect"]["resultID"]:
-                return True
-            return False
-        else:
-            if effect["effect"]["resultID"] == -1:
-                return True
-            return False
 def endOfEncounter(initiative):
     allPlayersDead = True
     for playerTurns in initiative:
@@ -3676,7 +3625,7 @@ def endOfEncounter(initiative):
                 allMonstersDead = False
                 break
     return allPlayersDead or allMonstersDead
-def endConcentration(player, concentration, initiative):
+def endConcentration(player, concentration, initiative, mapdata):
     if isinstance(player, dict):
         player = player["Statblock"]
     concTargets = concentration["effect"]["concentrationTargets"]
@@ -3715,6 +3664,7 @@ def endConcentration(player, concentration, initiative):
                         # Remove any attributes associated with the ID
                         for j, resID in enumerate(statEffects[i]["effect"]["resultID"]):
                             if concentration["effect"]["resultID"] == resID:
+                                print(statEffects[i])
                                 del statEffects[i]["effect"]["resultID"][j]
                                 if statEffects[i]["name"].lower() not in [
                                     "lingeffect",
@@ -3722,7 +3672,10 @@ def endConcentration(player, concentration, initiative):
                                 ]:
                                     del statEffects[i]["effect"]["attribute"][j]
                                 else:
-                                    del statEffects[i]["effect"]["spell"][j]
+                                    if "spell" in statEffects[i]["effect"]:
+                                        del statEffects[i]["effect"]["spell"][j]
+                                    else:
+                                        del statEffects[i]["effect"]["action"][j]
                     if summonedCreature:
                         continue
                     seIdx = 0
@@ -3752,7 +3705,11 @@ def endConcentration(player, concentration, initiative):
 
         if not summonedCreature:
             cIdx += 1
-def executeAction(actor, action, selectedTargets, actionResult, initiative):
+
+    for tidx, token in enumerate(mapdata["layers"]["aoeTokens"]):
+        if token["resultID"] in concentration["effect"]["resultID"]:
+            del mapdata["layers"]["aoeTokens"][tidx]
+def executeAction(actor, action, selectedTargets, actionResult, initiative, mapdata):
     def applyEffectToTarget(creature, succeeded, damage, action, resultID):
         rollType = action.getRollType().lower() if isinstance(action, Spell) or isinstance(action, MonAction) else "tohit"
 
@@ -3769,9 +3726,13 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative):
         else:
             if ((rollType in ["onhit", "autohit", "tohit"] and succeeded)
                     or (rollType in ["save"] and not succeeded)):
+                print("In damage path")
                 creature.setHP(creature.getHP() - damage)
             elif rollType in ["save"] and succeeded and action.getHalfSave():
+                print("In half damage path")
                 creature.setHP(creature.getHP() - (damage // 2))
+            else:
+                print("In no damage path")
 
         creature.setHP(math.floor(creature.getHP()))
 
@@ -3805,13 +3766,16 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative):
                     if not any(
                         resultID == rID for rID in lingSaves["effect"]["resultID"]
                     ):
-                        lingSaves["effect"]["spell"].append(action.toDict())
+                        if "spell" in lingSaves["effect"]:
+                            lingSaves["effect"]["spell"].append(action.toDict())
+                        else:
+                            lingSaves["effect"]["action"].append(action.toDict())
                         lingSaves["effect"]["resultID"].append(actionResult["resultID"])
                 else:
                     newLingSave = {
                         "name": "lingSave",
                         "effect": {
-                            "spell": [action.toDict()],
+                            "action": [action.toDict()],
                             "resultID": [actionResult["resultID"]],
                         },
                     }
@@ -3822,26 +3786,6 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative):
     #selectedTargets is a list of statblocks.
     #actionResult is the entry below.
     #Token is an object describing AOE placement.
-    """
-    entry = {
-            "resultID": random.randint(1, 9999999999), str
-            "actor": player.getName(), str
-            "action": actionName, str
-            "actionType": actionType, str
-            "actionProb": actionProb, float
-            "actionEDam": actionEDam, float
-            "actionImpact": actionImpact, float
-            "targets": [t["Statblock"].getName() if isinstance(t, dict) else t.getName() for t in targets],
-            "conditions": conditions,
-            "statuseffects": statuseffects,
-            "outcome": {
-                "rollResults" : [],
-                "diceResults" : []
-            },
-            "extraOutcome": extraResult,
-            "timestamp": datetime.now().strftime("%H:%M:%S")
-        # }
-        """
     print("EXECUTE ACTION")
     print("ACTOR", actor)
     print("ACTION", action)
@@ -3854,6 +3798,28 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative):
     if len(damages) == 1 and len(selectedTargets) != 1:
         damages = [damages[0]] * len(selectedTargets)
 
+    #Assumes frontend is not normalizing data
+    for i, result in enumerate(actionResult["outcome"]["rollResults"]):
+        if result.isnumeric() and (isinstance(action, Weapon)
+                                   or action.getRollType().lower() == "onhit"
+                                   or action.getRollType().lower() == "tohit"):
+            ac = actor.getAC()
+            if int(result) >= ac:
+                actionResult["outcome"]["rollResults"][i] = "y"
+            else:
+                actionResult["outcome"]["rollResults"][i] = "n"
+        elif result.isnumeric() and action.getRollType().lower() == "save":
+            saveDC = actor.getDC()
+            if int(result) >= saveDC:
+                actionResult["outcome"]["rollResults"][i] = "y"
+            else:
+                actionResult["outcome"]["rollResults"][i] = "n"
+
+    for i in range(len(actionResult["outcome"]["diceResults"])):
+        actionResult["outcome"]["diceResults"][i] = int(actionResult["outcome"]["diceResults"][i])
+
+    print("NEW ACTION OUTCOME", actionResult["outcome"])
+
     if (
         isinstance(action, Spell)
         and action.getStatusEffects()
@@ -3864,7 +3830,8 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative):
             "effect": {
                 "resultID": actionResult["resultID"],
                 "concentrationTargets": [t["Statblock"].getName() if isinstance(t, dict) else t.getName() for t in
-                                         selectedTargets]
+                                         selectedTargets],
+                "action" :action
             }
         }
         for se in actor.getActiveStatusEffects():
@@ -3873,7 +3840,7 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative):
                        concEffect["effect"]["concentrationTargets"]):
                     # Edge case for summoned concentrationTargets
                     oldTargets = se["effect"]["concentrationTargets"]
-                    endConcentration(actor, se, initiative)
+                    endConcentration(actor, se, initiative, mapdata)
                     cetidx = 0
                     while cetidx < len(concEffect["effect"]["concentrationTargets"]):
                         cet = concEffect["effect"]["concentrationTargets"][cetidx]
@@ -3882,13 +3849,14 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative):
                         ]:
                             del concEffect["effect"]["concentrationTargets"][cetidx]
                             del actionResult["targets"][cetidx]
+                            del actionResult["effect"]["action"][cetidx]
                             del actionResult["outcome"]["diceResults"][cetidx]
                             del actionResult["outcome"]["rollResults"][cetidx]
                             del selectedTargets[cetidx]
                             continue
                         cetidx += 1
                 else:
-                    endConcentration(actor, se, initiative)
+                    endConcentration(actor, se, initiative, mapdata)
                 break
         actor.addStatusEffect(concEffect)
 
@@ -3905,13 +3873,16 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative):
             )
             if creature.isActiveStatusEffect("lingEffect"):
                 lingEffect = creature.getActiveStatusEffect("lingEffect")
-                lingEffect["effect"]["spell"].append(transLingEffect.toDict())
+                if "spell" in lingEffect["effect"]:
+                    lingEffect["effect"]["spell"].append(transLingEffect.toDict())
+                else:
+                    lingEffect["effect"]["action"].append(transLingEffect.toDict())
                 lingEffect["effect"]["resultID"].append(actionResult["resultID"])
             else:
                 newLingEffect = {
                     "name": "lingEffect",
                     "effect": {
-                        "spell": [transLingEffect.toDict()],
+                        "action": [transLingEffect.toDict()],
                         "resultID": [actionResult["resultID"]],
                     },
                 }
@@ -3976,28 +3947,21 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative):
                 actionResult["turnCount"] = 0
                 actionResult["turnCap"] = int(note.lower().split("turn")[0])
                 break
-def endSpellEffect(effect, idx, creature, initiative):
+def endSpellEffect(effect, idx, creature):
     # Ends any long-lasting effect that a creature has from a given spell
     # - and ends concentration if nobody else is under that spell.
-    if "effect" in effect:
-        effectID = effect["effect"]["resultID"][idx]
-        if idx == 0:
-            removeStatusEffect(effect["name"], creature)
+    effectID = effect["effect"]["resultID"][idx]
+    # lingEffect = False
+
+    del effect["effect"]["resultID"][idx]
+    if effect["name"].lower() in ["lingsave", "lingeffect"]:
+        if effect["name"].lower() == "lingeffect":
+            lingEffect = True
+        if "spell" in effect["effect"]:
+            del effect["effect"]["spell"][idx]
         else:
-            del effect["effect"]["resultID"][idx]
-            if effect["name"].lower() in ["lingsave", "lingeffect"]:
-                del effect["effect"]["spell"][idx]
-            else:
-                del effect["effect"]["attribute"][idx]
-    elif "cond" in effect:
-        effectID = effect["resultID"][idx]
-        if idx == 0:
-            removeCondition(effect["cond"], creature)
-        else:
-            del effect["resultID"][idx]
-    else:
-        removeCondition(effect, creature)
-        return
+            del effect["effect"]["action"][idx]
+
     # Removes associated statEffects and conditions from creature.
     for condition in creature.getActiveConditions():
         if isinstance(condition, dict):
@@ -4007,36 +3971,44 @@ def endSpellEffect(effect, idx, creature, initiative):
                     break
             if len(condition["resultID"]) == 0:
                 removeCondition(condition["cond"], creature)
-    for se in creature.getActiveStatusEffects():
+    statEffects = creature.getActiveStatusEffects()
+    i = 0
+    while i < len(statEffects):
+        se = statEffects[i]
         if (
-            se["name"].lower() != "concentration"
-            and effectID in se["effect"]["resultID"]
+                se["name"].lower() != "concentration"
+                and effectID in se["effect"]["resultID"]
         ):
             for ri, resultID in enumerate(se["effect"]["resultID"]):
                 if effectID == resultID:
-                    endSpellEffect(se, ri, creature, initiative)
+                    del statEffects[i]["effect"]["resultID"][ri]
+                    if len(se[i]["effect"]["resultID"]) == 0:
+                        del statEffects[i]
                     break
-
-    for target in initiative:
-        target = target["Statblock"]
-        if target.isActiveStatusEffect("concentration"):
-            concEffect = target.getActiveStatusEffect("concentration")
-            if concEffect["effect"]["resultID"] == effectID:
-                remainingTargets = False
-                for effectTarget in initiative:
-                    effectTarget = effectTarget["Statblock"]
-                    if (
-                        effectTarget.isActiveStatusEffect(effect["name"])
-                        and effectID
-                        in effectTarget.getActiveStatusEffect(effect["name"])["effect"][
-                            "resultID"
-                        ]
-                    ):
-                        remainingTargets = True
-                        break
-                if not remainingTargets:
-                    endConcentration(target, concEffect, initiative)
-                break
+        i += 1
+    #This part is optional from the MTHcap. Do we want to let lingsave concentration die if its not targeting anything?
+    #Or do we leave that to user choice?
+    # if not lingEffect:
+    #     for target in initiative:
+    #         target = target["Statblock"]
+    #         if target.isActiveStatusEffect("concentration"):
+    #             concEffect = target.getActiveStatusEffect("concentration")
+    #             if concEffect["effect"]["resultID"] == effectID:
+    #                 remainingTargets = False
+    #                 for effectTarget in initiative:
+    #                     effectTarget = effectTarget["Statblock"]
+    #                     if (
+    #                         effectTarget.isActiveStatusEffect(effect["name"])
+    #                         and effectID
+    #                         in effectTarget.getActiveStatusEffect(effect["name"])["effect"][
+    #                             "resultID"
+    #                         ]
+    #                     ):
+    #                         remainingTargets = True
+    #                         break
+    #                 if not remainingTargets:
+    #                     endConcentration(target, concEffect, initiative)
+    #                 break
 
 #ENCOUNTER RUNTIME METHODS
 def merge_sort_spells(spell_list):
@@ -4730,15 +4702,24 @@ def main():
     async def terminal_test():
         await init_indexes()
         # testEID = "5030060a-5b53-4a2c-8ef2-efd7e1771323"
-        testEID = "929a450f-c452-4c72-b7d4-8c4af11e9e32"
+        testEID = "929a450f-c452-4c72-b7d4-8c4af11e9e32" #apopopopkop
         # testCID = "1e90f504-747d-4a21-89c7-807177add357" #Wizard
-        testCID = "56f5f763-4e6b-4e5f-8cc5-5046dbc0e2a9"
+        # testCID = "56f5f763-4e6b-4e5f-8cc5-5046dbc0e2a9" #Aboleth?
+        testCID = "56f5f763-4e6b-4e5f-8cc5-5046dbc0e2a9" #RangerTest
         # testCID = "78d093db-6cf2-461f-ac5d-1dcc6e6bea87" #Dryad
         encounter = await get_encounter_by_eid(testEID)
         encounter = loadEncounter(encounter)
         print(encounter)
         creature = encounter.getPlayerByCID(testCID)
-        # creature.setSpellSlots(2, 500)
+        concEffect = creature.getActiveStatusEffect("concentration")
+        effAction = {}
+        with open("CoreEngine/data/spell_list.json", "r") as slr:
+            spell_list = json.load(slr)
+            for spell in spell_list:
+                if spell["spellname"].lower() == "wind wall":
+                    effAction = spell
+                    break
+        concEffect["effect"]["action"] = effAction
         # creature.addSpell("Moonbeam", 2, False, -1, 300, "save", "CON",
         #                   True, 0, 2, 10, "radiant", [], [{
         #                                                     "name": "Concentration",
@@ -4746,13 +4727,12 @@ def main():
         #                                                  }],
         #                 {"repeat" : True}, {}, {}, "", "action", [], "circle", 5)
         # creature = encounter.getMonsterByCID(testCID)
-        # creature.setHP(50)
-        initiative = setActiveInitiative(encounter)
+        # initiative = setActiveInitiative(encounter)
 
-        # await saveEncounter(encounter)
+        await saveEncounter(encounter)
 
         # print(monsterTurn(creature, initiative)) #MONSTER
-        print(playerTurn(creature, initiative)) #PLAYER
+        # print(playerTurn(creature, initiative)) #PLAYER
 
         #TODO: Try PA recommendations, check for correctness
         #TODO: Try rulesetSimulate alot, check for correctness.

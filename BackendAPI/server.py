@@ -24,6 +24,7 @@ from google.auth.transport import requests as google_requests
 from pathlib import Path
 
 from .models.AffectedCreatures import AffectedCreaturesRequest
+from .models.PreTurnRequest import PreTurnRequest
 from .models.UserAuth import (TokenData, UserCreate,
                              UserInDB, UserPublic, ChangePasswordRequest, SetDisabledRequest, GoogleAuthRequest)
 from db.db_access import init_indexes, get_user_by_username, get_encounter_by_eid, get_player_by_cid, \
@@ -202,7 +203,6 @@ async def getCreatureActions(eid : str, cid : str, currentUser: UserInDB = Depen
         basics = json.load(brf)
         actions.extend(basics)
     return actions
-
 @app.get("/encounter/{eid}/creature/{cid}", response_model=Union[AnyPlayer, Monster])
 async def getCreature(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
     enc = await getEncounter(eid, currentUser)
@@ -307,52 +307,37 @@ async def deletePlayer(cid: str, currentUser: UserInDB = Depends(getCurrentActiv
         "removedFromUser": userDeleted
     }
 
-@app.post("/encounter/{eid}/simulate/ruleset")
-async def rulesetSimulate(
-    eid: str,
-    entry: ActionRequest,
-    currentUser: UserInDB = Depends(getCurrentActiveUser)
-):
-    def _get_map_data(encounter):
-        if hasattr(encounter, "getMapData"):
-            return encounter.getMapData()
-        return getattr(encounter, "_Encounter__mapData", None)
-    def _set_map_data(encounter, map_data):
-        if hasattr(encounter, "setMapData"):
-            encounter.setMapData(map_data)
-        else:
-            setattr(encounter, "_Encounter__mapData", map_data)
-    def _persist_lingering_aoe_token(encounter, token: dict) -> None:
-        if not token or token.get("timing") != "lingering":
-            return
+@app.delete("/encounter/{eid}/creature/{cid}/pre-effect/{resultID}")
+async def endPreEffect(eid : str, cid : str, resultID : str, currentUser : UserInDB = Depends(getCurrentActiveUser)):
+    encounter = await getEncounter(eid, currentUser)
+    creatureObj = await getCreatureObj(encounter, cid)
 
-        map_data = _get_map_data(encounter)
-        if map_data is None:
-            return
+    statEffects = creatureObj.getActiveStatusEffects()
+    idx = 0
+    effect = {}
+    for eff in statEffects:
+        if eff["name"].lower() in ["lingsave", "lingeffect"]:
+            if isinstance(eff["effect"]["resultID"], list):
+                for i, id in enumerate(eff["effect"]["resultID"]):
+                    if resultID == id:
+                        idx = i
+                        effect = eff
+                        break
+            elif resultID == eff["effect"]["resultID"]:
+                idx = 0
+                effect = eff
+                break
 
-        layers = map_data.setdefault("layers", {})
-        aoe_tokens = layers.setdefault("aoeTokens", [])
+    if not effect:
+        raise HTTPException(status_code=500, detail="Effect not found.")
 
-        # Upsert by resultID so resubmits do not duplicate
-        aoe_tokens = [
-            existing
-            for existing in aoe_tokens
-            if existing.get("resultID") != token.get("resultID")
-        ]
-        aoe_tokens.append(token)
+    main.endSpellEffect(effect, idx, creatureObj)
+    await main.saveEncounter(encounter)
 
-        layers["aoeTokens"] = aoe_tokens
-        map_data["layers"] = layers
-        _set_map_data(encounter, map_data)
-    encounter = main.loadEncounter(await getEncounter(eid, currentUser))
-
-    token_model = entry.token
-    entry = entry.model_dump(mode="json", by_alias=True)
-
+def unpackEntry(entry, activeInitiative):
     actor = entry["actor"]
     actorObj = ""
     action = entry["action"]
-    activeInitiative = main.setActiveInitiative(encounter)
     targets = entry["targets"]
     selectedTargets = []
     isSpell = False
@@ -360,6 +345,7 @@ async def rulesetSimulate(
     for creature in activeInitiative:
         if creature["name"].lower() == actor.lower():
             actorObj = creature["Statblock"]
+            print("Found actor!")
             spell = creature["Statblock"].getSpellByName(action)
             if spell:
                 isSpell = True
@@ -387,6 +373,56 @@ async def rulesetSimulate(
                 action = main.translateBasicAction(actorObj, bActions[2])
         else:
             raise HTTPException(status_code=500, detail="Action not found.")
+
+    return actorObj, action, targets, isSpell, selectedTargets
+
+@app.post("/encounter/{eid}/simulate/ruleset")
+async def rulesetSimulate(
+    eid: str,
+    entry: ActionRequest,
+    currentUser: UserInDB = Depends(getCurrentActiveUser)
+):
+    def _persist_lingering_aoe_token(encounter, token: dict) -> None:
+        def _get_map_data(encounter):
+            if hasattr(encounter, "getMapData"):
+                return encounter.getMapData()
+            return getattr(encounter, "_Encounter__mapData", None)
+
+        def _set_map_data(encounter, map_data):
+            if hasattr(encounter, "setMapData"):
+                encounter.setMapData(map_data)
+            else:
+                setattr(encounter, "_Encounter__mapData", map_data)
+        if not token or token.get("timing") != "lingering":
+            return
+
+        map_data = _get_map_data(encounter)
+        if map_data is None:
+            return
+
+        layers = map_data.setdefault("layers", {})
+        aoe_tokens = layers.setdefault("aoeTokens", [])
+
+        # Upsert by resultID so resubmits do not duplicate
+        aoe_tokens = [
+            existing
+            for existing in aoe_tokens
+            if existing.get("resultID") != token.get("resultID")
+        ]
+        aoe_tokens.append(token)
+
+        layers["aoeTokens"] = aoe_tokens
+        map_data["layers"] = layers
+        _set_map_data(encounter, map_data)
+
+    encounter = main.loadEncounter(await getEncounter(eid, currentUser))
+    mapdata = encounter.getMapData()
+    activeInitiative = main.setActiveInitiative(encounter)
+
+    token_model = entry.token
+    entry = entry.model_dump(mode="json", by_alias=True)
+    actorObj, action, targets, isSpell, selectedTargets = unpackEntry(entry, activeInitiative)
+    actor = actorObj.getName()
 
     token = token_model.model_dump(mode="json") if token_model else None
     if token:
@@ -423,7 +459,7 @@ async def rulesetSimulate(
             else:
                 raise HTTPException(status_code=500, detail="Invalid Action cost")
 
-    main.executeAction(actorObj, action, selectedTargets, entry, activeInitiative)
+    main.executeAction(actorObj, action, selectedTargets, entry, activeInitiative, mapdata)
 
     # Persist lingering AOE template into mapdata before save
     _persist_lingering_aoe_token(encounter, token)
@@ -477,6 +513,22 @@ async def manualSimulate(eid : str, affectedCreatures : AffectedCreaturesRequest
 
     return {"verification" : "true"}
 
+@app.post("/encounter/{eid}/simulate/preturn")
+async def preTurnSimulate(eid : str, entry : PreTurnRequest, currentUser : UserInDB = Depends(getCurrentActiveUser)):
+    encounter = main.loadEncounter(await getEncounter(eid, currentUser))
+    mapdata = encounter.getMapData()
+    activeInitiative = main.setActiveInitiative(encounter)
+    entry = entry.model_dump(mode="json", by_alias=True)
+
+    actorObj, action, targets, isSpell, selectedTargets = unpackEntry(entry, activeInitiative)
+    main.executeAction(actorObj, action, selectedTargets, entry, activeInitiative, mapdata)
+    await main.saveEncounter(encounter)
+    if entry["preTurnMeta"].lower() == "lingsave" and entry["rollResult"][0] == "y":
+        print("Saved out")
+        return {"savedOut" : True}
+    else:
+        return {"savedOut" : False}
+
 @app.post("/encounter/{eid}/creature/{cid}/simulate/movement")
 async def movementSimulate(eid : str, cid : str, newPos : List[List[int]], currentUser : UserInDB = Depends(getCurrentActiveUser)):
     encounter = main.loadEncounter(await getEncounter(eid, currentUser))
@@ -509,11 +561,63 @@ async def movementSimulate(eid : str, cid : str, newPos : List[List[int]], curre
                 bad = True
                 message = f"Position collision detected"
 
-    #TODO: Check if newPos is within movement range of currentPos, according to movementResource of creature.
+    #TODO in summer: Check if newPos is within movement range of currentPos, according to movementResource of creature.
 
     if bad:
         raise HTTPException(status_code=500, detail=message)
     creature.setPosition(newPos)
+
+    tokens = encounter.getMapData()["layers"]["aoeTokens"]
+    token = {}
+    for t in tokens:
+        for pos in newPos:
+            if pos in t["positioning"]:
+                token = t
+                break
+    if token:
+        tokenCID = token["cid"]
+
+        concEffect = {}
+        players = [encounter.getPlayer(i) for i in range(encounter.playerSize())]
+        monsters = [encounter.getMonster(i) for i in range(encounter.monsterSize())]
+        for player in players:
+            if player.getCID() == tokenCID:
+                concEffect = player.getActiveStatusEffect("concentration")
+                break
+        if not concEffect:
+            for monster in monsters:
+                if monster.getCID() == tokenCID:
+                    concEffect = monster.getActiveStatusEffect("concentration")
+                    break
+        if not concEffect:
+            raise HTTPException(status_code=500, detail="Error with concentration effect")
+        #Moved into lingering token -> gain the lingering effect associated with that token.
+        if concEffect:
+            print("Creature entered lingering token, adding lingeffect...")
+            creature.addStatusEffect({
+                "name" : "lingeffect",
+                "effect" : {
+                    "action" : [concEffect["effect"]["action"]],
+                    "resultID" : [token["resultID"]]
+                }
+            })
+    else:
+        #Moved out of a lingering token -> remove lingeffect associated with that token.
+        if creature.getActiveStatusEffect("lingeffect"):
+            tokenIDs = [t["resultID"] for t in tokens]
+            lingEff = creature.getActiveStatusEffect("lingeffect")
+            for ridx, rid in enumerate(lingEff["effect"]["resultID"]):
+                if rid in tokenIDs:
+                    print("Creature left lingering token, removing lingeffect...")
+                    if len(lingEff["effect"]["resultID"]) == 1:
+                        creature.removeStatusEffect("lingeffect")
+                        break
+                    else:
+                        del lingEff["effect"]["resultID"][ridx]
+                        del lingEff["effect"]["action"][ridx]
+                        break
+
+
     await main.saveEncounter(encounter)
 
 @app.get("/uuid")
@@ -522,6 +626,12 @@ def getUUID():
     myUuidString = str(myUuidObject)
     logger.info(myUuidString)
     return myUuidString
+
+@app.put("/encounter/{eid}/setcompleted")
+async def setCompleted(eid, currentUser : UserInDB = Depends(getCurrentActiveUser)):
+    encounter = main.loadEncounter(await getEncounter(eid, currentUser))
+    encounter.setComplete(True)
+    await main.saveEncounter(encounter)
 @app.get("/basic-actions")
 def getBasicActions():
     with open("CoreEngine/data/basic_actions.json", "r") as brf:
@@ -553,7 +663,6 @@ async def getNextTurn(eid: str, currentUser: UserInDB = Depends(getCurrentActive
                     normalized.add(cond["name"].lower())
 
         return normalized
-
     def get_pre_turn_effects(current_creature, encounter_obj):
         pre_effects = []
 
@@ -590,7 +699,6 @@ async def getNextTurn(eid: str, currentUser: UserInDB = Depends(getCurrentActive
                         result["turnCount"] += 1
 
         return pre_effects
-
     def get_creature_from_turn(turn_obj, encounter_obj):
         turn_name = str(turn_obj.get("name", "")).lower()
         turn_type = turn_obj.get("turnType", "")
@@ -749,6 +857,12 @@ async def getEncounterPacket(currentUser: UserInDB = Depends(getCurrentActiveUse
     encounters = await encounterList.to_list(length=None)
     return [{"name": enc.get("name"),"date": enc.get("date"), "mapLink": enc.get("mapdata", {}).get("map", {}).get("mapLink"), "eid":  enc.get("eid"),"completed": enc.get("completed")} \
             for enc in encounters]
+
+@app.get("/encounter/{eid}/completed")
+async def endOfEncounter(eid : str, currentUser : UserInDB = Depends(getCurrentActiveUser)):
+    encounter = main.loadEncounter(await getEncounter(eid, currentUser))
+    initiative = main.setActiveInitiative(encounter)
+    return {"isEnd" : main.endOfEncounter(initiative)}
 
 @app.get("/dashboard/{eid}/packet")
 async def getEncounterMiniData(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):

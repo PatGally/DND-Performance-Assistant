@@ -131,13 +131,26 @@ class Stats:
         return None
     def addStatusEffect(self, effect):
         effect["name"] = effect["name"].lower()
+        if effect["name"] == "lingeffect":
+            if self.getActiveStatusEffect("lingeffect"):
+                self.getActiveStatusEffect("lingeffect")["effect"]["resultID"].append(effect["effect"]["resultID"])
+                self.getActiveStatusEffect("lingeffect")["effect"]["action"].append(effect["effect"]["action"])
+                return
         self.__activeStatusEffects.append(effect)
     def removeStatusEffect(self, effectName):
+        self.removeStatusEffectFull(effectName)
+    def removeStatusEffectFull(self, effectName):
         for i, effect in enumerate(self.__activeStatusEffects):
             if effect["name"].lower() == effectName.lower():
                 self.__activeStatusEffects.remove(effect)
                 return True
         return False
+    def removeStatusEffectID(self, effectID):
+        for i, effect in enumerate(self.__activeStatusEffects):
+            for ridx, id in enumerate(effect["resultID"]):
+                if effectID == id:
+                    del self.__activeStatusEffects[i]["effect"]["resultID"][ridx]
+                    del self.__activeStatusEffects[i]["effect"]["spell"][ridx]
     def isActiveStatusEffect(self, effect):
         for status in self.__activeStatusEffects:
             if effect.lower() == status["name"].lower():
