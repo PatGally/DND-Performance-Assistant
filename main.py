@@ -1255,6 +1255,7 @@ def calcLingeringSavesProbability(player, target, spell):
             and not target.isActiveCondition("Out of Combat"):
         saveProb = ((21 - player.getDC()) + target.getSaveProf(
             spell.getLingSaves()["saveType"])) / 20
+        saveProb = min(max(saveProb, 0), 1)
         return saveProb
     return 0
 def getMultiTargetWeights(player, action, initiative):
@@ -1464,7 +1465,7 @@ def getOrientedTemplateMasks(
 
     def circleMaskLookup(radiusCells: int) -> Set[Coord]:
         mask = set()
-        r2 = radiusCells * radiusCells
+        r2 = radiusCells ** 2
 
         for dy in range(-radiusCells, radiusCells + 1):
             remaining = r2 - (dy * dy)
@@ -1798,6 +1799,8 @@ def bestAoePositioningDebug(
     # radiusFt now controls the actual AOE template size.
     sizeCells = max(1, math.ceil(int(radiusFt) / 5))
     rangeCells = max(0, math.ceil(int(rangeFt) / 5))
+    if originMode == "self":
+        rangeCells = 0
     lineWidthCells = max(1, math.ceil(lineWidthFt / 5)) if lineWidthFt else None
 
     unparsedCells = []
@@ -1811,7 +1814,7 @@ def bestAoePositioningDebug(
     for target in allTargets:
         normalizedTarget = {
             "name": target["name"],
-            "probSuccess": float(target["probSuccess"]),
+            "probSuccess": float(target["probSuccess"]) if target["probSuccess"] else 0.0,
             "positioning": {tuple(p) for p in target["positioning"]},
         }
         normalizedTargets.append(normalizedTarget)
@@ -2134,7 +2137,7 @@ def calcIndividualExpectedDamage(player, action, creature):
         )
         return round(expectedDamage, 3)
     else:
-        return None
+        return 0.0
 def calcTotalExpectedDamage(player, action, initiative):
     eDamages = []
     viableTargets = []
@@ -2805,8 +2808,10 @@ def calcTotalSaveProbability(player, action, initiative):
 
         if not token:
             return 0
+        finalTargets = []
         for creature in targetsCopy:
             if creature.getName().lower() in [t["name"].lower() for t in token["targetsHit"]]:
+                finalTargets.append(creature)
                 if checkLingEffects or checkExtraEffects:
                     successProbIdx = [t["name"].lower() for t in token["targetsHit"]].index(creature.getName().lower())
                     successProb = targets[successProbIdx]["probSuccess"]
@@ -2821,10 +2826,10 @@ def calcTotalSaveProbability(player, action, initiative):
                 if checkLingSaves:
                     lingSavesProb += calcLingeringSavesProbability(player, creature, action)
 
-        if len(targets) != 0:
-            lingEffectProb = lingEffectProb / len(targets)
-            extraEffectProb = extraEffectProb / len(targets)
-            lingSavesProb = lingSavesProb / len(targets)
+        if len(finalTargets) != 0:
+            lingEffectProb = lingEffectProb / len(finalTargets)
+            extraEffectProb = extraEffectProb / len(finalTargets)
+            lingSavesProb = lingSavesProb / len(finalTargets)
         else:
             probSuccess = 0
         targetSuccess = token
@@ -4007,6 +4012,13 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, mapd
                     raw_damage *= 0
                 elif any(creature.isVulnerable(dType) for dType in damTypes):
                     raw_damage *= 2
+        if isinstance(damTypes, str):
+            if creature.isResistant(damTypes):
+                raw_damage /= 4
+            elif creature.isVulnerable(damTypes):
+                raw_damage *= 1.5
+            elif creature.isImmune(damTypes):
+                raw_damage /= 2
         applied_damage = _applied_damage_amount(
             raw_damage,
             succeeded,
@@ -4497,9 +4509,10 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
             for chunk in chunks[1:]:
                 m = SEG_RE.match(chunk)
                 if not m:
-                    raise ValueError(
-                        f"Could not parse prob chunk: {chunk!r} from {prob_str_or_num!r}"
-                    )
+                    continue
+                    # raise ValueError(
+                    #     f"Could not parse prob chunk: {chunk!r} from {prob_str_or_num!r}"
+                    # )
 
                 a = float(m.group("a"))
                 b = float(m.group("b")) if m.group("b") is not None else None
@@ -4636,8 +4649,12 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
         )
         for action in overallRankings:
             if "target" in action and action["target"]:
-                for i, t in enumerate(action["target"]):
-                    action["target"][i] = t.getName() if not isinstance(t, str) else t
+                if "targetsHit" in action["target"]:
+                    for i, t in enumerate(action["target"]["targetsHit"]):
+                        action["target"]["targetsHit"][i] = t.getName() if not isinstance(t, str) else t
+                else:
+                    for i, t in enumerate(action["target"]):
+                        action["target"][i] = t.getName() if not isinstance(t, str) else t
 
         return overallRankings
 
@@ -4824,9 +4841,10 @@ def monsterTurn(creature, initiative, encounter_id=None):
     mInitEntry = initiative[[i["name"].lower() for i in initiative].index(creature.getName().lower())]
     for i, monAction in enumerate(monActions):
         if monAction.isBadObj():
-            actions.append({"name": monAction.getName(), "prob": 0, "eDam": 0, "impact": 0})
+            # actions.append({"name": monAction.getName(), "prob": 0, "eDam": 0, "impact": 0})
             continue
         actionName = monAction.getName()
+        print("action", actionName)
 
         if actionViabilityCheck(monAction, mInitEntry, initiative, False):
             try:
@@ -4836,7 +4854,10 @@ def monsterTurn(creature, initiative, encounter_id=None):
                     actionProb = 1.0
                     actionEDam = 0
                     probTargets = [creature.getName()]
-                    eTargets = [creature.getName()]
+                    probTargetsNorm = normalizeTargetSets(probTargets, initiative)
+                    actionImpact = calcImpact(creature, monAction, actionProb,
+                                              actionEDam, probTargetsNorm, initiative)
+                    target = probTargets
                 else:
                     if monAction.getRollType().lower() == "tohit":
                         actionProb = calcTotalToHitProbability(creature, monAction, initiative)
@@ -4859,37 +4880,37 @@ def monsterTurn(creature, initiative, encounter_id=None):
                     actionEDam, eTargets = calcTotalExpectedDamage(creature,
                                                                   monAction, initiative) if actionEDam == -1 else actionEDam
 
-                if not probTargets and not eTargets:
-                    continue
-                probTargetsNorm = normalizeTargetSets(probTargets, initiative)
-                eTargetsNorm = normalizeTargetSets(eTargets, initiative)
+                    if not probTargets and not eTargets:
+                        continue
+                    probTargetsNorm = normalizeTargetSets(probTargets, initiative)
+                    eTargetsNorm = normalizeTargetSets(eTargets, initiative)
 
-                if {target.getName() for target in probTargetsNorm} == {target.getName() for target in eTargetsNorm}:
-                    # Good case
-                    actionImpact = calcImpact(creature, monAction, actionProb,
-                                             actionEDam, probTargetsNorm, initiative)
-                    target = probTargets
-                else:
-                    # Bad case.
-                    if not probTargetsNorm and not eTargetsNorm:
-                        actionImpact = 0
-                        target = {}
-                    elif not probTargetsNorm:
+                    if {target.getName() for target in probTargetsNorm} == {target.getName() for target in eTargetsNorm}:
+                        # Good case
                         actionImpact = calcImpact(creature, monAction, actionProb,
-                                              actionEDam, eTargetsNorm, initiative)
-                        target = eTargets
-                    elif not eTargetsNorm:
-                        actionImpact = calcImpact(creature, monAction, actionProb,
-                                              actionEDam, probTargetsNorm, initiative)
+                                                 actionEDam, probTargetsNorm, initiative)
                         target = probTargets
                     else:
-                        spellImpact1 = calcImpact(creature, monAction, actionProb,
-                                                  actionEDam, probTargetsNorm, initiative)
-                        spellImpact2 = calcImpact(creature, monAction, actionProb,
+                        # Bad case.
+                        if not probTargetsNorm and not eTargetsNorm:
+                            actionImpact = 0
+                            target = {}
+                        elif not probTargetsNorm:
+                            actionImpact = calcImpact(creature, monAction, actionProb,
                                                   actionEDam, eTargetsNorm, initiative)
-                        actionImpact = max([spellImpact1, spellImpact2])
-                        targetIdx = [spellImpact1, spellImpact2].index(actionImpact)
-                        target = probTargets if targetIdx == 0 else eTargets
+                            target = eTargets
+                        elif not eTargetsNorm:
+                            actionImpact = calcImpact(creature, monAction, actionProb,
+                                                  actionEDam, probTargetsNorm, initiative)
+                            target = probTargets
+                        else:
+                            spellImpact1 = calcImpact(creature, monAction, actionProb,
+                                                      actionEDam, probTargetsNorm, initiative)
+                            spellImpact2 = calcImpact(creature, monAction, actionProb,
+                                                      actionEDam, eTargetsNorm, initiative)
+                            actionImpact = max([spellImpact1, spellImpact2])
+                            targetIdx = [spellImpact1, spellImpact2].index(actionImpact)
+                            target = probTargets if targetIdx == 0 else eTargets
 
                 actionNames.append(actionName)
                 actionProbs.append(actionProb)
@@ -5166,7 +5187,9 @@ def main():
         if not action:
             return
 
-        print(executeAction(actorObj, action, selectedTargets, actionRequest, initiative, mapdata))
+        # print(executeAction(actorObj, action,
+        #             selectedTargets, actionRequest,
+        #                     initiative, mapdata))
 
         # await saveEncounter(encounter)
 
