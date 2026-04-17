@@ -16,7 +16,6 @@ class Player(Stats):
         self.__level = level
         self.setMaxHP(self.__calcHP())
         if hp == -1:
-            print("THIS SHOULDNT HAPPEN")
             self.setHP(self.getMaxHP())
         else:
             self.setHP(hp)

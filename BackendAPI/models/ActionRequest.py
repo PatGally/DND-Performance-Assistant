@@ -13,11 +13,53 @@ class ExtraOutcome(BaseModel):
     extraRollResults : List[str] = Field(alias="extraRollResults")
     extraDiceResults : List[int] = Field(alias="extraDiceResults")
 
+class AoeTokenPayload(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+
+    name: str
+    positioning: List[List[int]]
+    token_image: str
+    resultID: str
+    cid: str
+    anchor: List[int]
+    timing: str
+    shape: str
+
+    @field_validator("positioning", mode="before")
+    @classmethod
+    def validate_positioning(cls, v: Any) -> List[List[int]]:
+        if not isinstance(v, list):
+            raise ValueError("positioning must be a list of [x, y] coords")
+        out: List[List[int]] = []
+        for item in v:
+            if (
+                not isinstance(item, list)
+                or len(item) != 2
+                or not all(isinstance(n, int) for n in item)
+            ):
+                raise ValueError("each positioning entry must be [int, int]")
+            out.append(item)
+        return out
+
+    @field_validator("anchor", mode="before")
+    @classmethod
+    def validate_anchor(cls, v: Any) -> List[int]:
+        if (
+            not isinstance(v, list)
+            or len(v) != 2
+            or not all(isinstance(n, int) for n in v)
+        ):
+            raise ValueError("anchor must be [int, int]")
+        return v
+
+    @field_validator("name", "token_image", "resultID", "cid", "timing", "shape", mode="before")
+    @classmethod
+    def strip_strings(cls, v: Any) -> str:
+        return str(v).strip()
+
+
 class ActionRequest(BaseModel):
-    """
-    Payload received by the backend to apply/simulate a chosen action on encounter state.
-    Mirrors the entry dict created client-side.
-    """
+
     model_config = ConfigDict(populate_by_name=True, extra="allow")
 
     resultID: str
@@ -38,14 +80,9 @@ class ActionRequest(BaseModel):
     outcome: Outcome
     extraOutcome: ExtraOutcome
 
-    token : Optional[Any] = None
+    token : Optional[AoeTokenPayload] = None
 
-    # Sender uses "%H:%M:%S"
     timestamp: time
-
-    # -------------------
-    # Validators
-    # -------------------
 
     @field_validator("actor", "action", "actionType", mode="before")
     @classmethod
@@ -91,7 +128,7 @@ class ActionRequest(BaseModel):
         for item in v:
             if not isinstance(item, dict):
                 raise ValueError("each statuseffect must be a dict/object")
-            # optional normalization: lowercase name if present
+
             if "name" in item and isinstance(item["name"], str):
                 item = dict(item)
                 item["name"] = item["name"].strip().lower()
@@ -101,12 +138,6 @@ class ActionRequest(BaseModel):
     @field_validator("timestamp", mode="before")
     @classmethod
     def parse_timestamp(cls, v: Any) -> time:
-        """
-        Accepts:
-          - datetime.time already
-          - "HH:MM:SS" string (your sender format)
-          - ISO datetime string (fallback)
-        """
         if isinstance(v, time):
             return v
         if isinstance(v, str):
@@ -122,3 +153,4 @@ class ActionRequest(BaseModel):
             except ValueError:
                 pass
         raise ValueError("timestamp must be 'HH:MM:SS' (e.g., '14:33:07')")
+

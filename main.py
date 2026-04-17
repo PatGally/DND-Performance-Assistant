@@ -1,16 +1,16 @@
+import asyncio
 import copy
 import itertools
 import json
-
-from pymongo.errors import PyMongoError
-import asyncio
-from db.db_access import init_indexes, get_encounter_by_eid, upsert_player_dict, upsert_encounter_dict
 import math
+import os
 import re
+from datetime import datetime
 from typing import Set, List, Dict, Any, Tuple, Optional
 
+from pymongo.errors import PyMongoError
 from scipy.stats import norm
-
+from ml.main_hooks import make_training_record, predict_action_weight
 from CoreEngine import Weapon, Spell, Monster, Player, Encounter, MonAction
 from CoreEngine.DNDClasses import (
     Barbarian,
@@ -18,15 +18,10 @@ from CoreEngine.DNDClasses import (
     Cleric,
     Druid,
     Fighter,
-    Monk,
     Paladin,
-    Ranger,
-    Rogue,
     Sorcerer,
 )
-
-from datetime import datetime
-import os
+from db.db_access import init_indexes, get_encounter_by_eid, upsert_player_dict, upsert_encounter_dict
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "CoreEngine/data")
@@ -353,6 +348,7 @@ def addChosenSpell(spell, player):
                         targetRange, rollType, saveType, halfSave, damageMod, diceNum, diceType,
                         damType, conditions, statusEffect, lingEffect, extraEffect, lingSaves,
                         scaling, actionCost, specialNotes, spellShape, spellRadius)
+
 def findSpell(spellName, spellData):
     found = False
     i = 0
@@ -365,7 +361,6 @@ def findSpell(spellName, spellData):
         return i
     else:
         return -1
-
 async def savePlayer(player):
     # Adds a serialized player to an existing player_list JSON file.
     stats_dict = {
@@ -447,7 +442,6 @@ async def savePlayer(player):
         await upsert_player_dict(player_dict)
     except PyMongoError as err:
         raise err
-
 def loadMonsterActions(monsterData):
     actionData = monsterData["actions"]
     actions = []
@@ -519,8 +513,10 @@ def loadMonsterActions(monsterData):
             damageMod = int(actionRolls.get("damageMod", 0))
             damageMod = int(actionRolls.get("damMod", 0)) if damageMod == 0 else damageMod
         actions.append(MonAction(actionName, actionDesc, selfTarget, numTarget, actionRange, actionShape,
-                                 rollType, saveType, saveDC, halfSave, damageMod, diceNum, diceType,
-                                 attackBonus, extraDamage, damType, conditions, statusEffect, lingEffect, extraEffect,
+                                 rollType, saveType, saveDC, halfSave,
+                                 damageMod,diceNum, diceType,
+                                 attackBonus, extraDamage, damType, conditions,
+                                 statusEffect, lingEffect, extraEffect,
                                  lingSaves, actionCost, recharge, specialNotes))
     return actions
 def loadMonsterSpells(monsterData):
@@ -737,19 +733,17 @@ async def saveEncounter(encounter):
                     ],
                     "aoeTokens": [
                         {
-                            "tid": t.get("tid"),
                             "cid": t.get("cid"),
-                            "resultID": int(t.get("resultID", 0)),
+                            "resultID": t.get("resultID", ""),
                             "name": t.get("name"),
-                            "shape": {
-                                "type": t.get("shape", {}).get("type"),
-                                "radiusCells": int(t.get("shape", {}).get("radiusCells", 0))
-                            },
+                            "shape": t.get("shape", ""),
                             "anchor": {
-                                "x": int(t.get("anchor", {}).get("x", 0)),
-                                "y": int(t.get("anchor", {}).get("y", 0))
+                                "x" : t.get("anchor").get("x"),
+                                "y" : t.get("anchor").get("y")
                             },
-                            "timing": t.get("timing")
+                            "timing": t.get("timing"),
+                            "token_image" : t.get("token_image"),
+                            "positioning" : t.get("positioning")
                         }
                         for t in mapData.get("layers", {}).get("aoeTokens", [])
                     ]
@@ -949,8 +943,18 @@ def translateBasicAction(creature, action):
                      "", [], damType, conditions,
                      statusEffect, lingEffect, extraEffect, lingSaves,
                      "action", "", [])
-def defineBasicActions(actionNames, actionTypes, actionProbs, actionEDams, actionImpacts, actionTargets,
-                       initEntry, initiative, isPlayerTurn):
+def defineBasicActions(
+    actionNames,
+    actionTypes,
+    actionProbs,
+    actionEDams,
+    actionImpacts,
+    actionTargets,
+    actionObjs,
+    initEntry,
+    initiative,
+    isPlayerTurn,
+):
     # Load basic actions
     try:
         with open(BASIC_ACTION_LIST_FILE, "r") as f:  # Basic actions are hardcoded into basic_actions file.
@@ -959,6 +963,9 @@ def defineBasicActions(actionNames, actionTypes, actionProbs, actionEDams, actio
         actions = []
     except json.JSONDecodeError:
         actions = []
+
+    if len(actions) < 3:
+        return
 
     if isPlayerTurn and not isinstance(initEntry, Player):
         creature = initEntry["Statblock"]
@@ -972,64 +979,91 @@ def defineBasicActions(actionNames, actionTypes, actionProbs, actionEDams, actio
     shove = translateBasicAction(creature, shove)
     dodge = translateBasicAction(creature, dodge)
 
-    #TODO: Include targets for the basic actions.
-
     if actionViabilityCheck(grapple, initEntry, initiative, isPlayerTurn):
         grappleProb = calcTotalSaveProbability(creature, grapple, initiative)  # Calculate probability of save
         grappleProb["probSuccess"] = 0 if grappleProb["probSuccess"] < 0 else grappleProb["probSuccess"]
         grappleProb["probSuccess"] = 1 if grappleProb["probSuccess"] > 1 else grappleProb["probSuccess"]
+
         probToStr = f"{grappleProb['probSuccess']}"
-        probToStr += f" - {grappleProb['probLingEffect']}LE" if grappleProb['probLingEffect'] else ""
-        probToStr += f" - {grappleProb['probExtraEffect']}EE" if grappleProb['probExtraEffect'] else ""
-        probToStr += f" - {grappleProb['probLingSaves']}LS" if grappleProb['probLingSaves'] else ""
+        probToStr += f" - {grappleProb['probLingEffect']}LE" if grappleProb["probLingEffect"] else ""
+        probToStr += f" - {grappleProb['probExtraEffect']}EE" if grappleProb["probExtraEffect"] else ""
+        probToStr += f" - {grappleProb['probLingSaves']}LS" if grappleProb["probLingSaves"] else ""
+
         probTargets = grappleProb["target"] if grappleProb["probSuccess"] != 0 else ""
         targets = normalizeTargetSets(probTargets, initiative)
         grappleProb = probToStr
-        grappleImpact = calcImpact(creature, grapple, grappleProb, 0,
-                                    targets, initiative)  # Calculates the impact of these actions to the encounter.
+
+        grappleImpact = calcImpact(
+            creature,
+            grapple,
+            grappleProb,
+            0,
+            targets,
+            initiative,
+        )
         grappleImpact = max(0.0, min(20.0, grappleImpact - 2))
+
         actionNames.append(grapple.getName())
         actionTypes.append("Basic")
         actionProbs.append(grappleProb)
         actionEDams.append(0)
         actionImpacts.append(grappleImpact)
         actionTargets.append(targets)
+        actionObjs.append(grapple)
 
     if actionViabilityCheck(shove, initEntry, initiative, isPlayerTurn):
         shoveProb = calcTotalSaveProbability(creature, shove, initiative)
         shoveProb["probSuccess"] = 0 if shoveProb["probSuccess"] < 0 else shoveProb["probSuccess"]
         shoveProb["probSuccess"] = 1 if shoveProb["probSuccess"] > 1 else shoveProb["probSuccess"]
+
         probToStr = f"{shoveProb['probSuccess']}"
-        probToStr += f" - {shoveProb['probLingEffect']}LE" if shoveProb['probLingEffect'] else ""
-        probToStr += f" - {shoveProb['probExtraEffect']}EE" if shoveProb['probExtraEffect'] else ""
-        probToStr += f" - {shoveProb['probLingSaves']}LS" if shoveProb['probLingSaves'] else ""
+        probToStr += f" - {shoveProb['probLingEffect']}LE" if shoveProb["probLingEffect"] else ""
+        probToStr += f" - {shoveProb['probExtraEffect']}EE" if shoveProb["probExtraEffect"] else ""
+        probToStr += f" - {shoveProb['probLingSaves']}LS" if shoveProb["probLingSaves"] else ""
+
         probTargets = shoveProb["target"] if shoveProb["probSuccess"] != 0 else ""
         targets = normalizeTargetSets(probTargets, initiative)
         shoveProb = probToStr
 
-        shoveImpact = calcImpact(creature, shove, shoveProb, 0,
-                                 targets,initiative)
+        shoveImpact = calcImpact(
+            creature,
+            shove,
+            shoveProb,
+            0,
+            targets,
+            initiative,
+        )
         shoveImpact = max(0.0, min(20.0, shoveImpact - 2))
+
         actionNames.append(shove.getName())
         actionTypes.append("Basic")
         actionProbs.append(shoveProb)
         actionEDams.append(0)
         actionImpacts.append(shoveImpact)
         actionTargets.append(targets)
+        actionObjs.append(shove)
 
     if actionViabilityCheck(dodge, initEntry, initiative, isPlayerTurn):
         dodgeProb = 1.0
-        dodgeImpact = calcImpact(creature, dodge, dodgeProb, 0,
-                                 copy.deepcopy(initiative), initiative)
+        dodgeTargets = [initEntry["Statblock"]]
+        dodgeImpact = calcImpact(
+            creature,
+            dodge,
+            dodgeProb,
+            0,
+            dodgeTargets,
+            initiative,
+        )
         dodgeImpact = max(0.0, min(20.0, dodgeImpact - 2))
+
         actionNames.append(dodge.getName())
         actionTypes.append("Basic")
-        # dodgeProb is autoProc
         actionProbs.append(dodgeProb)
-        # grapple, shove, dodgeProb has no expected damage.
         actionEDams.append(0)
         actionImpacts.append(dodgeImpact)
-        actionTargets.append([initEntry["Statblock"]])
+        actionTargets.append(dodgeTargets)
+        actionObjs.append(dodge)
+
 def calcDamProbs(creatureStats, action, modifier, threshold):
     def prob_damage_at_least_normal(thresh, diceNum, sides, flatMod=0):
         # Approximates P(sum of dice + flatMod >= threshold)
@@ -1234,8 +1268,10 @@ def calcLingeringEffectProbability(player, target, action, lingEffect, successPr
     # 1. Repeat check
     if "repeat" in lingEffect and lingEffect["repeat"] == True:
         return successProb
-
-    lingSpell = translateLingEffect(action, lingEffect, player.getSpellMod())
+    try:
+        lingSpell = translateLingEffect(action, lingEffect, player.getSpellMod())
+    except:
+        return 0
 
     # 5. Route to correct probability function
     roll_type = lingSpell.getRollType().lower()
@@ -1251,12 +1287,14 @@ def calcLingeringEffectProbability(player, target, action, lingEffect, successPr
     return lingEffectProb
 def calcLingeringSavesProbability(player, target, spell):
     target = target[0] if isinstance(target, list) else target
-    if (target["turnType"] == "Monster"
-            and not target["Statblock"].isActiveStatusEffect("SwitchSides")
-            and not target["Statblock"].isActiveCondition("Dead")
-            and not target["Statblock"].isActiveCondition("Out of Combat")):
-        saveProb = ((21 - player.getDC()) + target["Statblock"].getSaveProf(
+    if isinstance(target, dict):
+        target = target["Statblock"]
+    if not target.isActiveStatusEffect("SwitchSides") \
+            and not target.isActiveCondition("Dead") \
+            and not target.isActiveCondition("Out of Combat"):
+        saveProb = ((21 - player.getDC()) + target.getSaveProf(
             spell.getLingSaves()["saveType"])) / 20
+        saveProb = min(max(saveProb, 0), 1)
         return saveProb
     return 0
 def getMultiTargetWeights(player, action, initiative):
@@ -1314,7 +1352,6 @@ def getMultiTargetWeights(player, action, initiative):
     weights = weights[0 : min(action.getNumTarget(), len(weights))]
     return weights
 def isValidTarget(action, creature, actorPos, isPlayerTurn=True):
-    #TODO: Add actor data for every isValidTarget check.
     if isPlayerTurn:
         if isinstance(action, Weapon) or (isinstance(action, Spell) and action.getDamType() != "healing"):
             if (creature["turnType"] == "Monster"
@@ -1381,15 +1418,21 @@ def _cr_to_float(cr_str: str) -> float:
     return float(s)
 def bestAoePositioning(
     rangeFt: int,
+    radiusFt: int,
     shape: str,
     allCreaturePositions: List[List[int]],
-    viableTargets: List[Dict[str, Any]],
+    allTargets: List[Dict[str, Any]],
+    casterCells : List[List[int]],
+    originMode : str = "placed"
 ) -> Dict[str, Any]:
     result = bestAoePositioningDebug(
         rangeFt=rangeFt,
+        radiusFt=radiusFt,
         shape=shape,
         allCreaturePositions=allCreaturePositions,
-        viableTargets=viableTargets,
+        allTargets=allTargets,
+        casterCells=casterCells,
+        originMode=originMode
     )
     # result = {
     #     "coveredCells": covered,
@@ -1400,14 +1443,135 @@ def bestAoePositioning(
     # }
     return {"targetsHit" : result["targetsHit"], "positioning" : [[x, y] for x, y in result["coveredCells"]]}
     # return [[x, y] for x, y in result["coveredCells"]]
-def bestAoePositioningDebug(
-    rangeFt: int,
-    shape: str,
-    allCreaturePositions: List[List[int]],
-    viableTargets: List[Dict[str, Any]],
-) -> Dict[str, Any]:
-    #This version returns metadata, which the bestAoePositioning method ignores.
+def getOrientedTemplateMasks(
+        shapeKind: str,
+        sizeCells: int,
+        lineWidthCells: Optional[int] = None,
+) -> List[Tuple[str, Set[Coord]]]:
 
+    def squareMaskLookup(sideCells: int) -> Set[Coord]:
+        # Anchor is top-left.
+        return {(dx, dy) for dx in range(sideCells) for dy in range(sideCells)}
+
+    def lineMaskLookup(lengthCells: int, widthCells: int) -> Set[Coord]:
+        # Cardinal "up" line. Anchor is center of near edge.
+        halfLeft = widthCells // 2
+        halfRight = widthCells - halfLeft - 1
+
+        mask = set()
+        for step in range(lengthCells):
+            y = -step
+            for x in range(-halfLeft, halfRight + 1):
+                mask.add((x, y))
+        return mask
+
+    def diagonalLineMaskLookup(lengthCells: int, widthCells: int) -> Set[Coord]:
+        # Diagonal "up_right" line. Anchor is near endpoint.
+        # Centerline: (0,0), (1,-1), (2,-2), ...
+        # Width grows along the perpendicular diagonal.
+        halfLeft = widthCells // 2
+        halfRight = widthCells - halfLeft - 1
+
+        mask = set()
+        for step in range(lengthCells):
+            cx = step
+            cy = -step
+            for offset in range(-halfLeft, halfRight + 1):
+                mask.add((cx + offset, cy + offset))
+        return mask
+
+    def coneMaskLookup(lengthCells: int) -> Set[Coord]:
+        mask = set()
+
+        for step in range(1, lengthCells + 1):
+            y = -step
+            halfWidth = (step - 1) // 2
+            for x in range(-halfWidth, halfWidth + 1):
+                mask.add((x, y))
+
+        return mask
+
+    def diagonalConeMaskLookup(lengthCells: int) -> Set[Coord]:
+        mask = set()
+
+        for dx in range(lengthCells + 1):
+            for negDy in range(lengthCells + 1):
+                if 1 <= dx + negDy <= lengthCells:
+                    mask.add((dx, -negDy))
+
+        return mask
+
+    def circleMaskLookup(radiusCells: int) -> Set[Coord]:
+        mask = set()
+        r2 = radiusCells ** 2
+
+        for dy in range(-radiusCells, radiusCells + 1):
+            remaining = r2 - (dy * dy)
+            if remaining < 0:
+                continue
+
+            maxDx = math.isqrt(remaining)
+            for dx in range(-maxDx, maxDx + 1):
+                mask.add((dx, dy))
+
+        return mask
+
+    if shapeKind == "circle":
+        base = circleMaskLookup(sizeCells)
+        return [("center", base)]
+
+    if shapeKind == "square":
+        base = squareMaskLookup(sizeCells)
+        return [("fixed", base)]
+
+    if shapeKind == "cone":
+        up = coneMaskLookup(sizeCells)
+        upRight = diagonalConeMaskLookup(sizeCells)
+
+        return [
+            ("up", up),
+            ("up_right", upRight),
+            ("right", rotateMask90(up)),
+            ("down_right", rotateMask90(upRight)),
+            ("down", rotateMask180(up)),
+            ("down_left", rotateMask180(upRight)),
+            ("left", rotateMask270(up)),
+            ("up_left", rotateMask270(upRight)),
+        ]
+
+    if shapeKind == "line":
+        widthCells = lineWidthCells if lineWidthCells is not None else 1
+
+        up = lineMaskLookup(sizeCells, widthCells)
+        upRight = diagonalLineMaskLookup(sizeCells, widthCells)
+
+        return [
+            ("up", up),
+            ("up_right", upRight),
+            ("right", rotateMask90(up)),
+            ("down_right", rotateMask90(upRight)),
+            ("down", rotateMask180(up)),
+            ("down_left", rotateMask180(upRight)),
+            ("left", rotateMask270(up)),
+            ("up_left", rotateMask270(upRight)),
+        ]
+
+    raise ValueError(f"Unsupported shape kind: {shapeKind}")
+def rotateMask90(mask: Set[Coord]) -> Set[Coord]:
+        return {(-y, x) for x, y in mask}
+def rotateMask180(mask: Set[Coord]) -> Set[Coord]:
+        return {(-x, -y) for x, y in mask}
+def rotateMask270(mask: Set[Coord]) -> Set[Coord]:
+        return {(y, -x) for x, y in mask}
+def bestAoePositioningDebug(
+        rangeFt: int,
+        radiusFt: int,
+        shape: str,
+        allCreaturePositions: List[List[int]],
+        allTargets: List[Dict[str, Any]],
+        casterCells: List[List[int]],
+        originMode: str = "placed"
+) -> Dict[str, Any]:
     def parseShape(shape: str) -> Tuple[str, Optional[int]]:
         s = shape.strip().lower()
 
@@ -1427,190 +1591,280 @@ def bestAoePositioningDebug(
             return "line", 5
 
         raise ValueError(f"Unsupported shape string: {shape}")
-    def getOrientedTemplateMasks(
-            shapeKind: str,
-            sizeCells: int,
-            lineWidthCells: Optional[int] = None,
-    ) -> List[Tuple[str, Set[Coord]]]:
-        """
-        Each mask is a set of relative (dx, dy) offsets.
-        Anchor semantics:
-          - circle: anchor is center cell
-          - square: anchor is top-left corner
-          - cone: anchor is cone tip
-          - line: anchor is line start-center projected to grid
-        """
-        if shapeKind == "circle":
-            base = circleMaskLookup(sizeCells)
-            return [("center", base)]
-
-        if shapeKind == "square":
-            base = squareMaskLookup(sizeCells)
-            return [("fixed", base)]
-
-        if shapeKind == "cone":
-            up = coneMaskLookup(sizeCells)
-            return [
-                ("up", up),
-                ("right", rotateMask90(up)),
-                ("down", rotateMask180(up)),
-                ("left", rotateMask270(up)),
-            ]
-
-        if shapeKind == "line":
-            widthCells = lineWidthCells if lineWidthCells is not None else 1
-            up = lineMaskLookup(sizeCells, widthCells)
-            return [
-                ("up", up),
-                ("right", rotateMask90(up)),
-                ("down", rotateMask180(up)),
-                ("left", rotateMask270(up)),
-            ]
-
-        raise ValueError(f"Unsupported shape kind: {shapeKind}")
-    def squareMaskLookup(sideCells: int) -> Set[Coord]:
-        # Anchor is top left.
-        return {(dx, dy) for dx in range(sideCells) for dy in range(sideCells)}
-    def lineMaskLookup(lengthCells: int, widthCells: int) -> Set[Coord]:
-        # Anchor is center of near edge.
-        # Builds up direction first, then others. Returns best direction.
-        halfLeft = widthCells // 2
-        halfRight = widthCells - halfLeft - 1
-
-        mask = set()
-        for step in range(lengthCells):
-            y = -step
-            for x in range(-halfLeft, halfRight + 1):
-                mask.add((x, y))
-        return mask
-    def coneMaskLookup(lengthCells: int) -> Set[Coord]:
-        """
-        Discrete staircase cone using a lookup-style growth pattern.
-
-        Built 'up' from tip at (0, 0).
-        Row 0 contains tip.
-        Each farther row widens by 2.
-
-        Example length 4:
-            y=0:   x=0
-            y=-1:  x=-1..1
-            y=-2:  x=-2..2
-            y=-3:  x=-3..3
-        """
-        mask = set()
-        for step in range(lengthCells):
-            y = -step
-            rowHalfWidth = step
-            for x in range(-rowHalfWidth, rowHalfWidth + 1):
-                mask.add((x, y))
-        return mask
-    def circleMaskLookup(radiusCells: int) -> Set[Coord]:
-        """
-          For each vertical offset dy, horizontal width is:
-              maxDx = radiusCells - abs(dy)
-        """
-        mask = set()
-        for dy in range(-radiusCells, radiusCells + 1):
-            maxDx = radiusCells - abs(dy)
-            for dx in range(-maxDx, maxDx + 1):
-                mask.add((dx, dy))
-        return mask
-    def rotateMask90(mask: Set[Coord]) -> Set[Coord]:
-        return {(-y, x) for x, y in mask}
-    def rotateMask180(mask: Set[Coord]) -> Set[Coord]:
-        return {(-x, -y) for x, y in mask}
-    def rotateMask270(mask: Set[Coord]) -> Set[Coord]:
-        return {(y, -x) for x, y in mask}
     def scoreMaskPlacement(
             covered: Set[Coord],
-            viableTargets: List[Dict[str, Any]],
-            viableCellsToTarget: Dict[Coord, Dict[str, Any]],
+            allTargets: List[Dict[str, Any]],
+            viableCellSet: Set[Coord],
             nonViableCells: Set[Coord],
     ) -> Tuple[float, List[Dict[str, Any]]]:
-        """
-        Priority:
-          High probSuccess (++)
-          Low probSuccess (+)
-          Empty (-)
-          Non-viable (---)
-        """
-        coveredViableCells = covered & set(viableCellsToTarget.keys())
+
+        coveredViableCells = covered & viableCellSet
         coveredNonViableCells = covered & nonViableCells
         emptyCells = covered - coveredViableCells - coveredNonViableCells
-
-        perTargetHits: Dict[str, int] = {}
-        perTargetTotal: Dict[str, int] = {}
-        perTargetProb: Dict[str, float] = {}
-
-        for target in viableTargets:
-            name = target["name"]
-            probSuccess = float(target["probSuccess"])
-            positions = {tuple(p) for p in target["positioning"]}
-            hits = len(covered & positions)
-
-            perTargetHits[name] = hits
-            perTargetTotal[name] = len(positions)
-            perTargetProb[name] = probSuccess
 
         score = 0.0
         targetBreakdown = []
 
-        for name in perTargetHits:
-            hits = perTargetHits[name]
-            total = perTargetTotal[name]
-            probSuccess = perTargetProb[name]
+        for target in allTargets:
+            positions = target["positioning"]
+            if isinstance(positions, list):
+                positions = set(tuple(coord) for coord in positions)
+            hits = len(covered & positions)
 
             if hits > 0:
-                coverageRatio = hits / total
-                targetScore = probSuccess * coverageRatio * 100.0
-                score += targetScore
+                name = target["name"]
+                probSuccess = target["probSuccess"]
+                badTarget = len(positions & coveredNonViableCells)
+                total = len(positions)
+                if badTarget > 0:
+                    targetScore = (probSuccess * 100) + 35
+                    score -= targetScore
+                else:
+                    targetScore = probSuccess * 100.0
+                    score += targetScore
 
                 targetBreakdown.append({
                     "name": name,
                     "probSuccess": probSuccess,
                     "tilesHit": hits,
                     "tilesTotal": total,
-                    "coverageRatio": coverageRatio,
                     "targetScore": targetScore,
                 })
 
         score -= len(emptyCells) * 1.0
-        score -= len(coveredNonViableCells) * 35.0
-        score -= len(covered) * 0.05
-        score += len(coveredViableCells) * 0.01
+        for coord in covered:
+            x, y = coord
+            if x < 0 or y < 0:
+                score -= score * 0.01
 
         targetBreakdown.sort(
-            key=lambda t: (-t["targetScore"], -t["coverageRatio"], -t["probSuccess"])
+            key=lambda t: (-t["targetScore"], -t["probSuccess"])
         )
         return score, targetBreakdown
+    def normalizeCellSet(cellsLike: List[List[int]]) -> set[Coord]:
+        return {tuple(p) for p in cellsLike}
+    def distanceCells(a: Coord, b: Coord) -> int:
+        # abs(x1 - x2) + abs(y1 - y2)
+        return abs(a[0] - b[0]) + abs(a[1] - b[1])
+    def anchorWithinPlacedRange(anchor: Coord, casterCellSet: Set[Coord], rangeCells: int) -> bool:
+        if rangeCells <= 0:
+            return True
+        return any(distanceCells(anchor, c) <= rangeCells for c in casterCellSet)
+
+    def buildSelfOriginCone(
+            casterCellSet: Set[Coord],
+            direction: Coord,
+            lengthCells: int,
+    ) -> Set[Coord]:
+        def directionToOrientationName(direction: Coord) -> str:
+            return {
+                (0, -1): "up",
+                (1, -1): "up_right",
+                (1, 0): "right",
+                (1, 1): "down_right",
+                (0, 1): "down",
+                (-1, 1): "down_left",
+                (-1, 0): "left",
+                (-1, -1): "up_left",
+            }[direction]
+
+        def getFrontCornerCell(casterCellSet: Set[Coord], direction: Coord) -> Coord:
+            xs = [x for x, _ in casterCellSet]
+            ys = [y for _, y in casterCellSet]
+
+            if direction == (1, -1):  # up_right
+                return (max(xs), min(ys))
+            if direction == (1, 1):  # down_right
+                return (max(xs), max(ys))
+            if direction == (-1, 1):  # down_left
+                return (min(xs), max(ys))
+            if direction == (-1, -1):  # up_left
+                return (min(xs), min(ys))
+
+            raise ValueError(f"Not a diagonal direction: {direction}")
+
+        def getDiagonalSelfOriginAnchorCell(casterCellSet: Set[Coord], direction: Coord) -> Coord:
+            corner = getFrontCornerCell(casterCellSet, direction)
+            return (corner[0] + direction[0], corner[1] + direction[1])
+
+        def diagonalSelfConeMaskLookup(lengthCells: int) -> Set[Coord]:
+            mask = set()
+            for dx in range(lengthCells):
+                for negDy in range(lengthCells):
+                    if 0 <= dx + negDy < lengthCells:
+                        mask.add((dx, -negDy))
+            return mask
+
+        orientationName = directionToOrientationName(direction)
+        covered = set()
+
+        # Cardinal self-origin cones stay exactly as they are now
+        if direction in {(0, -1), (1, 0), (0, 1), (-1, 0)}:
+            coneMasks = dict(getOrientedTemplateMasks("cone", lengthCells))
+            relMask = coneMasks[orientationName]
+
+            frontEdge = getFrontEdgeCells(casterCellSet, direction)
+
+            for ax, ay in frontEdge:
+                for mx, my in relMask:
+                    covered.add((ax + mx, ay + my))
+
+            covered -= casterCellSet
+            return covered
+
+        # Diagonal self-origin cones must start from the diagonal anchor cell,
+        # not from the caster corner.
+        baseMask = diagonalSelfConeMaskLookup(lengthCells)
+
+        if direction == (1, -1):  # up_right
+            relMask = baseMask
+        elif direction == (1, 1):  # down_right
+            relMask = rotateMask90(baseMask)
+        elif direction == (-1, 1):  # down_left
+            relMask = rotateMask180(baseMask)
+        elif direction == (-1, -1):  # up_left
+            relMask = rotateMask270(baseMask)
+        else:
+            raise ValueError(f"Unsupported direction: {direction}")
+
+        ax, ay = getDiagonalSelfOriginAnchorCell(casterCellSet, direction)
+
+        for mx, my in relMask:
+            covered.add((ax + mx, ay + my))
+
+        covered -= casterCellSet
+        return covered
+    def buildSelfOriginLine(
+            casterCellSet: Set[Coord],
+            direction: Coord,
+            lengthCells: int,
+            widthCells: int,
+    ) -> Set[Coord]:
+        def getPerp(direction: Coord) -> Coord:
+            # 90-degree perpendicular in grid coordinates.
+            dx, dy = direction
+            return (-dy, dx)
+        dx, dy = direction
+        px, py = getPerp(direction)
+
+        frontEdge = getFrontEdgeCells(casterCellSet, direction)
+
+        halfLeft = widthCells // 2
+        halfRight = widthCells - halfLeft - 1
+
+        covered = set()
+
+        for fx, fy in frontEdge:
+            for step in range(1, lengthCells + 1):  # starts at 1, not 0
+                cx = fx + dx * step
+                cy = fy + dy * step
+
+                for w in range(-halfLeft, halfRight + 1):
+                    covered.add((cx + px * w, cy + py * w))
+
+        covered -= casterCellSet
+        return covered
+    def get8Directions() -> List[Tuple[str, Coord]]:
+        return [
+            ("up", (0, -1)),
+            ("up_right", (1, -1)),
+            ("right", (1, 0)),
+            ("down_right", (1, 1)),
+            ("down", (0, 1)),
+            ("down_left", (-1, 1)),
+            ("left", (-1, 0)),
+            ("up_left", (-1, -1)),
+        ]
+    def getFrontEdgeCells(casterCellSet: Set[Coord], direction: Coord) -> Set[Coord]:
+        #Returns the caster cells furthest forward in the chosen direction.
+        #Uses dot-product projection so it works for diagonal directions too.
+        dx, dy = direction
+        if not casterCellSet:
+            return set()
+
+        max_proj = max((x * dx + y * dy) for x, y in casterCellSet)
+        return {
+            (x, y)
+            for x, y in casterCellSet
+            if x * dx + y * dy == max_proj
+        }
+    def generateCandidateAnchors(
+            relMask: Set[Coord],
+            focusCells: Set[Coord],
+            casterCellSet: Set[Coord],
+            rangeCells: int,
+    ) -> Set[Coord]:
+        #focusCells is either viableCells or allCells
+        #Return value allows for search by target, not search by each cell (brute force).
+        anchors = set()
+
+        for tx, ty in focusCells:
+            for dx, dy in relMask:
+                anchor = (tx - dx, ty - dy)
+
+                if casterCellSet and not anchorWithinPlacedRange(anchor, casterCellSet, rangeCells):
+                    continue
+
+                anchors.add(anchor)
+        return anchors
+    def expandAnchorNeighborhood(seedAnchors: Set[Coord], radius: int = 1) -> Set[Coord]:
+        expanded = set(seedAnchors)
+        for ax, ay in seedAnchors:
+            for dx in range(-radius, radius + 1):
+                for dy in range(-radius, radius + 1):
+                    if (ax + dx) > 0 and (ay + dy) > 0:
+                        expanded.add((ax + dx, ay + dy))
+        return expanded
+    def getDiagonalSelfOriginAnchorCell(casterCellSet: Set[Coord], direction: Coord) -> Coord:
+        xs = [x for x, _ in casterCellSet]
+        ys = [y for _, y in casterCellSet]
+
+        if direction == (1, -1):  # up_right
+            corner = (max(xs), min(ys))
+        elif direction == (1, 1):  # down_right
+            corner = (max(xs), max(ys))
+        elif direction == (-1, 1):  # down_left
+            corner = (min(xs), max(ys))
+        elif direction == (-1, -1):  # up_left
+            corner = (min(xs), min(ys))
+        else:
+            raise ValueError(f"Not a diagonal direction: {direction}")
+
+        return (corner[0] + direction[0], corner[1] + direction[1])
 
     shapeKind, lineWidthFt = parseShape(shape)
-    sizeCells = max(1, math.ceil(int(rangeFt) / 5))
+
+    # radiusFt now controls the actual AOE template size.
+    sizeCells = max(1, math.ceil(int(radiusFt) / 5))
+    rangeCells = max(0, math.ceil(int(rangeFt) / 5))
+    if originMode == "self":
+        rangeCells = 0
     lineWidthCells = max(1, math.ceil(lineWidthFt / 5)) if lineWidthFt else None
+
     unparsedCells = []
     [unparsedCells.extend(pos) for pos in allCreaturePositions]
     allCells: Set[Coord] = {tuple(p) for p in unparsedCells}
+    casterCellSet: Set[Coord] = normalizeCellSet(casterCells)
 
+    normalizedTargets = []
     viableCellsToTarget: Dict[Coord, Dict[str, Any]] = {}
 
-    for target in viableTargets:
-        name = target["name"]
-        probSuccess = float(target["probSuccess"])
-        positions = [tuple(p) for p in target["positioning"]]
-
+    for target in allTargets:
         normalizedTarget = {
-            "name": name,
-            "probSuccess": probSuccess,
-            "positioning": set(positions),
+            "name": target["name"],
+            "probSuccess": float(target["probSuccess"]) if target["probSuccess"] else 0.0,
+            "positioning": {tuple(p) for p in target["positioning"]},
         }
+        normalizedTargets.append(normalizedTarget)
 
-        for pos in positions:
-            viableCellsToTarget[pos] = normalizedTarget
+        if target["viable"]:
+            for pos in normalizedTarget["positioning"]:
+                viableCellsToTarget[pos] = normalizedTarget
 
     viableCells: Set[Coord] = set(viableCellsToTarget.keys())
     nonViableCells: Set[Coord] = allCells - viableCells
 
-    if not viableTargets:
+    if not allTargets:
         return {
             "coveredCells": [],
             "anchor": None,
@@ -1637,13 +1891,6 @@ def bestAoePositioningDebug(
             "targetsHit": [],
         }
 
-    pad = sizeCells + 3
-    #TODO: Make sure anchor is unable to be outside the bounds of the grid.
-    minX, maxX = min(xs) - pad, max(xs) + pad
-    minX = 0 if minX < 0 else minX
-    minY, maxY = min(ys) - pad, max(ys) + pad
-    minY = 0 if minY < 0 else minY
-
     best = {
         "coveredCells": set(),
         "anchor": None,
@@ -1652,28 +1899,173 @@ def bestAoePositioningDebug(
         "targetsHit": [],
     }
 
-    for ax in range(minX, maxX + 1):
-        for ay in range(minY, maxY + 1):
-            anchor = (ax, ay)
+    # SELF-ORIGIN
+    if originMode.lower() == "self":
+        if not casterCellSet:
+            return {
+                "coveredCells": [],
+                "anchor": None,
+                "orientation": None,
+                "score": float("-inf"),
+                "targetsHit": [],
+            }
 
+        # circle / square can still use the simpler anchor-based logic for now
+        if shapeKind in {"circle", "square"}:
             for orientationName, relMask in orientedMasks:
-                covered = {(ax + dx, ay + dy) for dx, dy in relMask}
+                for anchor in casterCellSet:
+                    ax, ay = anchor
+                    covered = {(ax + dx, ay + dy) for dx, dy in relMask}
+                    covered -= casterCellSet
 
-                score, targetBreakdown = scoreMaskPlacement(
-                    covered=covered,
-                    viableTargets=viableTargets,
-                    viableCellsToTarget=viableCellsToTarget,
-                    nonViableCells=nonViableCells,
+                    score, targetBreakdown = scoreMaskPlacement(
+                        covered=covered,
+                        allTargets=normalizedTargets,
+                        viableCellSet=viableCells,
+                        nonViableCells=nonViableCells,
+                    )
+
+                    if score > best["score"]:
+                        best = {
+                            "coveredCells": covered,
+                            "anchor": anchor,
+                            "orientation": orientationName,
+                            "score": score,
+                            "targetsHit": targetBreakdown,
+                        }
+
+            best["coveredCells"] = sorted(best["coveredCells"])
+            return best
+
+        # cone / line need special 8-direction self-origin logic
+        #Shapes are rebuilt in buildSelfOrigin___ due to needing to account for front edge
+        for orientationName, direction in get8Directions():
+            # anchor is mostly metadata now; useless for user. Use for debugging
+            if direction in {(1, -1), (1, 1), (-1, 1), (-1, -1)}:
+                anchor_meta = [getDiagonalSelfOriginAnchorCell(casterCellSet, direction)]
+            else:
+                frontEdge = getFrontEdgeCells(casterCellSet, direction)
+                anchor_meta = sorted(frontEdge)
+
+            if shapeKind == "line":
+                covered = buildSelfOriginLine(
+                    casterCellSet=casterCellSet,
+                    direction=direction,
+                    lengthCells=sizeCells,
+                    widthCells=lineWidthCells or 1,
                 )
+            elif shapeKind == "cone":
+                covered = buildSelfOriginCone(
+                    casterCellSet=casterCellSet,
+                    direction=direction,
+                    lengthCells=sizeCells,
+                )
+            else:
+                continue
 
-                if score > best["score"]:
-                    best = {
-                        "coveredCells": covered,
-                        "anchor": anchor,
-                        "orientation": orientationName,
-                        "score": score,
-                        "targetsHit": targetBreakdown,
-                    }
+            score, targetBreakdown = scoreMaskPlacement(
+                covered=covered,
+                allTargets=allTargets,
+                viableCellSet=viableCells,
+                nonViableCells=nonViableCells,
+            )
+
+            if score > best["score"]:
+                best = {
+                    "coveredCells": covered,
+                    "anchor": anchor_meta,
+                    "orientation": orientationName,
+                    "score": score,
+                    "targetsHit": targetBreakdown,
+                }
+
+        best["coveredCells"] = sorted(best["coveredCells"])
+        return best
+
+    #PLACE-ORIGIN
+    PLACEMENT_EXPANSION_RADIUS = 2
+    CANDIDATE_CUTOFF = 10
+
+    for orientationName, relMask in orientedMasks:
+        candidateAnchors = generateCandidateAnchors(
+            relMask=relMask,
+            focusCells=viableCells,
+            casterCellSet=casterCellSet,
+            rangeCells=rangeCells,
+        )
+
+        seedResults = []
+
+        for anchor in sorted(candidateAnchors):
+            ax, ay = anchor
+            covered = {(ax + dx, ay + dy) for dx, dy in relMask}
+
+            # Cheap skips
+            if not (covered & viableCells):
+                continue
+            if not (covered & allCells):
+                continue
+
+            score, targetBreakdown = scoreMaskPlacement(
+                covered=covered,
+                allTargets=normalizedTargets,
+                viableCellSet=viableCells,
+                nonViableCells=nonViableCells,
+            )
+
+            seedResults.append((score, anchor, covered, targetBreakdown))
+
+            if score > best["score"]:
+                best = {
+                    "coveredCells": covered,
+                    "anchor": anchor,
+                    "orientation": orientationName,
+                    "score": score,
+                    "targetsHit": targetBreakdown,
+                }
+
+        if not seedResults:
+            continue
+
+        seedResults.sort(key=lambda x: x[0], reverse=True)
+        topSeedAnchors = {anchor for _, anchor, _, _ in seedResults[:CANDIDATE_CUTOFF]}
+
+        expandedAnchors = expandAnchorNeighborhood(
+            topSeedAnchors,
+            radius=PLACEMENT_EXPANSION_RADIUS
+        )
+
+        # Only keep anchors we have not already checked for this orientation
+        expandedAnchors -= candidateAnchors
+
+        for anchor in sorted(expandedAnchors): #Extra check around anchors by radius, as placing an AOE inbetween candidates can sometimes be better
+            if casterCellSet and not anchorWithinPlacedRange(anchor, casterCellSet, rangeCells):
+                continue
+
+            ax, ay = anchor
+            covered = {(ax + dx, ay + dy) for dx, dy in relMask}
+
+            # Cheap skips
+            if not (covered & viableCells):
+                continue
+            if not (covered & allCells):
+                continue
+
+            score, targetBreakdown = scoreMaskPlacement(
+                covered=covered,
+                allTargets=normalizedTargets,
+                viableCellSet=viableCells,
+                nonViableCells=nonViableCells,
+            )
+
+            if score > best["score"]:
+                best = {
+                    "coveredCells": covered,
+                    "anchor": anchor,
+                    "orientation": orientationName,
+                    "score": score,
+                    "targetsHit": targetBreakdown,
+                }
 
     best["coveredCells"] = sorted(best["coveredCells"])
     return best
@@ -1782,7 +2174,7 @@ def calcIndividualExpectedDamage(player, action, creature):
         )
         return round(expectedDamage, 3)
     else:
-        return None
+        return 0.0
 def calcTotalExpectedDamage(player, action, initiative):
     eDamages = []
     viableTargets = []
@@ -1816,21 +2208,33 @@ def calcTotalExpectedDamage(player, action, initiative):
                             return sum(eDamages) / len(eDamages), viableTargets
                         return 0, {}
                     elif action.getNumTarget() in [-1, -2]:
-                        targets = [creature for creature in initiative
-                                   if isValidTarget(action, creature, player.getPosition(), isPlayerTurn)]
+                        targets = [creature for creature in initiative]
                         for i, target in enumerate(targets):
                             #EDam targets use expected damage instead of probSuccess
                             #Potentially leads to different AOE subsets, which is resolved through impact rating checks.
-                            targets[i] = {
-                                "name": target["Statblock"].getName(),
-                                "probSuccess": calcIndividualExpectedDamage(player, action, target),
-                                "positioning": target["Statblock"].getPosition()
-                            }
+                            if isValidTarget(action, target, player.getPosition(), isPlayerTurn):
+                                targets[i] = {
+                                    "name": target["Statblock"].getName(),
+                                    "probSuccess": calcIndividualExpectedDamage(player, action, target),
+                                    "positioning": target["Statblock"].getPosition(),
+                                    "viable" : True
+                                }
+                            else:
+                                targets[i] = {
+                                    "name": target["Statblock"].getName(),
+                                    "probSuccess": calcIndividualExpectedDamage(player, action, target),
+                                    "positioning": target["Statblock"].getPosition(),
+                                    "viable" : False
+                                }
                         positions = [creature["Statblock"].getPosition() for creature in initiative]
+                        actionRange = action.getActionRange()
                         radius = action.getActionRadius()
                         shape = action.getShape()
+                        casterCells = player.getPosition()
+                        aoeType = "placed" if action.getNumTarget() == -1 else "self"
 
-                        eDam, token = avgOverAOETargets(targets, positions, radius, shape)
+                        eDam, token = avgOverAOETargets(targets, positions, actionRange,
+                                                        radius, shape, casterCells, aoeType)
                         return round(eDam, 2), token
                     else:
                         raise ValueError("Invalid numTarget!")
@@ -1851,11 +2255,6 @@ def calcTotalExpectedDamage(player, action, initiative):
                     viableTargets.append(creature)
                 else:
                     raise ValueError("Bad rollType!")
-    #NOTE: This is old MTH code and reading it now, it seems pretty bad. May re-add later.
-    # if isinstance(action, Spell) and action.getRollType().lower() == "onhit":
-    #     spells = [player.getSpell(i) for i in range(player.getSpellLength())]
-    #     spell = player.getSpell(spells.index(action))
-    #     spell.setMean(spell.getMean() + weaponMean)
     if len(viableTargets) != 0 and all(eDamages) != 0:
         return round(max(eDamages), 2), viableTargets[eDamages.index(max(eDamages))]
     else:
@@ -2157,7 +2556,7 @@ def calcTotalToHitProbability(player, action, initiative):
                 lingEffectProb = 0
                 extraEffectProb = 0
                 lingSavesProb = 0
-            if len(successProbs) != 0:
+            if successProbs != 0:
                 probSuccess = round(probSuccess, 2)
                 lingEffectProb = round(lingEffectProb, 2)
                 extraEffectProb = round(extraEffectProb, 2)
@@ -2301,10 +2700,11 @@ def resetSaveSpecialNotesCheck(specImm, specRes, specVuln, creature):
         for vuln in creature.getDamVulnerabilities():
             if vuln not in specVuln:
                 creature.removeDamVulnerability(vuln)
-def avgOverAOETargets(targets, allPositions, radius, shape):
+def avgOverAOETargets(creatures, allPositions, actionRange, radius, shape, casterCells, aoeType="placed"):
     #Cache is in the targets dict
-    aoeToken = bestAoePositioning(radius, shape, allPositions, targets)
-    numTargets = len(targets)
+    aoeToken = bestAoePositioning(actionRange, radius, shape,
+                                  allPositions, creatures, casterCells, aoeType)
+    numTargets = len(creatures)
     if numTargets == 0:
         return 0
 
@@ -2411,22 +2811,41 @@ def calcTotalSaveProbability(player, action, initiative):
         else:
             return 0
     elif action.getNumTarget() in [-1, -2]:
-        targets = [creature["Statblock"] for creature in initiative
-                   if isValidTarget(action, creature, player.getPosition(), isPlayerTurn)]
-        targetsCopy = copy.deepcopy(targets)
+        targets = [creature for creature in initiative]
+        targetsCopy = [creature["Statblock"] for creature in targets]
         for i, target in enumerate(targets):
-            targets[i] = {
-                "name" : target.getName(),
-                "probSuccess" : calcIndividualSaveProbability(action, player.getDC(), target),
-                "positioning" : target.getPosition()
-            }
+            if isValidTarget(action, target, player.getPosition(), isPlayerTurn):
+                target = target["Statblock"]
+                targets[i] = {
+                    "name" : target.getName(),
+                    "probSuccess" : calcIndividualSaveProbability(action, player.getDC(), target),
+                    "positioning" : target.getPosition(),
+                    "viable" : True
+                }
+            else:
+                target = target["Statblock"]
+                targets[i] = {
+                    "name": target.getName(),
+                    "probSuccess": calcIndividualSaveProbability(action, player.getDC(), target),
+                    "positioning": target.getPosition(),
+                    "viable" : False
+                }
         positions = [creature["Statblock"].getPosition() for creature in initiative]
+        actionRange = action.getActionRange()
         radius = action.getActionRadius()
         shape = action.getShape()
-        probSuccess, token = avgOverAOETargets(targets, positions, radius, shape)
+        casterCells = player.getPosition()
+        aoeType = "placed" if action.getNumTarget() == -1 else "self"
+        probSuccess, token = avgOverAOETargets(targets, positions,
+                                               actionRange, radius, shape,
+                                               casterCells, aoeType)
 
+        if not token:
+            return 0
+        finalTargets = []
         for creature in targetsCopy:
             if creature.getName().lower() in [t["name"].lower() for t in token["targetsHit"]]:
+                finalTargets.append(creature)
                 if checkLingEffects or checkExtraEffects:
                     successProbIdx = [t["name"].lower() for t in token["targetsHit"]].index(creature.getName().lower())
                     successProb = targets[successProbIdx]["probSuccess"]
@@ -2441,10 +2860,10 @@ def calcTotalSaveProbability(player, action, initiative):
                 if checkLingSaves:
                     lingSavesProb += calcLingeringSavesProbability(player, creature, action)
 
-        if len(targets) != 0:
-            lingEffectProb = lingEffectProb / len(targets)
-            extraEffectProb = extraEffectProb / len(targets)
-            lingSavesProb = lingSavesProb / len(targets)
+        if len(finalTargets) != 0:
+            lingEffectProb = lingEffectProb / len(finalTargets)
+            extraEffectProb = extraEffectProb / len(finalTargets)
+            lingSavesProb = lingSavesProb / len(finalTargets)
         else:
             probSuccess = 0
         targetSuccess = token
@@ -2599,7 +3018,7 @@ def calcTotalAutoHitProbability(player, action, initiative):
             successProbs = []
             targets = []
             for creature in weights:
-                if isValidTarget(action, creature, player.getPostion(),isPlayerTurn):
+                if isValidTarget(action, creature, player.getPosition(),isPlayerTurn):
                     if isinstance(player, Player) or isinstance(action, Spell):
                         successProb = calcIndividualAutoHitProbability(action, creature["Statblock"])
                     else:
@@ -2630,20 +3049,33 @@ def calcTotalAutoHitProbability(player, action, initiative):
         else:
             return 0
     elif action.getNumTarget() in [-1, -2]:
-        targets = [creature["Statblock"] for creature in initiative
-                   if isValidTarget(action, creature, player.getPosition(), isPlayerTurn)]
-        targetsCopy = copy.deepcopy(targets)
+        targets = [creature for creature in initiative]
+        targetsCopy = [creature["Statblock"] for creature in targets]
         for i, target in enumerate(targets):
-            targets[i] = {
-                "name" : target.getName(),
-                "probSuccess" : calcIndividualAutoHitProbability(action,target),
-                "positioning" : target.getPosition()
-            }
+            if isValidTarget(action, target, player.getPosition(), isPlayerTurn):
+                target = target["Statblock"]
+                targets[i] = {
+                    "name" : target.getName(),
+                    "probSuccess" : calcIndividualAutoHitProbability(action,target),
+                    "positioning" : target.getPosition(),
+                    "viable" : True
+                }
+            else:
+                target = target["Statblock"]
+                targets[i] = {
+                    "name": target.getName(),
+                    "probSuccess": calcIndividualAutoHitProbability(action,target),
+                    "positioning": target.getPosition(),
+                    "viable" : False
+                }
         positions = [creature["Statblock"].getPosition() for creature in initiative]
+        actionRange = action.getActionRange()
         radius = action.getActionRadius()
         shape = action.getShape()
-        probSuccess, token = avgOverAOETargets(targets, positions, radius, shape)
-
+        casterCells = player.getPosition()
+        aoeType = "placed" if action.getNumTarget() == -1 else "self"
+        probSuccess, token = avgOverAOETargets(targets, positions, actionRange,
+                                               radius, shape, casterCells, aoeType)
         for creature in targetsCopy:
             if creature.getName().lower() in [t["name"].lower() for t in token["targetsHit"]]:
                 if checkLingEffects or checkExtraEffects:
@@ -2922,31 +3354,39 @@ def calcImpact(player, action, probSuccess, expectedDamage, targets,
     )
     if isinstance(probSuccess, str):
         if checkExtraEffects:
-            extraEffect = translateLingEffect(
-                action, action.getExtraEffect(), player.getSpellMod()
-            )
-            extraProb = probSuccess.split(" - ")
-            if len(extraProb) == 1:
-                extraProb = extraProb[0]
-            else:
-                for prob in extraProb:
-                    if "EE" in prob:
-                        extraProb = prob.split("EE")[0]
-                        extraProb = float(extraProb)
-                        break
+            try:
+                extraEffect = translateLingEffect(
+                    action, action.getExtraEffect(), player.getSpellMod()
+                )
+            except:
+                checkExtraEffects = False
+            if checkExtraEffects:
+                extraProb = probSuccess.split(" - ")
+                if len(extraProb) == 1:
+                    extraProb = extraProb[0]
+                else:
+                    for prob in extraProb:
+                        if "EE" in prob:
+                            extraProb = prob.split("EE")[0]
+                            extraProb = float(extraProb)
+                            break
         if checkLingEffects:
-            lingEffect = translateLingEffect(
-                action, action.getLingEffects(), player.getSpellMod()
-            )
-            lingEffProb = probSuccess.split(" - ")
-            if len(lingEffProb) == 1 or "LE" not in lingEffProb:
-                lingEffProb = lingEffProb[0]
-            else:
-                for prob in lingEffProb:
-                    if "LE" in prob:
-                        lingEffProb = prob.split("LE")[0]
-                    if "EE" in prob:
-                        lingEffProb += f" - {prob}"
+            try:
+                lingEffect = translateLingEffect(
+                    action, action.getLingEffects(), player.getSpellMod()
+                )
+            except:
+                checkLingEffects = False
+            if checkLingEffects:
+                lingEffProb = probSuccess.split(" - ")
+                if len(lingEffProb) == 1 or "LE" not in lingEffProb:
+                    lingEffProb = lingEffProb[0]
+                else:
+                    for prob in lingEffProb:
+                        if "LE" in prob:
+                            lingEffProb = prob.split("LE")[0]
+                        if "EE" in prob:
+                            lingEffProb += f" - {prob}"
         if checkLingSaves:
             lingSProb = probSuccess.split(" - ")
             if len(lingSProb) == 1:
@@ -3209,7 +3649,7 @@ def addStatusEffect(effect, creature, resultID):
                     ling = creature.getActiveStatusEffect("lingEffect")
                 else:
                     ling = creature.getActiveStatusEffect("lingsave")
-                ling["effect"]["spell"].extend(effect["spell"])
+                ling["effect"]["action"].extend(effect["action"])
                 ling["effect"]["resultID"].extend(effect["resultID"])
     effect["effect"]["resultID"] = [resultID]
     creature.addStatusEffect(effect)
@@ -3219,47 +3659,6 @@ def removeStatusEffect(name, creature):
     for effect in creature.getActiveStatusEffects():
         if name.lower() == effect["name"].lower():
             return creature.removeStatusEffect(name)
-def enemyCanMutate(newEffect, creature):
-    if isinstance(creature, dict):
-        creature = creature["Statblock"]
-    effect = {}
-    if "name" in newEffect:
-        for e in creature.getActiveStatusEffects():
-            if newEffect["name"].lower() == e["name"].lower():
-                effect = e
-    else:
-        for c in creature.getActiveConditions():
-            if isinstance(c, dict):
-                if c["cond"].lower() == c["cond"].lower():
-                    effect = c
-            else:
-                if c.lower() == newEffect.lower():
-                    effect = c
-    if not effect:
-        return True
-
-    if not isinstance(effect, dict):
-        return True
-    if "cond" in effect:
-        if isinstance(effect["resultID"], list):
-            if -1 in effect["resultID"]:
-                return True
-            return False
-        else:
-            if effect["resultID"] == -1:
-                return True
-        return False
-    else:
-        if not "effect" in effect or not "resultID" in effect["effect"]:
-            return True
-        if isinstance(effect["effect"]["resultID"], list):
-            if -1 in effect["effect"]["resultID"]:
-                return True
-            return False
-        else:
-            if effect["effect"]["resultID"] == -1:
-                return True
-            return False
 def endOfEncounter(initiative):
     allPlayersDead = True
     for playerTurns in initiative:
@@ -3276,7 +3675,7 @@ def endOfEncounter(initiative):
                 allMonstersDead = False
                 break
     return allPlayersDead or allMonstersDead
-def endConcentration(player, concentration, initiative):
+def endConcentration(player, concentration, initiative, mapdata):
     if isinstance(player, dict):
         player = player["Statblock"]
     concTargets = concentration["effect"]["concentrationTargets"]
@@ -3322,7 +3721,10 @@ def endConcentration(player, concentration, initiative):
                                 ]:
                                     del statEffects[i]["effect"]["attribute"][j]
                                 else:
-                                    del statEffects[i]["effect"]["spell"][j]
+                                    if "spell" in statEffects[i]["effect"]:
+                                        del statEffects[i]["effect"]["spell"][j]
+                                    else:
+                                        del statEffects[i]["effect"]["action"][j]
                     if summonedCreature:
                         continue
                     seIdx = 0
@@ -3352,9 +3754,14 @@ def endConcentration(player, concentration, initiative):
 
         if not summonedCreature:
             cIdx += 1
-def executeAction(actor, action, selectedTargets, actionResult, initiative, token=None):
+
+    for tidx, token in enumerate(mapdata["layers"]["aoeTokens"]):
+        if token["resultID"] in concentration["effect"]["resultID"]:
+            del mapdata["layers"]["aoeTokens"][tidx]
+
+def executeAction(actor, action, selectedTargets, actionResult, initiative, mapdata):
     def applyEffectToTarget(creature, succeeded, damage, action, resultID):
-        rollType = action.getRollType() if isinstance(action, Spell) else "tohit"
+        rollType = action.getRollType().lower() if isinstance(action, Spell) or isinstance(action, MonAction) else "tohit"
 
         downed_before = creature.isActiveCondition("Downed")
         stable_before = creature.isActiveCondition("Stabilized")
@@ -3364,19 +3771,26 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, toke
             and not isinstance(action.getDamType(), list)
             and action.getDamType().lower() == "healing"
         ):
-            creature.setHP(min(creature.getMaxHP(), creature.getHP() + damage))
+            if damage > 0:
+                creature.setHP(min(creature.getMaxHP(), creature.getHP() + damage))
         else:
-            creature.setHP(creature.getHP() - damage)
+            if damage > 0:
+                creature.setHP(creature.getHP() - damage)
+
         creature.setHP(math.floor(creature.getHP()))
 
         if creature.isActiveCondition("downed") and damage > 0:
             removeCondition("downed", creature)
             addCondition("dead", creature, -1)
+
         if creature.getHP() <= 0:
             creature.setHP(0)
             if isinstance(creature, Player):
-                addCondition("Downed" if damage < (creature.getMaxHP() + creature.getHP()) else "Dead", creature,
-                             resultID)
+                addCondition(
+                    "Downed" if damage < (creature.getMaxHP() + creature.getHP()) else "Dead",
+                    creature,
+                    resultID,
+                )
             else:
                 addCondition("Dead", creature, resultID)
 
@@ -3390,67 +3804,157 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, toke
             if isinstance(action, Spell) and action.getConditions():
                 for cond in action.getConditions():
                     addCondition(cond, creature, resultID)
+
             if isinstance(action, Spell) and action.getStatusEffects():
                 for effect in action.getStatusEffects():
                     if effect["name"].lower() != "concentration":
                         addStatusEffect(effect, creature, resultID)
+
             if isinstance(action, Spell) and action.getLingSaves():
                 if creature.isActiveStatusEffect("lingsave"):
                     lingSaves = creature.getActiveStatusEffect("lingsave")
-                    if not any(
-                        resultID == rID for rID in lingSaves["effect"]["resultID"]
-                    ):
-                        lingSaves["effect"]["spell"].append(action.toDict())
+                    if not any(resultID == rID for rID in lingSaves["effect"]["resultID"]):
+                        if "spell" in lingSaves["effect"]:
+                            lingSaves["effect"]["spell"].append(action.toDict())
+                        else:
+                            lingSaves["effect"]["action"].append(action.toDict())
                         lingSaves["effect"]["resultID"].append(actionResult["resultID"])
                 else:
                     newLingSave = {
                         "name": "lingSave",
                         "effect": {
-                            "spell": [action.toDict()],
+                            "action": [action.toDict()],
                             "resultID": [actionResult["resultID"]],
                         },
                     }
                     addStatusEffect(newLingSave, creature, actionResult["resultID"])
-        return creature
-    #actor is a statblock.
-    #Action is a spell/weapon/monAction object.
-    #selectedTargets is a list of statblocks.
-    #actionResult is the entry below.
-    #Token is an object describing AOE placement.
-    #TODO: Make this method work for both players and monsters.
-    # Add a token to the mapData section once implemented.
 
-    """
-    entry = {
-            "resultID": random.randint(1, 9999999999), str
-            "actor": player.getName(), str
-            "action": actionName, str
-            "actionType": actionType, str
-            "actionProb": actionProb, float
-            "actionEDam": actionEDam, float
-            "actionImpact": actionImpact, float
-            "targets": [t["Statblock"].getName() if isinstance(t, dict) else t.getName() for t in targets],
-            "conditions": conditions,
-            "statuseffects": statuseffects,
-            "outcome": {
-                "rollResults" : [],
-                "diceResults" : []
-            },
-            "extraOutcome": extraResult,
-            "timestamp": datetime.now().strftime("%H:%M:%S")
-        # }
-        """
-    # print("EXECUTE ACTION")
-    # print("ACTOR", actor)
-    # print("ACTION", action)
-    # print("SELECTED TARGETS", selectedTargets)
-    # print("ACTION RESULT", actionResult)
-    # print("INITIATIVE", initiative)
+        return creature
+    def _normalize_result_flag(result, roll_type, target_obj, save_dc):
+        result_str = str(result).strip()
+
+        if not result_str.isnumeric():
+            return result_str.lower()
+
+        if roll_type in ("weapon", "onhit", "tohit"):
+            target_ac = target_obj.getAC()
+            return "y" if int(result_str) >= target_ac else "n"
+
+        if roll_type == "save":
+            return "y" if int(result_str) >= save_dc else "n"
+
+        return result_str.lower()
+    def _applied_damage_amount(raw_damage, succeeded, roll_type, half_save=False, is_healing=False):
+        try:
+            raw_damage = int(raw_damage)
+        except (TypeError, ValueError):
+            raw_damage = 0
+
+        if is_healing:
+            return raw_damage if succeeded else 0
+
+        if roll_type in ("weapon", "onhit", "autohit", "tohit"):
+            return raw_damage if succeeded else 0
+
+        if roll_type == "save":
+            if not succeeded:
+                return raw_damage
+            return (raw_damage // 2) if half_save else 0
+
+        return 0
+
+
+    def _normalize_result_flag(result, roll_type, target_obj, save_dc):
+        result_str = str(result).strip()
+
+        if not result_str.isnumeric():
+            return result_str.lower()
+
+        if roll_type in ("weapon", "onhit", "tohit"):
+            target_ac = target_obj.getAC()
+            return "y" if int(result_str) >= target_ac else "n"
+
+        if roll_type == "save":
+            return "y" if int(result_str) >= save_dc else "n"
+
+        return result_str.lower()
+
+    def _applied_damage_amount(raw_damage, succeeded, roll_type, half_save=False, is_healing=False):
+        try:
+            raw_damage = int(raw_damage)
+        except (TypeError, ValueError):
+            raw_damage = 0
+
+        if is_healing:
+            return raw_damage if succeeded else 0
+
+        if roll_type in ("weapon", "onhit", "autohit", "tohit"):
+            return raw_damage if succeeded else 0
+
+        if roll_type == "save":
+            if not succeeded:
+                return raw_damage
+            return (raw_damage // 2) if half_save else 0
+
+        return 0
+
     outcomes = actionResult["outcome"]["rollResults"]
     damages = actionResult["outcome"]["diceResults"]
 
     if len(damages) == 1 and len(selectedTargets) != 1:
         damages = [damages[0]] * len(selectedTargets)
+        actionResult["outcome"]["diceResults"] = damages
+
+    for i in range(len(damages)):
+        try:
+            damages[i] = int(damages[i])
+        except (TypeError, ValueError):
+            damages[i] = 0
+
+    main_roll_type = "weapon" if isinstance(action, Weapon) else action.getRollType().lower()
+    main_save_dc = actor.getDC() if hasattr(actor, "getDC") else 0
+
+    for i, result in enumerate(list(actionResult["outcome"]["rollResults"])):
+        if i >= len(selectedTargets):
+            break
+
+        target_obj = selectedTargets[i]["Statblock"] if isinstance(selectedTargets[i], dict) else selectedTargets[i]
+        actionResult["outcome"]["rollResults"][i] = _normalize_result_flag(
+            result,
+            main_roll_type,
+            target_obj,
+            main_save_dc,
+        )
+
+    extra = actionResult.get("extraOutcome")
+    extra_effect = action.getExtraEffect() if hasattr(action, "getExtraEffect") else None
+    if extra and extra_effect:
+        extra_roll_type = str(extra_effect.get("rolls", {}).get("rollType", "")).lower()
+        extra_save_dc = actor.getDC() if hasattr(actor, "getDC") else 0
+        extra_outcomes = extra.get("extraRollResults", [])
+        extra_damages = extra.get("extraDiceResults", [])
+
+        if len(extra_damages) == 1 and len(selectedTargets) != 1:
+            extra_damages = [extra_damages[0]] * len(selectedTargets)
+            extra["extraDiceResults"] = extra_damages
+
+        for i in range(len(extra_damages)):
+            try:
+                extra_damages[i] = int(extra_damages[i])
+            except (TypeError, ValueError):
+                extra_damages[i] = 0
+
+        for i, result in enumerate(list(extra_outcomes)):
+            if i >= len(selectedTargets):
+                break
+
+            target_obj = selectedTargets[i]["Statblock"] if isinstance(selectedTargets[i], dict) else selectedTargets[i]
+            extra_outcomes[i] = _normalize_result_flag(
+                result,
+                extra_roll_type,
+                target_obj,
+                extra_save_dc,
+            )
 
     if (
         isinstance(action, Spell)
@@ -3461,95 +3965,174 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, toke
             "name": "Concentration",
             "effect": {
                 "resultID": actionResult["resultID"],
-                "concentrationTargets": [t["Statblock"].getName() if isinstance(t, dict) else t.getName() for t in
-                                         selectedTargets]
-            }
+                "concentrationTargets": [
+                    t["Statblock"].getName() if isinstance(t, dict) else t.getName()
+                    for t in selectedTargets
+                ],
+                "action": action.toDict(),
+            },
         }
         for se in actor.getActiveStatusEffects():
             if se["name"].lower() == "concentration":
-                if any(effect in se["effect"]["concentrationTargets"] for effect in
-                       concEffect["effect"]["concentrationTargets"]):
-                    # Edge case for summoned concentrationTargets
+                if any(
+                    effect in se["effect"]["concentrationTargets"]
+                    for effect in concEffect["effect"]["concentrationTargets"]
+                ):
                     oldTargets = se["effect"]["concentrationTargets"]
-                    endConcentration(actor, se, initiative)
+                    endConcentration(actor, se, initiative, mapdata)
                     cetidx = 0
                     while cetidx < len(concEffect["effect"]["concentrationTargets"]):
                         cet = concEffect["effect"]["concentrationTargets"][cetidx]
-                        if cet in oldTargets and cet not in [
-                            c["name"] for c in initiative
-                        ]:
+                        if cet in oldTargets and cet not in [c["name"] for c in initiative]:
                             del concEffect["effect"]["concentrationTargets"][cetidx]
                             del actionResult["targets"][cetidx]
+                            del actionResult["effect"]["action"][cetidx]
                             del actionResult["outcome"]["diceResults"][cetidx]
                             del actionResult["outcome"]["rollResults"][cetidx]
                             del selectedTargets[cetidx]
                             continue
                         cetidx += 1
                 else:
-                    endConcentration(actor, se, initiative)
+                    endConcentration(actor, se, initiative, mapdata)
                 break
         actor.addStatusEffect(concEffect)
 
+    main_is_healing = (
+        isinstance(action, Spell)
+        and not isinstance(action.getDamType(), list)
+        and action.getDamType().lower() == "healing"
+    )
+    main_half_save = bool(action.getHalfSave()) if hasattr(action, "getHalfSave") else False
+
     for idx, target in enumerate(selectedTargets):
         creature = target["Statblock"] if isinstance(target, dict) else target
-        succeeded = outcomes[idx].lower() in ("y", "crit")
-        damage = damages[idx]
-        creature = applyEffectToTarget(
-            creature, succeeded, damage, action, actionResult["resultID"]
+        succeeded = idx < len(outcomes) and str(outcomes[idx]).lower() in ("y", "crit")
+
+        raw_damage = damages[idx] if idx < len(damages) else 0
+        damTypes = action.getDamType()
+        if isinstance(damTypes, list):
+            if len(damTypes) == 1:
+                dType = damTypes[0]
+                if creature.isResistant(dType):
+                    raw_damage /= 4
+                elif creature.isVulnerable(dType):
+                    raw_damage *= 1.5
+                elif creature.isImmune(dType):
+                    raw_damage /= 2
+            if "AND" in damTypes:
+                for dType in damTypes:
+                    if creature.isResistant(dType):
+                        raw_damage /= 4
+                    elif creature.isVulnerable(dType):
+                        raw_damage *= 1.5
+                    elif creature.isImmune(dType):
+                        raw_damage /= 2
+            elif "OR" in damTypes:
+                if all(creature.isResistant(dType) for dType in damTypes):
+                    raw_damage /= 2
+                elif all(creature.isImmune(dType) for dType in damTypes):
+                    raw_damage *= 0
+                elif any(creature.isVulnerable(dType) for dType in damTypes):
+                    raw_damage *= 2
+        if isinstance(damTypes, str):
+            if creature.isResistant(damTypes):
+                raw_damage /= 4
+            elif creature.isVulnerable(damTypes):
+                raw_damage *= 1.5
+            elif creature.isImmune(damTypes):
+                raw_damage /= 2
+        applied_damage = _applied_damage_amount(
+            raw_damage,
+            succeeded,
+            main_roll_type,
+            half_save=main_half_save,
+            is_healing=main_is_healing,
         )
+
+        if idx < len(damages):
+            damages[idx] = applied_damage
+
+        creature = applyEffectToTarget(
+            creature, succeeded, applied_damage, action, actionResult["resultID"]
+        )
+
         if isinstance(action, Spell) and action.getLingEffects():
             transLingEffect = translateLingEffect(
                 action, action.getLingEffects(), actor.getSpellMod()
             )
             if creature.isActiveStatusEffect("lingEffect"):
                 lingEffect = creature.getActiveStatusEffect("lingEffect")
-                lingEffect["effect"]["spell"].append(transLingEffect.toDict())
+                if "spell" in lingEffect["effect"]:
+                    lingEffect["effect"]["spell"].append(transLingEffect.toDict())
+                else:
+                    lingEffect["effect"]["action"].append(transLingEffect.toDict())
                 lingEffect["effect"]["resultID"].append(actionResult["resultID"])
             else:
                 newLingEffect = {
                     "name": "lingEffect",
                     "effect": {
-                        "spell": [transLingEffect.toDict()],
+                        "action": [transLingEffect.toDict()],
                         "resultID": [actionResult["resultID"]],
                     },
                 }
                 addStatusEffect(newLingEffect, creature, actionResult["resultID"])
 
-    cost = "action" if isinstance(action, Weapon) else action.getActionCost()
-
-    # ---- EXTRA EFFECT PASS (if any) ----
     extra = actionResult.get("extraOutcome", None)
-    if extra:
-        extraOutcomes = extra["extraRollResults"]
-        extraDamages = extra["extraDiceResults"]
+    extra_effect = action.getExtraEffect() if hasattr(action, "getExtraEffect") else None
+    if extra and extra_effect:
+        extraOutcomes = extra.get("extraRollResults", [])
+        extraDamages = extra.get("extraDiceResults", [])
+
         if extraOutcomes or extraDamages:
             if len(extraDamages) == 1 and len(selectedTargets) != 1:
                 extraDamages = [extraDamages[0]] * len(selectedTargets)
+                extra["extraDiceResults"] = extraDamages
+
+            extraRollType = str(extra_effect.get("rolls", {}).get("rollType", "")).lower()
+            extraHalfSave = bool(extra_effect.get("rolls", {}).get("halfSave", False))
+
+            extraDamType = extra_effect.get("damType")
+            if isinstance(extraDamType, list):
+                extraIsHealing = len(extraDamType) == 1 and str(extraDamType[0]).lower() == "healing"
+            else:
+                extraIsHealing = str(extraDamType).lower() == "healing"
 
             for idx, target in enumerate(selectedTargets):
                 creature = target["Statblock"] if isinstance(target, dict) else target
-                succeededExtra = extraOutcomes[idx].lower() in ("y", "crit")
-                damageExtra = extraDamages[idx]
-                extraEffect = action.getExtraEffect()
-                extraRollType = extraEffect["rolls"]["rollType"]
+                succeededExtra = idx < len(extraOutcomes) and str(extraOutcomes[idx]).lower() in ("y", "crit")
+
+                rawDamageExtra = extraDamages[idx] if idx < len(extraDamages) else 0
+                appliedDamageExtra = _applied_damage_amount(
+                    rawDamageExtra,
+                    succeededExtra,
+                    extraRollType,
+                    half_save=extraHalfSave,
+                    is_healing=extraIsHealing,
+                )
+
+                if idx < len(extraDamages):
+                    extraDamages[idx] = appliedDamageExtra
 
                 downed_before = creature.isActiveCondition("Downed")
                 stable_before = creature.isActiveCondition("Stabilized")
 
-                if (
-                    isinstance(action, Spell)
-                    and not isinstance(action.getDamType(), list)
-                    and action.getDamType().lower() == "healing"
-                ):
-                    creature.setHP(min(creature.getMaxHP(), creature.getHP() + damageExtra))
+                if extraIsHealing:
+                    if appliedDamageExtra > 0:
+                        creature.setHP(min(creature.getMaxHP(), creature.getHP() + appliedDamageExtra))
                 else:
-                    creature.setHP(creature.getHP() - damageExtra)
+                    if appliedDamageExtra > 0:
+                        creature.setHP(creature.getHP() - appliedDamageExtra)
+
+                creature.setHP(math.floor(creature.getHP()))
+
                 if creature.getHP() <= 0:
                     creature.setHP(0)
                     if isinstance(creature, Player):
-                        addCondition("Downed" if damageExtra < (creature.getMaxHP() + creature.getHP()) else "Dead",
-                                     creature,
-                                     actionResult["resultID"])
+                        addCondition(
+                            "Downed" if appliedDamageExtra < (creature.getMaxHP() + creature.getHP()) else "Dead",
+                            creature,
+                            actionResult["resultID"],
+                        )
                     else:
                         addCondition("Dead", creature, actionResult["resultID"])
 
@@ -3562,13 +4145,14 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, toke
                 if (extraRollType == "save" and not succeededExtra) or (
                     extraRollType != "save" and succeededExtra
                 ):
-                    if "conditions" in extraEffect and extraEffect["conditions"]:
-                        for cond in extraEffect["conditions"]:
+                    if "conditions" in extra_effect and extra_effect["conditions"]:
+                        for cond in extra_effect["conditions"]:
                             addCondition(cond, creature, actionResult["resultID"])
-                    if "statusEffect" in extraEffect and extraEffect["statusEffect"]:
-                        for effect in extraEffect["statusEffect"]:
+                    if "statusEffect" in extra_effect and extra_effect["statusEffect"]:
+                        for effect in extra_effect["statusEffect"]:
                             if effect["name"].lower() != "concentration":
                                 addStatusEffect(effect, creature, actionResult["resultID"])
+
     if isinstance(action, Spell) and action.getSpecialNotes():
         specialNotes = action.getSpecialNotes()
         for note in specialNotes:
@@ -3576,28 +4160,22 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, toke
                 actionResult["turnCount"] = 0
                 actionResult["turnCap"] = int(note.lower().split("turn")[0])
                 break
-def endSpellEffect(effect, idx, creature, initiative):
+
+def endSpellEffect(effect, idx, creature):
     # Ends any long-lasting effect that a creature has from a given spell
     # - and ends concentration if nobody else is under that spell.
-    if "effect" in effect:
-        effectID = effect["effect"]["resultID"][idx]
-        if idx == 0:
-            removeStatusEffect(effect["name"], creature)
+    effectID = effect["effect"]["resultID"][idx]
+    # lingEffect = False
+
+    del effect["effect"]["resultID"][idx]
+    if effect["name"].lower() in ["lingsave", "lingeffect"]:
+        if effect["name"].lower() == "lingeffect":
+            lingEffect = True
+        if "spell" in effect["effect"]:
+            del effect["effect"]["spell"][idx]
         else:
-            del effect["effect"]["resultID"][idx]
-            if effect["name"].lower() in ["lingsave", "lingeffect"]:
-                del effect["effect"]["spell"][idx]
-            else:
-                del effect["effect"]["attribute"][idx]
-    elif "cond" in effect:
-        effectID = effect["resultID"][idx]
-        if idx == 0:
-            removeCondition(effect["cond"], creature)
-        else:
-            del effect["resultID"][idx]
-    else:
-        removeCondition(effect, creature)
-        return
+            del effect["effect"]["action"][idx]
+
     # Removes associated statEffects and conditions from creature.
     for condition in creature.getActiveConditions():
         if isinstance(condition, dict):
@@ -3607,36 +4185,44 @@ def endSpellEffect(effect, idx, creature, initiative):
                     break
             if len(condition["resultID"]) == 0:
                 removeCondition(condition["cond"], creature)
-    for se in creature.getActiveStatusEffects():
+    statEffects = creature.getActiveStatusEffects()
+    i = 0
+    while i < len(statEffects):
+        se = statEffects[i]
         if (
-            se["name"].lower() != "concentration"
-            and effectID in se["effect"]["resultID"]
+                se["name"].lower() != "concentration"
+                and effectID in se["effect"]["resultID"]
         ):
             for ri, resultID in enumerate(se["effect"]["resultID"]):
                 if effectID == resultID:
-                    endSpellEffect(se, ri, creature, initiative)
+                    del statEffects[i]["effect"]["resultID"][ri]
+                    if len(se[i]["effect"]["resultID"]) == 0:
+                        del statEffects[i]
                     break
-
-    for target in initiative:
-        target = target["Statblock"]
-        if target.isActiveStatusEffect("concentration"):
-            concEffect = target.getActiveStatusEffect("concentration")
-            if concEffect["effect"]["resultID"] == effectID:
-                remainingTargets = False
-                for effectTarget in initiative:
-                    effectTarget = effectTarget["Statblock"]
-                    if (
-                        effectTarget.isActiveStatusEffect(effect["name"])
-                        and effectID
-                        in effectTarget.getActiveStatusEffect(effect["name"])["effect"][
-                            "resultID"
-                        ]
-                    ):
-                        remainingTargets = True
-                        break
-                if not remainingTargets:
-                    endConcentration(target, concEffect, initiative)
-                break
+        i += 1
+    #This part is optional from the MTHcap. Do we want to let lingsave concentration die if its not targeting anything?
+    #Or do we leave that to user choice?
+    # if not lingEffect:
+    #     for target in initiative:
+    #         target = target["Statblock"]
+    #         if target.isActiveStatusEffect("concentration"):
+    #             concEffect = target.getActiveStatusEffect("concentration")
+    #             if concEffect["effect"]["resultID"] == effectID:
+    #                 remainingTargets = False
+    #                 for effectTarget in initiative:
+    #                     effectTarget = effectTarget["Statblock"]
+    #                     if (
+    #                         effectTarget.isActiveStatusEffect(effect["name"])
+    #                         and effectID
+    #                         in effectTarget.getActiveStatusEffect(effect["name"])["effect"][
+    #                             "resultID"
+    #                         ]
+    #                     ):
+    #                         remainingTargets = True
+    #                         break
+    #                 if not remainingTargets:
+    #                     endConcentration(target, concEffect, initiative)
+    #                 break
 
 #ENCOUNTER RUNTIME METHODS
 def merge_sort_spells(spell_list):
@@ -3687,8 +4273,11 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
     actionTypes = []
     actionProbs = []
     actionEDams = []
+    actionPercentages = []
     actionImpacts = []
     actionTargets = []
+    actionObjects = []   # add this
+
     for i in range(len(spellList)):
         if actionViabilityCheck(spellList[i], initEntry, initiative, isPlayerTurn):
             spellName = spellList[i].getName()
@@ -3738,252 +4327,557 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
                         probTargets = {}
                     spellProb = probToStr
                     try:
+                        #TODO: Failed burning hands eDam, prob and impact worked.
                         spellEDam, eTargets = calcTotalExpectedDamage(creature, spellList[i],
                                                                    initiative) if spellEDam == -1 else spellEDam
                     except TypeError:
                         spellEDam = 0
                         eTargets = {}
 
+                if not probTargets and not eTargets:
+                    continue
+                probTargetsNorm = normalizeTargetSets(probTargets, initiative)
+                eTargetsNorm = normalizeTargetSets(eTargets, initiative)
 
-                probTargets = normalizeTargetSets(probTargets, initiative)
-                eTargets = normalizeTargetSets(eTargets, initiative)
-
-                if probTargets and eTargets and {target.getName() for target in probTargets} == {target.getName() for target in eTargets}:
+                if probTargetsNorm and eTargetsNorm and {target.getName() for target in probTargetsNorm} == {target.getName() for target in eTargetsNorm}:
                     #Good case.
                     spellImpact = calcImpact(creature, spellList[i], spellProb,
-                                             spellEDam, probTargets, initiative)
+                                             spellEDam, probTargetsNorm, initiative)
                     target = probTargets
                 else:
                     #Bad case.
-                    if not probTargets and eTargets:
+                    if not probTargetsNorm and eTargetsNorm:
                         spellImpact = calcImpact(creature, spellList[i], spellProb,
-                                             spellEDam, eTargets, initiative)
+                                             spellEDam, eTargetsNorm, initiative)
                         target = eTargets
-                    elif not eTargets and probTargets:
+                    elif not eTargetsNorm and probTargetsNorm:
                         spellImpact = calcImpact(creature, spellList[i], spellProb,
-                                                 spellEDam, probTargets, initiative)
+                                                 spellEDam, probTargetsNorm, initiative)
                         target = probTargets
-                    elif not probTargets and not eTargets:
+                    elif not probTargetsNorm and not eTargetsNorm:
                         spellImpact = 0
                         target = None
                     else:
                         spellImpact1 = calcImpact(creature, spellList[i], spellProb,
-                                                  spellEDam, probTargets, initiative)
+                                                  spellEDam, probTargetsNorm, initiative)
                         spellImpact2 = calcImpact(creature, spellList[i], spellProb,
-                                                 spellEDam, eTargets, initiative)
+                                                 spellEDam, eTargetsNorm, initiative)
                         spellImpact = max([spellImpact1, spellImpact2])
                         targetIdx = [spellImpact1, spellImpact2].index(spellImpact)
                         target = probTargets if targetIdx == 0 else eTargets
 
                 actionNames.append(spellName)
-                actionTypes.append(f"Lvl {spellList[i].getLvl()} Spell" if spellList[i].getLvl() > 0 else "Cantrip")
+                actionTypes.append(f"Lvl {spellList[i].getLvl()} spell")
                 actionProbs.append(spellProb)
                 actionEDams.append(spellEDam)
                 actionImpacts.append(spellImpact)
                 actionTargets.append(target)
+                actionObjects.append(spellList[i])
+                if isinstance(target, list):
+                    percentages = []
+                    for i, t in enumerate(target):
+                        hp = t.getHP()
+                        if isinstance(spellEDam, list):
+                            percentages.append(round(spellEDam[i] / hp, 2))
+                        else:
+                            percentages.append(round(spellEDam / hp, 2))
+                    actionPercentages.append(percentages)
+                elif isinstance(target, dict):
+                    if "targetsHit" in target:
+                        percentages = []
+                        for i, t in enumerate(target["targetsHit"]):
+                            hp = t.getHP()
+                            if isinstance(spellEDam, list):
+                                percentages.append(round(spellEDam[i] / hp, 2))
+                            else:
+                                percentages.append(round(spellEDam / hp, 2))
+                        actionPercentages.append(percentages)
+                else:
+                    hp = target.getHP()
+                    if isinstance(spellEDam, list):
+                        actionPercentages.append(round(spellEDam[i] / hp, 2))
+                    else:
+                        actionPercentages.append(round(spellEDam / hp, 2))
             except:
-                print("Error with action", spellName)
                 continue
 
-    actions = [{"name": actionNames[i], "prob": actionProbs[i], "eDam": actionEDams[i],
-                "impact": actionImpacts[i], "target" : actionTargets[i]} for
+    actions = [{"name": actionNames[i], "type" : actionTypes[i], "prob": actionProbs[i], "eDam": actionEDams[i],
+                "percentage" : actionPercentages[i], "impact": actionImpacts[i],
+                "actions" : actionObjects[i], "target" : actionTargets[i]} for
                i in range(len(actionNames))]
     return actions
+
 def processClassAbilityAnalytics(abilities, player, initiative):
     # TODO: Read through abilities list
     # abilities are the already translated class objects
     # Then process using player and initiative like other analytics.
     pass
-def rankActions(actions):
-    KEYS = ("prob", "eDam", "impact")
 
-    SEG_RE = re.compile(
-        r"^\s*(?P<a>\d*\.?\d+)\s*(?:-\s*(?P<b>\d*\.?\d+))?\s*(?P<tag>LS|LE|EE)?\s*$",
-        re.IGNORECASE,
+def _extract_prob_value(prob) -> float:
+    if isinstance(prob, (int, float)):
+        return float(prob)
+
+    if isinstance(prob, str):
+        try:
+            return float(prob.split(" - ")[0].strip())
+        except Exception:
+            return 0.0
+
+    if isinstance(prob, dict):
+        return float(prob.get("probSuccess", 0.0))
+
+    return 0.0
+def _score_action_with_ml(
+    *,
+    actor,
+    action_obj,
+    targets,
+    encounter_id: str,
+    prob : float,
+    expected_damage: float,
+    impact: float,
+    base_weight : int
+):
+    heuristic_components = {
+        "expected_damage": float(expected_damage or 0.0),
+        "impact_score": float(impact or 0.0),
+        "kill_chance": 0.0,
+        "prob_success": prob,
+    }
+
+    context = {
+        "expected_damage": float(expected_damage or 0.0),
+        "impact_score": float(impact or 0.0),
+        "num_targets": len(targets) if isinstance(targets, list) else 0,
+    }
+
+    record = make_training_record(
+        action=action_obj,
+        actor=actor,
+        targets=targets,
+        encounter_id=encounter_id,
+        base_weight=base_weight,
+        heuristic_components=heuristic_components,
+        context=context,
     )
-    def _mid(a, b):
-        return (a + b) / 2.0 if b is not None else a
 
-    def parse_prob_segments(prob_str_or_num):
-        if isinstance(prob_str_or_num, (int, float)):
-            return float(prob_str_or_num), {}
+    ml_weight = predict_action_weight(record)
+    return ml_weight, record
 
-        if not isinstance(prob_str_or_num, str):
-            raise TypeError(f"Unsupported prob type: {type(prob_str_or_num)}")
 
-        s = prob_str_or_num.strip()
-        if s[0] == "-":
-            s = s[1:]
-        chunks = [c.strip() for c in s.split(" - ")]
+def _extract_prob_value(prob) -> float:
+    if isinstance(prob, (int, float)):
+        return float(prob)
 
-        if not chunks:
-            raise ValueError(f"Empty prob string: {prob_str_or_num!r}")
+    if isinstance(prob, str):
+        try:
+            return float(prob.split(" - ")[0].strip())
+        except Exception:
+            return 0.0
 
-        # First chunk: initial (no tag)
-        m0 = SEG_RE.match(chunks[0])
-        if not m0:
-            raise ValueError(
-                f"Could not parse initial prob chunk: {chunks[0]!r} of {s}"
-            )
+    if isinstance(prob, dict):
+        return float(prob.get("probSuccess", 0.0))
 
-        a0 = float(m0.group("a"))
-        b0 = float(m0.group("b")) if m0.group("b") is not None else None
-        initial = _mid(a0, b0)
+    return 0.0
+def _score_action_with_ml(
+    *,
+    actor,
+    action_obj,
+    targets,
+    encounter_id: str,
+    prob : float,
+    expected_damage: float,
+    impact: float,
+    base_weight : int
+):
+    heuristic_components = {
+        "expected_damage": float(expected_damage or 0.0),
+        "impact_score": float(impact or 0.0),
+        "kill_chance": 0.0,
+        "prob_success": prob,
+    }
 
-        parts = {}
-        for chunk in chunks[1:]:
-            m = SEG_RE.match(chunk)
-            if not m:
+    context = {
+        "expected_damage": float(expected_damage or 0.0),
+        "impact_score": float(impact or 0.0),
+        "num_targets": len(targets) if isinstance(targets, list) else 0,
+    }
+
+    record = make_training_record(
+        action=action_obj,
+        actor=actor,
+        targets=targets,
+        encounter_id=encounter_id,
+        base_weight=base_weight,
+        heuristic_components=heuristic_components,
+        context=context,
+    )
+
+    ml_weight = predict_action_weight(record)
+    return ml_weight, record
+def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
+    def getBaseRankings():
+        KEYS = ("prob", "rankEDam", "rankImpact")
+
+        SEG_RE = re.compile(
+            r"^\s*(?P<a>\d*\.?\d+)\s*(?:-\s*(?P<b>\d*\.?\d+))?\s*(?P<tag>LS|LE|EE)?\s*$",
+            re.IGNORECASE,
+        )
+
+        def _mid(a, b):
+            return (a + b) / 2.0 if b is not None else a
+        def _safe_float(value, default=0.0):
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                return default
+        def parse_prob_segments(prob_str_or_num):
+            if isinstance(prob_str_or_num, (int, float)):
+                return float(prob_str_or_num), {}
+
+            if not isinstance(prob_str_or_num, str):
+                raise TypeError(f"Unsupported prob type: {type(prob_str_or_num)}")
+
+            s = prob_str_or_num.strip()
+            if s and s[0] == "-":
+                s = s[1:]
+
+            chunks = [c.strip() for c in s.split(" - ")]
+            if not chunks:
+                raise ValueError(f"Empty prob string: {prob_str_or_num!r}")
+
+            m0 = SEG_RE.match(chunks[0])
+            if not m0:
                 raise ValueError(
-                    f"Could not parse prob chunk: {chunk!r} from {prob_str_or_num!r}"
+                    f"Could not parse initial prob chunk: {chunks[0]!r} of {s}"
                 )
 
-            a = float(m.group("a"))
-            b = float(m.group("b")) if m.group("b") is not None else None
-            tag = (m.group("tag") or "").upper()
+            a0 = float(m0.group("a"))
+            b0 = float(m0.group("b")) if m0.group("b") is not None else None
+            initial = _mid(a0, b0)
 
-            if tag not in {"LS", "LE", "EE"}:
-                # In your normalization, extras always have tags; if not, skip or raise.
-                raise ValueError(f"Missing/invalid tag in chunk: {chunk!r}")
-
-            parts[tag] = _mid(a, b)
-
-        return initial, parts
-
-    def prob_score_weighted(initial, parts, weights=None):
-        if weights is None:
-            weights = {"INIT": 0.70, "LS": 0.10, "LE": 0.10, "EE": 0.10}
-
-        used = {"INIT": weights["INIT"]}
-        for tag in ("LS", "LE", "EE"):
-            if tag in parts:
-                used[tag] = weights.get(tag, 0.0)
-
-        denom = sum(used.values())
-        score = used["INIT"] * initial
-        for tag in ("LS", "LE", "EE"):
-            if tag in parts:
-                score += used[tag] * parts[tag]
-
-        return score / denom if denom else initial
-    def prob_score_multiplicative(initial, parts):
-        score = initial
-        for tag in ("LS", "LE", "EE"):
-            if tag in parts:
-                score *= parts[tag]
-        return score
-
-    def prepare_actions_for_ranking(actions, score_mode="weighted"):
-        out = []
-        for a in actions:
-            x = dict(a)
-            x["probDisplay"] = a["prob"]
-
-            init, parts = parse_prob_segments(a["prob"])
-            x["probInit"] = init
-            x["probParts"] = parts  # dict like {"LE": 0.25, "EE": 0.10}
-
-            if score_mode == "weighted":
-                x["prob"] = prob_score_weighted(init, parts)
-            else:
-                x["prob"] = prob_score_multiplicative(init, parts)
-
-            if float(x["prob"]) < 0:
-                x["prob"] = 0
-                x["probDisplay"] = 0
-            elif float(x["prob"]) > 1.0:
-                x["prob"] = 1
-                x["probDisplay"] = 1
-
-            x["eDam"] = float(x["eDam"])
-            x["impact"] = float(x["impact"])
-            out.append(x)
-
-        return out
-
-    def pareto_front_set(actions, keys=KEYS):
-        front_ids = set()
-        for a in actions:
-            dominated = False
-            for b in actions:
-                if a is b:
+            parts = {}
+            for chunk in chunks[1:]:
+                m = SEG_RE.match(chunk)
+                if not m:
                     continue
-                ge_all = all(b[k] >= a[k] for k in keys)
-                gt_any = any(b[k] > a[k] for k in keys)
-                if ge_all and gt_any:
-                    dominated = True
-                    break
-            if not dominated:
-                front_ids.add(id(a))
-        return front_ids
 
-    def topsis_scores_minmax(actions, keys=KEYS, weights=None, eps=1e-12):
-        if not actions:
-            return {}
+                a = float(m.group("a"))
+                b = float(m.group("b")) if m.group("b") is not None else None
+                tag = (m.group("tag") or "").upper()
 
-        if weights is None:
-            weights = {k: 1.0 for k in keys}
+                if tag not in {"LS", "LE", "EE"}:
+                    raise ValueError(f"Missing/invalid tag in chunk: {chunk!r}")
 
-        mins = {k: min(a[k] for a in actions) for k in keys}
-        maxs = {k: max(a[k] for a in actions) for k in keys}
+                parts[tag] = _mid(a, b)
 
-        # Normalize to [0,1], apply weights
-        norm_rows = []
-        for a in actions:
-            row = {}
-            for k in keys:
-                rng = maxs[k] - mins[k]
-                if abs(rng) < eps:
-                    v = 0.0  # all same -> doesn't matter
+            return initial, parts
+        def prob_score_weighted(initial, parts, weights=None):
+            if weights is None:
+                weights = {"INIT": 0.70, "LS": 0.10, "LE": 0.10, "EE": 0.10}
+
+            used = {"INIT": weights["INIT"]}
+            for tag in ("LS", "LE", "EE"):
+                if tag in parts:
+                    used[tag] = weights.get(tag, 0.0)
+
+            denom = sum(used.values())
+            score = used["INIT"] * initial
+
+            for tag in ("LS", "LE", "EE"):
+                if tag in parts:
+                    score += used[tag] * parts[tag]
+
+            return score / denom if denom else initial
+        def prob_score_multiplicative(initial, parts):
+            score = initial
+            for tag in ("LS", "LE", "EE"):
+                if tag in parts:
+                    score *= parts[tag]
+            return score
+        def extract_percentage_value(percentages):
+            if not percentages:
+                return 0.0
+
+            normalized = []
+            for value in percentages:
+                if isinstance(value, str):
+                    value = value.strip().replace("%", "")
+
+                pct = _safe_float(value, 0.0)
+
+                # normalize 32 -> 0.32
+                if pct > 1.0:
+                    pct /= 100.0
+
+                pct = max(0.0, min(pct, 1.0))
+                normalized.append(pct)
+
+            return max(normalized) if normalized else 0.0
+
+        def get_type_multiplier(action_type):
+            if not isinstance(action_type, str):
+                return 1.0
+
+            action_type = action_type.strip().lower()
+
+            if action_type == "weapon":
+                return 0.95
+
+            if action_type == "monaction":
+                return 1.0
+
+            if action_type == "basic":
+                return 0.2
+
+            # Expected format: "Lvl # Spell"
+            # Using lower() per your request
+            if action_type.startswith("lvl ") and action_type.endswith(" spell"):
+                middle = action_type[4:-6].strip()  # text between "lvl " and " spell"
+                level = int(middle)
+
+                if level in (0, 1, 2):
+                    return 0.97
+
+                # exponential ramp starting at level 3
+                # 3 -> 1.03
+                # 4 -> 1.06
+                # 5 -> 1.12
+                # 6 -> 1.24
+                # 7 -> 1.48
+                # 8 -> 1.96
+                # 9 -> 2.92
+                return 1.03 + (0.03 * ((2 ** (level - 3)) - 1))
+
+            return 1.0
+
+        def get_percentage_multiplier(pct):
+            """
+            pct is normalized 0.0 - 1.0
+            25%+ gets a meaningful bump.
+            """
+            if pct >= 0.75:
+                return 2.00
+            if pct >= 0.50:
+                return 1.65
+            if pct >= 0.25:
+                return 1.35
+            if pct >= 0.10:
+                return 1.12
+            return 1.00 + (pct * 0.20)
+
+        def prepare_actions_for_ranking(actions, score_mode="weighted"):
+            out = []
+
+            for a in actions:
+                x = dict(a)
+                x["probDisplay"] = a["prob"]
+
+                init, parts = parse_prob_segments(a["prob"])
+                x["probInit"] = init
+                x["probParts"] = parts
+
+                if score_mode == "weighted":
+                    x["prob"] = prob_score_weighted(init, parts)
                 else:
-                    v = (a[k] - mins[k]) / (rng + eps)
-                row[k] = v * weights[k]
-            norm_rows.append((a, row))
+                    x["prob"] = prob_score_multiplicative(init, parts)
 
-        ideal_best = {
-            k: max(r[k] for _, r in norm_rows) for k in keys
-        }  # usually == weights[k]
-        ideal_worst = {k: min(r[k] for _, r in norm_rows) for k in keys}  # usually == 0
+                if float(x["prob"]) < 0:
+                    x["prob"] = 0.0
+                    x["probDisplay"] = 0.0
+                elif float(x["prob"]) > 1.0:
+                    x["prob"] = 1.0
+                    x["probDisplay"] = 1.0
 
-        scores = {}
-        for a, r in norm_rows:
-            d_pos = math.sqrt(sum((r[k] - ideal_best[k]) ** 2 for k in keys))
-            d_neg = math.sqrt(sum((r[k] - ideal_worst[k]) ** 2 for k in keys))
-            score = d_neg / (d_pos + d_neg + eps)
-            scores[id(a)] = score
+                rawEDam = _safe_float(x.get("eDam"), 0.0)
+                rawImpact = _safe_float(x.get("impact"), 0.0)
 
-        return scores
+                pct = extract_percentage_value(x.get("percentages", []))
+                typeMult = get_type_multiplier(x.get("type"))
+                pctMult = get_percentage_multiplier(pct)
 
-    def rank_all_actions(actions, weights=None):
-        front_ids = pareto_front_set(actions)
-        scores = topsis_scores_minmax(actions, weights=weights)
+                x["eDam"] = rawEDam
+                x["impact"] = rawImpact
+                x["percentageValue"] = pct
+                x["typeMultiplier"] = typeMult
+                x["percentageMultiplier"] = pctMult
 
-        enriched = []
-        for a in actions:
-            x = dict(a)  # don't mutate originals
-            x["pareto"] = id(a) in front_ids
-            x["topsis"] = scores.get(id(a), 0.0)
-            enriched.append(x)
+                # Heavier emphasis on damage-based chunking
+                x["rankEDam"] = rawEDam * typeMult * pctMult
 
-        enriched.sort(key=lambda x: (x["pareto"], x["topsis"]), reverse=True)
+                # Impact adjusted too, but less aggressively
+                x["rankImpact"] = rawImpact * ((typeMult * 0.75) + (pctMult * 0.25))
 
-        for i, x in enumerate(enriched, start=1):
-            x["overallRank"] = i
+                out.append(x)
 
-        return enriched
+            return out
 
-    # TODO: Double check accuracy of ranking logic
-    overallRankings = prepare_actions_for_ranking(actions)
-    overallRankings = rank_all_actions(
-        overallRankings, weights={"prob": 1.0, "eDam": 1.0, "impact": 1.25}
-    )
-    for action in overallRankings:
+        def pareto_front_set(actions, keys=KEYS):
+            front_ids = set()
+            for a in actions:
+                dominated = False
+                for b in actions:
+                    if a is b:
+                        continue
+                    ge_all = all(b[k] >= a[k] for k in keys)
+                    gt_any = any(b[k] > a[k] for k in keys)
+                    if ge_all and gt_any:
+                        dominated = True
+                        break
+                if not dominated:
+                    front_ids.add(id(a))
+            return front_ids
+
+        def topsis_scores_minmax(actions, keys=KEYS, weights=None, eps=1e-12):
+            if not actions:
+                return {}
+
+            if weights is None:
+                weights = {k: 1.0 for k in keys}
+
+            mins = {k: min(a[k] for a in actions) for k in keys}
+            maxs = {k: max(a[k] for a in actions) for k in keys}
+
+            norm_rows = []
+            for a in actions:
+                row = {}
+                for k in keys:
+                    rng = maxs[k] - mins[k]
+                    if abs(rng) < eps:
+                        v = 0.0
+                    else:
+                        v = (a[k] - mins[k]) / (rng + eps)
+                    row[k] = v * weights[k]
+                norm_rows.append((a, row))
+
+            ideal_best = {k: max(r[k] for _, r in norm_rows) for k in keys}
+            ideal_worst = {k: min(r[k] for _, r in norm_rows) for k in keys}
+
+            scores = {}
+            for a, r in norm_rows:
+                d_pos = math.sqrt(sum((r[k] - ideal_best[k]) ** 2 for k in keys))
+                d_neg = math.sqrt(sum((r[k] - ideal_worst[k]) ** 2 for k in keys))
+                scores[id(a)] = d_neg / (d_pos + d_neg + eps)
+
+            return scores
+
+        def rank_all_actions(actions, weights=None):
+            front_ids = pareto_front_set(actions)
+            scores = topsis_scores_minmax(actions, weights=weights)
+
+            enriched = []
+            for a in actions:
+                x = dict(a)
+                x["pareto"] = id(a) in front_ids
+                x["topsis"] = scores.get(id(a), 0.0)
+                enriched.append(x)
+
+            enriched.sort(key=lambda x: (x["pareto"], x["topsis"]), reverse=True)
+
+            for i, x in enumerate(enriched, start=1):
+                x["overallRank"] = i
+
+            return enriched
+
+        overallRankings = prepare_actions_for_ranking(actions)
+        overallRankings = rank_all_actions(
+            overallRankings,
+            weights={
+                "prob": 1.0,
+                "rankEDam": 1.35,
+                "rankImpact": 1.25,
+            },
+        )
+
+        for action in overallRankings:
+            if "target" in action and action["target"]:
+                if "targetsHit" in action["target"]:
+                    for i, t in enumerate(action["target"]["targetsHit"]):
+                        action["target"]["targetsHit"][i] = t.getName() if not isinstance(t, str) else t
+                else:
+                    for i, t in enumerate(action["target"]):
+                        action["target"][i] = t.getName() if not isinstance(t, str) else t
+        return overallRankings
+
+    prepared = []
+
+    rankings = getBaseRankings()
+    prepared = []
+    total_actions = len(rankings)
+
+    for action in rankings:
+        row = dict(action)
+
+        row["base_rank"] = int(action["overallRank"])
+
+        # Higher is better for ML + final sorting
+        row["base_weight"] = float(total_actions - row["base_rank"] + 1)
+
+        row["prob"] = max(0.0, min(1.0, float(row["prob"])))
+        row["eDam"] = float(row["eDam"])
+        row["impact"] = float(row["impact"])
+
+        row["ml_weight"] = None
+        row["final_weight"] = row["base_weight"]
+
+        if (
+            use_ml
+            and actor is not None
+            and encounter_id is not None
+            and row.get("action_obj") is not None
+        ):
+            try:
+                ml_weight, ml_record = _score_action_with_ml(
+                    actor=actor,
+                    action_obj=row["action_obj"],
+                    targets=row.get("target", []),
+                    encounter_id=encounter_id,
+                    prob=row["prob"],
+                    expected_damage=row["eDam"],
+                    impact=row["impact"],
+                    base_weight=row["base_weight"],
+                )
+                row["ml_weight"] = ml_weight
+                row["ml_record"] = ml_record
+                row["final_weight"] = ml_weight
+            except Exception as exc:
+                print(f"[rankActions] ML scoring failed for {row.get('name')}: {exc}")
+
+        prepared.append(row)
+
+    prepared.sort(key=lambda x: x["final_weight"], reverse=True)
+
+    for i, action in enumerate(prepared, start=1):
+        action["overallRank"] = i
+
+    for action in prepared:
         if "target" in action and action["target"]:
-            for i, t in enumerate(action["target"]):
-                action["target"][i] = t.getName() if not isinstance(t, str) else t
+            if isinstance(action["target"], list):
+                new_targets = []
+                for t in action["target"]:
+                    if isinstance(t, str):
+                        new_targets.append(t)
+                    elif hasattr(t, "getName"):
+                        new_targets.append(t.getName())
+                    else:
+                        new_targets.append(t)
+                action["target"] = new_targets
+            elif isinstance(action["target"], dict) and "targetsHit" in action["target"]:
+                fixed = []
+                for t in action["target"]["targetsHit"]:
+                    if isinstance(t, str):
+                        fixed.append(t)
+                    elif hasattr(t, "getName"):
+                        fixed.append(t.getName())
+                    else:
+                        fixed.append(t)
+                action["target"]["targetsHit"] = fixed
 
-    return overallRankings
-    # return [oRank["name"] for oRank in overallRankings]
+    for action in prepared:
+        action.pop("action_obj", None)
+        action.pop("ml_record", None)
+
+    return prepared
 def actionViabilityCheck(action, activeInitiativeEntry, initiative, isPlayerTurn):
     def spellSlotValidity(spellSlots):
         spellLvl = action.getLvl() - 1
@@ -4065,49 +4959,59 @@ def actionViabilityCheck(action, activeInitiativeEntry, initiative, isPlayerTurn
             return True
 
     return False
-def monsterTurn(creature, initiative):
+def monsterTurn(creature, initiative, encounter_id=None):
     if endOfEncounter(initiative):
         return {}
+
     actionNames = []
     actionTypes = []
     actionProbs = []
     actionEDams = []
+    actionPercentages = []
     actionImpacts = []
     actionTargets = []
+    actionObjects = []
     actions = []
+
     initEntry = initiative[[i["name"] for i in initiative].index(creature.getName())]
 
     defineBasicActions(actionNames, actionTypes, actionProbs,
                        actionEDams, actionImpacts, actionTargets,
-                       initEntry, initiative, False)
+                       actionObjects, initEntry, initiative, False)
+    actionPercentages.extend([0, 0, 0])
     if creature.isCaster():
         monSpells = [creature.getSpell(i) for i in range(creature.getSpellLength())]
         validSpells = []
         for spell in monSpells:
-            if "spellData" not in spell:
-                continue
-            else:
+            if "spellData" in spell:
                 validSpells.append(spell["spellData"])
+
         spellList = merge_sort_spells(validSpells)
         spellData = processSpellAnalytics(spellList, initEntry, initiative, False)
         actions.extend(spellData)
+
     monActions = [creature.getAction(i) for i in range(creature.getActionLength())]
     mInitEntry = initiative[[i["name"].lower() for i in initiative].index(creature.getName().lower())]
-    for i, monAction in enumerate(monActions):
+
+    for monAction in monActions:
         if monAction.isBadObj():
-            actions.append({"name": monAction.getName(), "prob": 0, "eDam": 0, "impact": 0})
             continue
+
         actionName = monAction.getName()
 
         if actionViabilityCheck(monAction, mInitEntry, initiative, False):
             try:
                 actionProb = 0
                 actionEDam = -1
+
                 if monAction.getSelfTarget():
                     actionProb = 1.0
                     actionEDam = 0
                     probTargets = [creature.getName()]
-                    eTargets = [creature.getName()]
+                    probTargetsNorm = normalizeTargetSets(probTargets, initiative)
+                    actionImpact = calcImpact(creature, monAction, actionProb,
+                                              actionEDam, probTargetsNorm, initiative)
+                    target = probTargets
                 else:
                     if monAction.getRollType().lower() == "tohit":
                         actionProb = calcTotalToHitProbability(creature, monAction, initiative)
@@ -4126,126 +5030,190 @@ def monsterTurn(creature, initiative):
                         actionProb = 1 if actionProb > 1 else actionProb
                         probTargets = ""
                         probToStr = actionProb
+
                     actionProb = probToStr
                     actionEDam, eTargets = calcTotalExpectedDamage(creature,
                                                                   monAction, initiative) if actionEDam == -1 else actionEDam
 
-                probTargets = normalizeTargetSets(probTargets, initiative)
-                eTargets = normalizeTargetSets(eTargets, initiative)
-
-                if {target.getName() for target in probTargets} == {target.getName() for target in eTargets}:
-                    # Good case
-                    actionImpact = calcImpact(creature, monAction, actionProb,
-                                             actionEDam, probTargets, initiative)
-                    target = probTargets
-                else:
-                    # Bad case.
                     if not probTargets and not eTargets:
-                        actionImpact = 0
-                        target = {}
-                    elif not probTargets:
-                        actionImpact = calcImpact(creature, monAction, actionProb,
-                                              actionEDam, eTargets, initiative)
-                        target = eTargets
-                    elif not eTargets:
-                        actionImpact = calcImpact(creature, monAction, actionProb,
-                                              actionEDam, probTargets, initiative)
+                        continue
+
+                    probTargetsNorm = normalizeTargetSets(probTargets, initiative)
+                    eTargetsNorm = normalizeTargetSets(eTargets, initiative)
+
+                    if {target.getName() for target in probTargetsNorm} == {target.getName() for target in eTargetsNorm}:
+                        actionImpact = calcImpact(creature, monAction, actionProb, actionEDam, probTargetsNorm, initiative)
                         target = probTargets
                     else:
-                        spellImpact1 = calcImpact(creature, monAction, actionProb,
-                                                  actionEDam, probTargets, initiative)
-                        spellImpact2 = calcImpact(creature, monAction, actionProb,
-                                                  actionEDam, eTargets, initiative)
-                        actionImpact = max([spellImpact1, spellImpact2])
-                        targetIdx = [spellImpact1, spellImpact2].index(actionImpact)
-                        target = probTargets if targetIdx == 0 else eTargets
+                        if not probTargetsNorm and not eTargetsNorm:
+                            actionImpact = 0
+                            target = {}
+                        elif not probTargetsNorm:
+                            actionImpact = calcImpact(creature, monAction, actionProb,
+                                                  actionEDam, eTargetsNorm, initiative)
+                            target = eTargets
+                        elif not eTargetsNorm:
+                            actionImpact = calcImpact(creature, monAction, actionProb,
+                                                  actionEDam, probTargetsNorm, initiative)
+                            target = probTargets
+                        else:
+                            actionImpact1 = calcImpact(creature, monAction, actionProb, actionEDam, probTargetsNorm, initiative)
+                            actionImpact2 = calcImpact(creature, monAction, actionProb, actionEDam, eTargetsNorm, initiative)
+                            actionImpact = max([actionImpact1, actionImpact2])
+                            targetIdx = [actionImpact1, actionImpact2].index(actionImpact)
+                            target = probTargets if targetIdx == 0 else eTargets
 
                 actionNames.append(actionName)
+                actionTypes.append("monAction")
                 actionProbs.append(actionProb)
                 actionEDams.append(actionEDam)
                 actionImpacts.append(actionImpact)
                 actionTargets.append(target)
+                actionObjects.append(monAction)
+                if isinstance(target, list):
+                    percentages = []
+                    for i, t in enumerate(target):
+                        hp = t.getHP()
+                        if isinstance(actionEDam, list):
+                            percentages.append(round(actionEDam[i] / hp, 2))
+                        else:
+                            percentages.append(round(actionEDam / hp, 2))
+                    actionPercentages.append(percentages)
+                elif isinstance(target, dict):
+                    if "targetsHit" in target:
+                        percentages = []
+                        for i, t in enumerate(target["targetsHit"]):
+                            hp = t.getHP()
+                            if isinstance(actionEDam, list):
+                                percentages.append(round(actionEDam[i] / hp, 2))
+                            else:
+                                percentages.append(round(actionEDam / hp, 2))
+                        actionPercentages.append(percentages)
+                else:
+                    hp = target.getHP()
+                    if isinstance(actionEDam, list):
+                        actionPercentages.append(round(actionEDam[i] / hp, 2))
+                    else:
+                        actionPercentages.append(round(actionEDam / hp, 2))
             except TypeError:
-                print("Error with action", actionName)
                 continue
 
     actions.extend(
-        [{"name": actionNames[i], "prob": actionProbs[i], "eDam": actionEDams[i],
-          "impact": actionImpacts[i], "target" : actionTargets[i]} for i in range(len(actionNames))])
-    return rankActions(actions)
-def playerTurn(player, initiative):
+        [{"name": actionNames[i], "type" : actionTypes[i], "prob": actionProbs[i], "eDam": actionEDams[i],
+          "percentages" : actionPercentages[i], "action_obj" : actionObjects[i],
+          "impact": actionImpacts[i], "target" : actionTargets[i]}
+         for i in range(len(actionNames))])
+    return rankActions(
+        actions,
+        actor=creature,
+        encounter_id=encounter_id,
+        use_ml=True
+    )
+
+def playerTurn(player, initiative, encounter_id=None):
     def translateClassAbilities():
-        pass  # Already has access to player object
-        # Read through player abilities, generate spell objects of those abilities. Do these based on player.getClass().
+        pass
 
     if endOfEncounter(initiative):
         return {}
+
     actionNames = []
     actionTypes = []
     actionProbs = []
     actionEDams = []
+    actionPercentages = []
     actionImpacts = []
     actionTargets = []
+    actionObjects = []
     pInitEntry = initiative[[i["name"].lower() for i in initiative].index(player.getName().lower())]
 
     defineBasicActions(actionNames, actionTypes, actionProbs,
                        actionEDams, actionImpacts, actionTargets,
-                       pInitEntry,initiative, True)
+                       actionObjects, pInitEntry,initiative, True)
+    actionPercentages.extend([0, 0, 0])
     if player.getWeaponLength() > 0:
         for i in range(player.getWeaponLength()):
-            if actionViabilityCheck(player.getWeapon(i), pInitEntry, initiative, True):
-                weaponProb = calcTotalToHitProbability(player, player.getWeapon(i), initiative)
+            weapon = player.getWeapon(i)
+
+            if actionViabilityCheck(weapon, pInitEntry, initiative, True):
+                weaponProb = calcTotalToHitProbability(player, weapon, initiative)
                 if isinstance(weaponProb, dict):
-                    probTarget = weaponProb["target"]
+                    probTargets = weaponProb["target"]
                     weaponProb = weaponProb["probSuccess"]
                 else:
                     try:
                         weaponProb = int(weaponProb)
-                        probTarget = {}
-                    except:
+                        probTargets = {}
+                    except Exception:
                         weaponProb = 0
-                        probTarget = {}
-                weaponEDam, eTarget = calcTotalExpectedDamage(player, player.getWeapon(i), initiative)
-                probTarget = normalizeTargetSets(probTarget, initiative)
-                eTarget = normalizeTargetSets(eTarget, initiative)
+                        probTargets = {}
 
-                if probTarget == eTarget:
-                    weaponImpact = calcImpact(player, player.getWeapon(i), weaponProb,
-                                              weaponEDam, probTarget, initiative)
-                    target = probTarget
+                weaponEDam, eTargets = calcTotalExpectedDamage(player, weapon, initiative)
+                probTargetsNorm = normalizeTargetSets(probTargets, initiative)
+                eTargetsNorm = normalizeTargetSets(eTargets, initiative)
+
+                if probTargetsNorm == eTargetsNorm:
+                    weaponImpact = calcImpact(player, weapon, weaponProb, weaponEDam, probTargetsNorm, initiative)
+                    target = probTargets
                 else:
-                    if not probTarget and not eTarget:
+                    if not probTargetsNorm and not eTargetsNorm:
                         weaponImpact = 0
                         target = {}
-                    elif not probTarget:
-                        weaponImpact = calcImpact(player, player.getWeapon(i), weaponProb,
-                                                  weaponEDam, eTarget, initiative)
-                        target = eTarget
-                    elif not eTarget:
-                        weaponImpact = calcImpact(player, player.getWeapon(i), weaponProb,
-                                                  weaponEDam, probTarget, initiative)
-                        target = probTarget
+                    elif not probTargetsNorm:
+                        weaponImpact = calcImpact(player, weapon, weaponProb, weaponEDam, eTargetsNorm, initiative)
+                        target = eTargets
+                    elif not eTargetsNorm:
+                        weaponImpact = calcImpact(player, weapon, weaponProb, weaponEDam, probTargetsNorm, initiative)
+                        target = probTargets
                     else:
-                        weaponImpact1 = calcImpact(player, player.getWeapon(i), weaponProb,
-                                                  weaponEDam, probTarget, initiative)
-                        weaponImpact2 = calcImpact(player, player.getWeapon(i), weaponProb,
-                                                  weaponEDam, eTarget, initiative)
+                        weaponImpact1 = calcImpact(player, weapon, weaponProb, weaponEDam, probTargetsNorm, initiative)
+                        weaponImpact2 = calcImpact(player, weapon, weaponProb, weaponEDam, eTargetsNorm, initiative)
                         weaponImpact = max([weaponImpact1, weaponImpact2])
                         targetIdx = [weaponImpact1, weaponImpact2].index(weaponImpact)
-                        target = probTarget if targetIdx == 0 else eTarget
-                if player.getClass().lower() in ["barbarian", "paladin, ranger"]:  # Extra attack; prob is same.
+                        target = probTargets if targetIdx == 0 else eTargets
+
+                if player.getClass().lower() in ["barbarian", "paladin", "ranger"]:
                     weaponEDam += weaponEDam
                     weaponImpact += weaponImpact
                 elif player.getClass().lower() in ["fighter"]:
                     weaponEDam *= player.getExtraAttackAmt()
                     weaponImpact *= player.getExtraAttackAmt()
-                actionNames.append(player.getWeapon(i).getName())
+
+                actionNames.append(weapon.getName())
                 actionTypes.append("Weapon")
                 actionProbs.append(weaponProb)
                 actionEDams.append(weaponEDam)
                 actionImpacts.append(weaponImpact)
                 actionTargets.append(target)
-    actions = [{"name": actionNames[i], "prob": actionProbs[i], "eDam": actionEDams[i],
+                actionObjects.append(weapon)
+                if isinstance(target, list):
+                    percentages = []
+                    for i, t in enumerate(target):
+                        hp = t.getHP()
+                        if isinstance(weaponEDam, list):
+                            percentages.append(round(weaponEDam[i] / hp, 2))
+                        else:
+                            percentages.append(round(weaponEDam / hp, 2))
+                    actionPercentages.append(percentages)
+                elif isinstance(target, dict):
+                    if "targetsHit" in target:
+                        percentages = []
+                        for i, t in enumerate(target["targetsHit"]):
+                            hp = t.getHP()
+                            if isinstance(weaponEDam, list):
+                                percentages.append(round(weaponEDam[i] / hp, 2))
+                            else:
+                                percentages.append(round(weaponEDam / hp, 2))
+                        actionPercentages.append(percentages)
+                else:
+                    hp = target.getHP()
+                    if isinstance(weaponEDam, list):
+                        actionPercentages.append(round(weaponEDam[i] / hp, 2))
+                    else:
+                        actionPercentages.append(round(weaponEDam / hp, 2))
+
+    actions = [{"name": actionNames[i], "type" : actionTypes[i], "prob": actionProbs[i], "eDam": actionEDams[i],
+                "percentages" : actionPercentages[i], "action_obj" : actionObjects[i],
                 "impact": actionImpacts[i], "target" : actionTargets[i]} for
                i in range(len(actionNames))]
     if player.getSpellLength() > 0:
@@ -4254,16 +5222,17 @@ def playerTurn(player, initiative):
         spellActions = processSpellAnalytics(spellList, pInitEntry, initiative, True)
         actions.extend(spellActions)
 
-    # classAbilities = translateClassAbilities()
-    # classActions = processClassAbilityAnalytics(classAbilities, player, initiative)
-    # actions.extend(classActions)
-    # TODO: Perform analytic generation on class abilities.
-    # NOTE: This includes paladin aura! It's being tracked as a class active renewed each turn.
+    return rankActions(
+        actions,
+        actor=player,
+        encounter_id=encounter_id,
+        use_ml=True,
+    )
 
-    return rankActions(actions)
 def setActiveInitiative(encounter):
     initiative = copy.deepcopy(encounter.getInitiative())
-    for creature in initiative:
+    todeli = -1
+    for ci, creature in enumerate(initiative):
         # Add creature statblock to their associated turn
         # SHALLOW COPY OF MONSTER/PLAYER OBJECTS - Changes to creature["Statblock"] affect associated object in encounter
         if creature["turnType"].lower() == "player":
@@ -4279,8 +5248,14 @@ def setActiveInitiative(encounter):
                 ):
                     creature["Statblock"] = encounter.getMonster(i)
                     break
+        elif creature["turnType"].lower() == "lairaction":
+            todeli = ci
+            continue
+    if todeli != -1:
+        del initiative[todeli]
     return initiative
 
+#MANUAL ENTRIES
 def handle_stat_array(creature, values):
     for statName, statValue in values.items():
         creature.updateStat(statName, statValue)
@@ -4311,20 +5286,118 @@ def handle_spell_slots(creature, values):
     for i, slot in enumerate(values):
         creature.setSpellSlots(i + 1, int(slot[0]))
 
+def unpackEntry(entry, activeInitiative):
+    actor = entry["actor"]
+    actorObj = ""
+    action = entry["action"]
+    targets = entry["targets"]
+    selectedTargets = []
+    isSpell = False
+
+    for creature in activeInitiative:
+        if creature["name"].lower() == actor.lower():
+            actorObj = creature["Statblock"]
+            spell = creature["Statblock"].getSpellByName(action)
+            if spell:
+                isSpell = True
+                action = spell
+            if isinstance(creature["Statblock"], Player) and not isSpell:
+                for i in range(creature["Statblock"].getWeaponLength()):
+                    weapon = creature["Statblock"].getWeapon(i)
+                    if weapon.getName().lower() == action.lower():
+                        action = weapon
+            elif not isSpell:
+                monAction = creature["Statblock"].getActionByName(action)
+                action = monAction if monAction else action
+
+        if creature["Statblock"].getCID() in targets:
+            selectedTargets.append(creature["Statblock"])
+
+    if isinstance(action, str):
+        if action.lower() in ["dodge", "shove", "grapple"]:
+            with open("./CoreEngine/data/basic_actions.json", "r") as br:
+                bActions = json.load(br)
+            if action.lower() == "grapple":
+                action = translateBasicAction(actorObj, bActions[0])
+            elif action.lower() == "shove":
+                action = translateBasicAction(actorObj, bActions[1])
+            else:
+                action = translateBasicAction(actorObj, bActions[2])
+        else:
+            return {}
+
+    if isinstance(action, dict):
+        if "spellData" in action:
+            action = action["spellData"]
+
+    return actorObj, action, targets, isSpell, selectedTargets
+
 def main():
     async def terminal_test():
         await init_indexes()
-        testEID = "f8e90b7e-9c86-4ceb-b9f9-97e6d82019d6"
-        testCID = "ee469aa0-5738-4bab-a3c1-c45d0ed97d2e"
+        # testEID = "85dbb1a3-8cde-4f89-b515-0b685ac0e251" #TestDemo4
+        testEID = "4f9ff0bc-15da-41cd-8723-429e2ec65042" #htgtgtgtht
+        # testCID = "c6f1bafd-6c9c-4e85-9a9b-59c38e67340e" #Lich
+
+
+        testCID = "e5e48c65-2a0c-4ecf-bc1f-57915b335095" #Ancient Brass Dragon
         encounter = await get_encounter_by_eid(testEID)
         encounter = loadEncounter(encounter)
+
+        actionRequest = {
+            "resultID": "8144e8eb-4903-47ae-8ac3-d6ed9db24e25",
+            "actor": "Ancient Brass Dragon",
+            "action": "Bite",
+            "actionType": "MonAction",
+            "actionProb": 0,
+            "actionEDam": 0,
+            "actionImpact": 0,
+            "targets": [
+                "1e90f504-747d-4a21-89c7-807177add357"
+            ],
+            "conditions": [],
+            "statusEffects": [],
+            "outcome": {
+                "rollResults": [
+                    "19"
+                ],
+                "diceResults": [
+                    10
+                ]
+            },
+            "extraOutcome": {
+                "extraRollResults": [],
+                "extraDiceResults": []
+            },
+            "timestamp": "23:18:00",
+            "token": {}
+        }
+        # print(encounter)
         # creature = encounter.getPlayerByCID(testCID)
+        # creature.addSpell("Moonbeam", 2, False, -1, 300, "save", "CON",
+        #                   True, 0, 2, 10, "radiant", [], [{
+        #                                                     "name": "Concentration",
+        #                                                     "effect": {}
+        #                                                  }],
+        #                 {"repeat" : True}, {}, {}, "", "action", [], "circle", 5)
         creature = encounter.getMonsterByCID(testCID)
         initiative = setActiveInitiative(encounter)
-        # print("LOCATIONS")
-        # for c in initiative:
-        #     print(c["name"], c["Statblock"].getPosition())
-        # print(monsterTurn(creature, initiative))
+        mapdata = encounter.getMapData()
+
+        # actorObj, action, targets, isSpell, selectedTargets = unpackEntry(actionRequest, initiative)
+        #
+        # if not action:
+        #     return
+
+        # print(executeAction(actorObj, action,
+        #             selectedTargets, actionRequest,
+        #                     initiative, mapdata))
+
+        # await saveEncounter(encounter)
+
+        # print(monsterTurn(creature, initiative)) #MONSTER
+        # print(playerTurn(creature, initiative)) #PLAYER
+
         #TODO: Try PA recommendations, check for correctness
         #TODO: Try rulesetSimulate alot, check for correctness.
 

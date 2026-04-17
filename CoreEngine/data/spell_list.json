@@ -2416,68 +2416,6 @@
         ]
     },
     {
-        "spellname": "Animate Dead",
-        "classes": [
-            "Cleric",
-            "Wizard",
-            "Rogue",
-            "Druid",
-            "Sorcerer",
-            "Fighter",
-            "Paladin"
-        ],
-        "level": 3,
-        "targeting": [
-            {
-                "self": false,
-                "number": 0,
-                "rolls": {
-                    "rollType": "autoHit",
-                    "saveType": "none",
-                    "halfSave": false,
-                    "damage": ""
-                },
-                "damType": [
-                    "none"
-                ],
-                "conditions": [],
-                "statusEffect": [
-                    {
-                        "name": "Summon",
-                        "effect": {
-                            "type": "Undead",
-                            "monsterName": "Skeleton",
-                            "crCap": "1/4",
-                            "numSummons": "1"
-                        }
-                    },
-                    {
-                        "name": "Summon",
-                        "effect": {
-                            "type": "Undead",
-                            "monsterName": "Zombie",
-                            "crCap": "1/4",
-                            "numSummons": "1"
-                        }
-                    },
-                    {
-                        "name": "Concentration",
-                        "effect": {}
-                    }
-                ],
-                "lingEffect": {},
-                "extraEffect": {},
-                "lingSave": {},
-                "scaling": "extraTarget2",
-                "specialNotes": [],
-                "actionCost": "action",
-                "range": "5",
-                "shape": "",
-                "radius": ""
-            }
-        ]
-    },
-    {
         "spellname": "Aura of Vitality",
         "classes": [
             "Artificer",
@@ -2612,83 +2550,6 @@
                 "range": "100",
                 "shape": "circle",
                 "radius": "60"
-            }
-        ]
-    },
-    {
-        "spellname": "Conjure Animals",
-        "classes": [
-            "Druid",
-            "Ranger"
-        ],
-        "level": 3,
-        "targeting": [
-            {
-                "self": false,
-                "number": 0,
-                "rolls": {
-                    "rollType": "autoHit",
-                    "saveType": "none",
-                    "halfSave": false,
-                    "damage": ""
-                },
-                "damType": [
-                    "none"
-                ],
-                "conditions": [],
-                "statusEffect": [
-                    {
-                        "name": "Summon",
-                        "effect": {
-                            "type": "Beast",
-                            "monsterName": "",
-                            "crCap": "2",
-                            "numSummons": "1"
-                        }
-                    },
-                    {
-                        "name": "Summon",
-                        "effect": {
-                            "type": "Beast",
-                            "monsterName": "",
-                            "crCap": "1",
-                            "numSummons": "2"
-                        }
-                    },
-                    {
-                        "name": "Summon",
-                        "effect": {
-                            "type": "Beast",
-                            "monsterName": "",
-                            "crCap": "1/2",
-                            "numSummons": "4"
-                        }
-                    },
-                    {
-                        "name": "Summon",
-                        "effect": {
-                            "type": "Beast",
-                            "monsterName": "",
-                            "crCap": "1/4",
-                            "numSummons": "8"
-                        }
-                    },
-                    {
-                        "name": "Concentration",
-                        "effect": {
-                            "value": "T/F"
-                        }
-                    }
-                ],
-                "lingEffect": {},
-                "extraEffect": {},
-                "lingSave": {},
-                "scaling": "mult PER2",
-                "specialNotes": [],
-                "actionCost": "action",
-                "range": "60",
-                "shape": "",
-                "radius": ""
             }
         ]
     },
@@ -3404,7 +3265,7 @@
                         "effect": {}
                     }
                 ],
-                "lingEffect": {},
+                "lingEffect": {"repeat" :  true},
                 "extraEffect": {},
                 "lingSave": {},
                 "scaling": "",
@@ -3553,158 +3414,6 @@
                 ],
                 "actionCost": "action",
                 "range": "30",
-                "shape": "",
-                "radius": ""
-            }
-        ]
-    },
-    {
-        "spellname": "Conjure Minor Elementals",
-        "classes": [
-            "Druid",
-            "Wizard",
-            "Rogue",
-            "Fighter"
-        ],
-        "level": 4,
-        "targeting": [
-            {
-                "self": false,
-                "number": 0,
-                "rolls": {
-                    "rollType": "autoHit",
-                    "saveType": "none",
-                    "halfSave": false,
-                    "damage": ""
-                },
-                "damType": [
-                    "none"
-                ],
-                "conditions": [],
-                "statusEffect": [
-                    {
-                        "name": "Summon",
-                        "effect": {
-                            "type": "Elemental",
-                            "monsterName": "",
-                            "crCap": "2",
-                            "numSummons": "1"
-                        }
-                    },
-                    {
-                        "name": "Summon",
-                        "effect": {
-                            "type": "Elemental",
-                            "monsterName": "",
-                            "crCap": "1",
-                            "numSummons": "2"
-                        }
-                    },
-                    {
-                        "name": "Summon",
-                        "effect": {
-                            "type": "Elemental",
-                            "monsterName": "",
-                            "crCap": "1/2",
-                            "numSummons": "4"
-                        }
-                    },
-                    {
-                        "name": "Summon",
-                        "effect": {
-                            "type": "Elemental",
-                            "monsterName": "",
-                            "crCap": "1/4",
-                            "numSummons": "8"
-                        }
-                    },
-                    {
-                        "name": "Concentration",
-                        "effect": {}
-                    }
-                ],
-                "lingEffect": {},
-                "extraEffect": {},
-                "lingSave": {},
-                "scaling": "mult PER2",
-                "specialNotes": [],
-                "actionCost": "action",
-                "range": "60",
-                "shape": "",
-                "radius": ""
-            }
-        ]
-    },
-    {
-        "spellname": "Conjure Woodland Beings",
-        "classes": [
-            "Druid",
-            "Ranger"
-        ],
-        "level": 4,
-        "targeting": [
-            {
-                "self": false,
-                "number": 0,
-                "rolls": {
-                    "rollType": "autoHit",
-                    "saveType": "none",
-                    "halfSave": false,
-                    "damage": ""
-                },
-                "damType": [
-                    "none"
-                ],
-                "conditions": [],
-                "statusEffect": [
-                    {
-                        "name": "Summon",
-                        "effect": {
-                            "type": "Fey",
-                            "monsterName": "",
-                            "crCap": "2",
-                            "numSummons": "1"
-                        }
-                    },
-                    {
-                        "name": "Summon",
-                        "effect": {
-                            "type": "Fey",
-                            "monsterName": "",
-                            "crCap": "1",
-                            "numSummons": "2"
-                        }
-                    },
-                    {
-                        "name": "Summon",
-                        "effect": {
-                            "type": "Fey",
-                            "monsterName": "",
-                            "crCap": "1/2",
-                            "numSummons": "4"
-                        }
-                    },
-                    {
-                        "name": "Summon",
-                        "effect": {
-                            "type": "Fey",
-                            "monsterName": "",
-                            "crCap": "1/4",
-                            "numSummons": "8"
-                        }
-                    },
-                    {
-                        "name": "Concentration",
-                        "effect": {}
-                    }
-                ],
-                "lingEffect": {},
-                "extraEffect": {},
-                "lingSave": {},
-                "scaling": "mult PER2",
-                "specialNotes": [],
-                "actionCost": "action",
-                "range": "60",
                 "shape": "",
                 "radius": ""
             }
@@ -4298,83 +4007,6 @@
         ]
     },
     {
-        "spellname": "Animate Objects",
-        "classes": [
-            "Bard",
-            "Sorcerer",
-            "Wizard"
-        ],
-        "level": 5,
-        "targeting": [
-            {
-                "self": false,
-                "number": 0,
-                "rolls": {
-                    "rollType": "autoHit",
-                    "saveType": "none",
-                    "halfSave": false,
-                    "damage": "",
-                    "damageMod": ""
-                },
-                "damType": [
-                    ""
-                ],
-                "conditions": [],
-                "statusEffect": [
-                    {
-                        "name": "Summon",
-                        "effect": {
-                            "type": "Construct",
-                            "monsterName": "Animated Object (Tiny)",
-                            "crCap": "1/4",
-                            "numSummons": "10"
-                        }
-                    },
-                    {
-                        "name": "Summon",
-                        "effect": {
-                            "type": "Construct",
-                            "monsterName": "Animated Object (Medium)",
-                            "crCap": "1/2",
-                            "numSummons": "5"
-                        }
-                    },
-                    {
-                        "name": "Summon",
-                        "effect": {
-                            "type": "Construct",
-                            "monsterName": "Animated Object (Large)",
-                            "crCap": "1",
-                            "numSummons": "2"
-                        }
-                    },
-                    {
-                        "name": "Summon",
-                        "effect": {
-                            "type": "Construct",
-                            "monsterName": "Animated Object (Huge)",
-                            "crCap": "2",
-                            "numSummons": "1"
-                        }
-                    },
-                    {
-                        "name": "Concentration",
-                        "effect": {}
-                    }
-                ],
-                "lingEffect": {},
-                "extraEffect": {},
-                "lingSave": {},
-                "scaling": "",
-                "specialNotes": [],
-                "actionCost": "action",
-                "range": "120",
-                "shape": "",
-                "radius": ""
-            }
-        ]
-    },
-    {
         "spellname": "Banishing Smite",
         "classes": [
             "Paladin",
@@ -4646,55 +4278,6 @@
                 "range": "60",
                 "shape": "cone",
                 "radius": "60"
-            }
-        ]
-    },
-    {
-        "spellname": "Conjure Elemental",
-        "classes": [
-            "Druid",
-            "Wizard"
-        ],
-        "level": 5,
-        "targeting": [
-            {
-                "self": false,
-                "number": 0,
-                "rolls": {
-                    "rollType": "autoHit",
-                    "saveType": "none",
-                    "halfSave": false,
-                    "damage": "",
-                    "damageMod": ""
-                },
-                "damType": [
-                    "none"
-                ],
-                "conditions": [],
-                "statusEffect": [
-                    {
-                        "name": "Summon",
-                        "effect": {
-                            "type": "Elemental",
-                            "monsterName": "",
-                            "crCap": "5",
-                            "numSummons": "1"
-                        }
-                    },
-                    {
-                        "name": "Concentration",
-                        "effect": {}
-                    }
-                ],
-                "lingEffect": {},
-                "extraEffect": {},
-                "lingSave": {},
-                "scaling": "1CR",
-                "specialNotes": [],
-                "actionCost": "action",
-                "range": "60",
-                "shape": "",
-                "radius": ""
             }
         ]
     },
@@ -5204,111 +4787,6 @@
                 "specialNotes": [],
                 "actionCost": "action",
                 "range": "120",
-                "shape": "",
-                "radius": ""
-            }
-        ]
-    },
-    {
-        "spellname": "Conjure Fey",
-        "classes": [
-            "Druid",
-            "Warlock"
-        ],
-        "level": 6,
-        "targeting": [
-            {
-                "self": false,
-                "number": 0,
-                "rolls": {
-                    "rollType": "autoHit",
-                    "saveType": "none",
-                    "halfSave": false,
-                    "damage": "",
-                    "damageMod": ""
-                },
-                "damType": [
-                    "none"
-                ],
-                "conditions": [],
-                "statusEffect": [
-                    {
-                        "name": "Summon",
-                        "effect": {
-                            "type": "Fey",
-                            "monsterName": "",
-                            "crCap": "6",
-                            "numSummons": "1"
-                        }
-                    },
-                    {
-                        "name": "Summon",
-                        "effect": {
-                            "type": "Beast",
-                            "monsterName": "",
-                            "crCap": "6",
-                            "numSummons": "1"
-                        }
-                    },
-                    {
-                        "name": "Concentration",
-                        "effect": {}
-                    }
-                ],
-                "lingEffect": {},
-                "extraEffect": {},
-                "lingSave": {},
-                "scaling": "1CR",
-                "specialNotes": [],
-                "actionCost": "action",
-                "range": "60",
-                "shape": "",
-                "radius": ""
-            }
-        ]
-    },
-    {
-        "spellname": "Create Undead",
-        "classes": [
-            "Cleric",
-            "Wizard",
-            "Warlock",
-            "Sorcerer"
-        ],
-        "level": 6,
-        "targeting": [
-            {
-                "self": false,
-                "number": 0,
-                "rolls": {
-                    "rollType": "autoHit",
-                    "saveType": "none",
-                    "halfSave": false,
-                    "damage": "",
-                    "damageMod": ""
-                },
-                "damType": [
-                    "none"
-                ],
-                "conditions": [],
-                "statusEffect": [
-                    {
-                        "name": "Summon",
-                        "effect": {
-                            "type": "Undead",
-                            "monsterName": "Ghoul",
-                            "crCap": "1",
-                            "numSummons": "3"
-                        }
-                    }
-                ],
-                "lingEffect": {},
-                "extraEffect": {},
-                "lingSave": {},
-                "scaling": "extraSummon1",
-                "specialNotes": [],
-                "actionCost": "action",
-                "range": "30",
                 "shape": "",
                 "radius": ""
             }
@@ -5827,54 +5305,6 @@
                 "range": "120",
                 "shape": "line",
                 "radius": "60"
-            }
-        ]
-    },
-    {
-        "spellname": "Conjure Celestials",
-        "classes": [
-            "Cleric",
-            "Sorcerer"
-        ],
-        "level": 7,
-        "targeting": [
-            {
-                "self": false,
-                "number": 0,
-                "rolls": {
-                    "rollType": "autoHit",
-                    "saveType": "none",
-                    "halfSave": false,
-                    "damage": ""
-                },
-                "damType": [
-                    "none"
-                ],
-                "conditions": [],
-                "statusEffect": [
-                    {
-                        "name": "Summon",
-                        "effect": {
-                            "type": "Celestial",
-                            "monsterName": "",
-                            "crCap": "4",
-                            "numSummons": "1"
-                        }
-                    },
-                    {
-                        "name": "Concentration",
-                        "effect": {}
-                    }
-                ],
-                "lingEffect": {},
-                "extraEffect": {},
-                "lingSave": {},
-                "scaling": "1CR PER2",
-                "specialNotes": [],
-                "actionCost": "action",
-                "range": "90",
-                "shape": "",
-                "radius": ""
             }
         ]
     },
@@ -6666,7 +6096,7 @@
                 "scaling": "",
                 "specialNotes": [],
                 "actionCost": "action",
-                "range": "1 mile",
+                "range": "5280",
                 "shape": "circle",
                 "radius": "160"
             }
