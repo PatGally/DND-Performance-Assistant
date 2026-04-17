@@ -62,7 +62,6 @@ async def _load_labeled_records_from_cursor(cursor) -> List[Record]:
 
 
 async def load_all_labeled_records() -> List[Record]:
-    print("[retrain] loading labeled records from DB")
 
     weapon_cursor = await get_weapon_weight_training_batch()
     spell_cursor = await get_spell_weight_training_batch()
@@ -75,10 +74,6 @@ async def load_all_labeled_records() -> List[Record]:
     )
 
     total = len(weapon_rows) + len(spell_rows) + len(mon_rows)
-    print(
-        f"[retrain] loaded weapon={len(weapon_rows)} "
-        f"spell={len(spell_rows)} monaction={len(mon_rows)} total={total}"
-    )
 
     return list(weapon_rows) + list(spell_rows) + list(mon_rows)
 
@@ -94,10 +89,7 @@ def get_labeled_action_counts(records: List[Record]) -> Dict[ActionKey, int]:
 
         if family and name:
             counts[(family, name)] += 1
-        else:
-            print(f"[retrain] skipped record missing key fields: {record}")
 
-    print(f"[retrain] action counts={dict(counts)}")
     return dict(counts)
 
 
@@ -132,7 +124,6 @@ def filter_training_records(
         if _action_key(record) in ready_action_keys
     ]
 
-    print(f"[retrain] training_records={len(training_records)}")
     return training_records
 
 
@@ -148,20 +139,11 @@ def split_record_ids_by_family(records: List[Record]) -> Dict[str, List[Any]]:
         family = str(record.get("action_family", "") or "").strip()
 
         if record_id is None:
-            print(f"[retrain] skipping deletion for record missing _id: {record}")
             continue
 
         if family in out:
             out[family].append(record_id)
-        else:
-            print(f"[retrain] unknown action_family during delete split: {family}")
 
-    print(
-        "[retrain] delete id buckets "
-        f"weapon={len(out['Weapon'])} "
-        f"spell={len(out['Spell'])} "
-        f"monaction={len(out['MonAction'])}"
-    )
     return out
 
 
@@ -171,15 +153,11 @@ async def maybe_train_after_action_uses(
     model_path: str | Path = DEFAULT_MODEL_PATH,
     delete_used_records: bool = True,
 ) -> Dict[str, Any]:
-    print("[retrain] maybe_train_after_action_uses start")
 
     records = await load_all_labeled_records()
     labeled_records: List[Record] = [r for r in records if r.get("label") is not None]
 
-    print(f"[retrain] labeled_records={len(labeled_records)}")
-
     if not labeled_records:
-        print("[retrain] no labeled records available")
         return {
             "trained": False,
             "reason": "No labeled records available.",
@@ -197,10 +175,7 @@ async def maybe_train_after_action_uses(
     action_counts = get_labeled_action_counts(labeled_records)
     ready_actions = get_ready_actions(action_counts, min_labeled_uses_per_action)
 
-    print(f"[retrain] ready_actions={ready_actions}")
-
     if not ready_actions:
-        print(f"[retrain] no action reached {min_labeled_uses_per_action} labeled uses")
         return {
             "trained": False,
             "reason": f"No action has reached {min_labeled_uses_per_action} labeled uses yet.",
@@ -225,7 +200,6 @@ async def maybe_train_after_action_uses(
     training_records = filter_training_records(labeled_records, ready_actions)
 
     if not training_records:
-        print("[retrain] ready_actions found but no matching training records")
         return {
             "trained": False,
             "reason": "Ready actions were found, but no matching records were collected for training.",
@@ -240,20 +214,11 @@ async def maybe_train_after_action_uses(
             },
         }
 
-    print(f"[retrain] training model_path={model_path}")
-
     result: TrainResult = await asyncio.to_thread(
         train_residual_model,
         training_records,
         model_path,
     )
-
-    print(
-        f"[retrain] training result trained={result.trained} "
-        f"num_records={result.num_records} "
-        f"train_loss={result.train_loss} val_loss={result.val_loss}"
-    )
-    print(f"[retrain] delete_used_records={delete_used_records}")
 
     delete_summary: Dict[str, int] = {
         "weapon_deleted": 0,
@@ -263,7 +228,6 @@ async def maybe_train_after_action_uses(
     deleted_records = False
 
     if not result.trained:
-        print("[retrain] training did not complete, skipping deletion")
         return {
             "trained": False,
             "reason": result.reason or "Training was skipped.",
@@ -274,37 +238,25 @@ async def maybe_train_after_action_uses(
             "delete_summary": delete_summary,
         }
 
-    if not delete_used_records:
-        print("[retrain] delete_used_records is False, skipping deletion")
-    else:
-        ids_by_family = split_record_ids_by_family(training_records)
+    ids_by_family = split_record_ids_by_family(training_records)
 
-        weapon_ids = ids_by_family["Weapon"]
-        spell_ids = ids_by_family["Spell"]
-        monaction_ids = ids_by_family["MonAction"]
+    weapon_ids = ids_by_family["Weapon"]
+    spell_ids = ids_by_family["Spell"]
+    monaction_ids = ids_by_family["MonAction"]
 
-        if weapon_ids:
-            weapon_delete_result = await delete_weapon_weight_records_by_ids(weapon_ids)
-            delete_summary["weapon_deleted"] = getattr(weapon_delete_result, "deleted_count", 0)
+    if weapon_ids:
+        weapon_delete_result = await delete_weapon_weight_records_by_ids(weapon_ids)
+        delete_summary["weapon_deleted"] = getattr(weapon_delete_result, "deleted_count", 0)
 
-        if spell_ids:
-            spell_delete_result = await delete_spell_weight_records_by_ids(spell_ids)
-            delete_summary["spell_deleted"] = getattr(spell_delete_result, "deleted_count", 0)
+    if spell_ids:
+        spell_delete_result = await delete_spell_weight_records_by_ids(spell_ids)
+        delete_summary["spell_deleted"] = getattr(spell_delete_result, "deleted_count", 0)
 
-        if monaction_ids:
-            monaction_delete_result = await delete_monaction_weight_records_by_ids(monaction_ids)
-            delete_summary["monaction_deleted"] = getattr(monaction_delete_result, "deleted_count", 0)
+    if monaction_ids:
+        monaction_delete_result = await delete_monaction_weight_records_by_ids(monaction_ids)
+        delete_summary["monaction_deleted"] = getattr(monaction_delete_result, "deleted_count", 0)
 
-        deleted_records = True
-
-        print(
-            "[retrain] delete summary "
-            f"weapon={delete_summary['weapon_deleted']} "
-            f"spell={delete_summary['spell_deleted']} "
-            f"monaction={delete_summary['monaction_deleted']}"
-        )
-
-    print("[retrain] maybe_train_after_action_uses complete")
+    deleted_records = True
 
     return {
         "trained": True,

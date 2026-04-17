@@ -6096,7 +6096,7 @@
                 "scaling": "",
                 "specialNotes": [],
                 "actionCost": "action",
-                "range": "1 mile",
+                "range": "5280",
                 "shape": "circle",
                 "radius": "160"
             }

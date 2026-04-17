@@ -1176,7 +1176,6 @@ def translateLingEffect(action, lingEffect, spellMod):
         return action
 
     # 2. Parse damage info
-    print("lingEffect translate", lingEffect)
     try:
         lingDieNum, lingDieType = map(int, lingEffect["rolls"]["damage"].split("d"))
     except Exception:
@@ -1402,7 +1401,6 @@ def bestAoePositioning(
     #     "score": score,
     #     "targetsHit": targetBreakdown,
     # }
-    # print(result)
     return {"targetsHit" : result["targetsHit"], "positioning" : [[x, y] for x, y in result["coveredCells"]]}
     # return [[x, y] for x, y in result["coveredCells"]]
 def getOrientedTemplateMasks(
@@ -1945,7 +1943,7 @@ def bestAoePositioningDebug(
         return best
 
     #PLACE-ORIGIN
-    PLACEMENT_EXPANSION_RADIUS = (radiusFt // 5) // 2
+    PLACEMENT_EXPANSION_RADIUS = 2
     CANDIDATE_CUTOFF = 10
 
     for orientationName, relMask in orientedMasks:
@@ -1985,7 +1983,6 @@ def bestAoePositioningDebug(
                     "score": score,
                     "targetsHit": targetBreakdown,
                 }
-                # print("New best! ", best)
 
         if not seedResults:
             continue
@@ -2192,9 +2189,6 @@ def calcTotalExpectedDamage(player, action, initiative):
                         positions = [creature["Statblock"].getPosition() for creature in initiative]
                         actionRange = action.getActionRange()
                         radius = action.getActionRadius()
-                        if isinstance(action, MonAction):
-                            print("range", actionRange)
-                            print("radius", radius)
                         shape = action.getShape()
                         casterCells = player.getPosition()
                         aoeType = "placed" if action.getNumTarget() == -1 else "self"
@@ -3325,7 +3319,6 @@ def calcImpact(player, action, probSuccess, expectedDamage, targets,
                     action, action.getExtraEffect(), player.getSpellMod()
                 )
             except:
-                print("error with extraEffect", extraEffect)
                 checkExtraEffects = False
             if checkExtraEffects:
                 extraProb = probSuccess.split(" - ")
@@ -3343,7 +3336,6 @@ def calcImpact(player, action, probSuccess, expectedDamage, targets,
                     action, action.getLingEffects(), player.getSpellMod()
                 )
             except:
-                print("Error with lingeffect", lingEffect)
                 checkLingEffects = False
             if checkLingEffects:
                 lingEffProb = probSuccess.split(" - ")
@@ -3631,7 +3623,6 @@ def endOfEncounter(initiative):
     allPlayersDead = True
     for playerTurns in initiative:
         if playerTurns["turnType"] == "Player":
-            print(playerTurns)
             if not playerTurns["Statblock"].isActiveCondition("Dead") and not playerTurns[
                 "Statblock"].isActiveCondition("Out of Combat"):
                 allPlayersDead = False
@@ -3867,13 +3858,6 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, mapd
 
         return 0
 
-    print("EXECUTE ACTION")
-    print("ACTOR", actor)
-    print("ACTION", action)
-    print("SELECTED TARGETS", selectedTargets)
-    print("ACTION RESULT", actionResult)
-    print("INITIATIVE", initiative)
-
     outcomes = actionResult["outcome"]["rollResults"]
     damages = actionResult["outcome"]["diceResults"]
 
@@ -3931,8 +3915,6 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, mapd
                 target_obj,
                 extra_save_dc,
             )
-
-    print("NEW ACTION OUTCOME", actionResult["outcome"])
 
     if (
         isinstance(action, Spell)
@@ -4251,14 +4233,12 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
     actionTypes = []
     actionProbs = []
     actionEDams = []
+    actionPercentages = []
     actionImpacts = []
     actionTargets = []
     for i in range(len(spellList)):
         if actionViabilityCheck(spellList[i], initEntry, initiative, isPlayerTurn):
             spellName = spellList[i].getName()
-            print(spellName)
-            if spellName.lower() in ["burning hands"]:
-                print("")
             try:
                 spellProb = 0
                 spellEDam = -1
@@ -4345,19 +4325,41 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
                         target = probTargets if targetIdx == 0 else eTargets
 
                 actionNames.append(spellName)
-                actionTypes.append(f"Lvl {spellList[i].getLvl()} Spell" if spellList[i].getLvl() > 0 else "Cantrip")
+                actionTypes.append(f"Lvl {spellList[i].getLvl()} spell")
                 actionProbs.append(spellProb)
                 actionEDams.append(spellEDam)
                 actionImpacts.append(spellImpact)
                 actionTargets.append(target)
+                if isinstance(target, list):
+                    percentages = []
+                    for i, t in enumerate(target):
+                        hp = t.getHP()
+                        if isinstance(spellEDam, list):
+                            percentages.append(round(spellEDam[i] / hp, 2))
+                        else:
+                            percentages.append(round(spellEDam / hp, 2))
+                    actionPercentages.append(percentages)
+                elif isinstance(target, dict):
+                    if "targetsHit" in target:
+                        percentages = []
+                        for i, t in enumerate(target["targetsHit"]):
+                            hp = t.getHP()
+                            if isinstance(spellEDam, list):
+                                percentages.append(round(spellEDam[i] / hp, 2))
+                            else:
+                                percentages.append(round(spellEDam / hp, 2))
+                        actionPercentages.append(percentages)
+                else:
+                    hp = target.getHP()
+                    if isinstance(spellEDam, list):
+                        actionPercentages.append(round(spellEDam[i] / hp, 2))
+                    else:
+                        actionPercentages.append(round(spellEDam / hp, 2))
             except:
-                print("Error with action", spellName)
                 continue
-        else:
-            print(spellList[i].getName(), "Not viable!")
 
-    actions = [{"name": actionNames[i], "prob": actionProbs[i], "eDam": actionEDams[i],
-                "impact": actionImpacts[i], "target" : actionTargets[i]} for
+    actions = [{"name": actionNames[i], "type" : actionTypes[i], "prob": actionProbs[i], "eDam": actionEDams[i],
+                "percentage" : actionPercentages[i], "impact": actionImpacts[i], "target" : actionTargets[i]} for
                i in range(len(actionNames))]
     return actions
 def processClassAbilityAnalytics(abilities, player, initiative):
@@ -4470,7 +4472,7 @@ def _score_action_with_ml(
     return ml_weight, record
 def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
     def getBaseRankings():
-        KEYS = ("prob", "eDam", "impact")
+        KEYS = ("prob", "rankEDam", "rankImpact")
 
         SEG_RE = re.compile(
             r"^\s*(?P<a>\d*\.?\d+)\s*(?:-\s*(?P<b>\d*\.?\d+))?\s*(?P<tag>LS|LE|EE)?\s*$",
@@ -4479,6 +4481,13 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
 
         def _mid(a, b):
             return (a + b) / 2.0 if b is not None else a
+
+        def _safe_float(value, default=0.0):
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                return default
+
         def parse_prob_segments(prob_str_or_num):
             if isinstance(prob_str_or_num, (int, float)):
                 return float(prob_str_or_num), {}
@@ -4487,14 +4496,13 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
                 raise TypeError(f"Unsupported prob type: {type(prob_str_or_num)}")
 
             s = prob_str_or_num.strip()
-            if s[0] == "-":
+            if s and s[0] == "-":
                 s = s[1:]
-            chunks = [c.strip() for c in s.split(" - ")]
 
+            chunks = [c.strip() for c in s.split(" - ")]
             if not chunks:
                 raise ValueError(f"Empty prob string: {prob_str_or_num!r}")
 
-            # First chunk: initial (no tag)
             m0 = SEG_RE.match(chunks[0])
             if not m0:
                 raise ValueError(
@@ -4510,21 +4518,18 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
                 m = SEG_RE.match(chunk)
                 if not m:
                     continue
-                    # raise ValueError(
-                    #     f"Could not parse prob chunk: {chunk!r} from {prob_str_or_num!r}"
-                    # )
 
                 a = float(m.group("a"))
                 b = float(m.group("b")) if m.group("b") is not None else None
                 tag = (m.group("tag") or "").upper()
 
                 if tag not in {"LS", "LE", "EE"}:
-                    # In your normalization, extras always have tags; if not, skip or raise.
                     raise ValueError(f"Missing/invalid tag in chunk: {chunk!r}")
 
                 parts[tag] = _mid(a, b)
 
             return initial, parts
+
         def prob_score_weighted(initial, parts, weights=None):
             if weights is None:
                 weights = {"INIT": 0.70, "LS": 0.10, "LE": 0.10, "EE": 0.10}
@@ -4536,26 +4541,105 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
 
             denom = sum(used.values())
             score = used["INIT"] * initial
+
             for tag in ("LS", "LE", "EE"):
                 if tag in parts:
                     score += used[tag] * parts[tag]
 
             return score / denom if denom else initial
+
         def prob_score_multiplicative(initial, parts):
             score = initial
             for tag in ("LS", "LE", "EE"):
                 if tag in parts:
                     score *= parts[tag]
             return score
+
+        def extract_percentage_value(percentages):
+            """
+            percentages is always a list.
+            Returns the highest normalized value from the list, from 0.0 to 1.0.
+            """
+            if not percentages:
+                return 0.0
+
+            normalized = []
+            for value in percentages:
+                if isinstance(value, str):
+                    value = value.strip().replace("%", "")
+
+                pct = _safe_float(value, 0.0)
+
+                # normalize 32 -> 0.32
+                if pct > 1.0:
+                    pct /= 100.0
+
+                pct = max(0.0, min(pct, 1.0))
+                normalized.append(pct)
+
+            return max(normalized) if normalized else 0.0
+
+        def get_type_multiplier(action_type):
+            if not isinstance(action_type, str):
+                return 1.0
+
+            action_type = action_type.strip().lower()
+
+            if action_type == "weapon":
+                return 0.95
+
+            if action_type == "monaction":
+                return 1.0
+
+            if action_type == "basic":
+                return 0.2
+
+            # Expected format: "Lvl # Spell"
+            # Using lower() per your request
+            if action_type.startswith("lvl ") and action_type.endswith(" spell"):
+                middle = action_type[4:-6].strip()  # text between "lvl " and " spell"
+                level = int(middle)
+
+                if level in (0, 1, 2):
+                    return 0.97
+
+                # exponential ramp starting at level 3
+                # 3 -> 1.03
+                # 4 -> 1.06
+                # 5 -> 1.12
+                # 6 -> 1.24
+                # 7 -> 1.48
+                # 8 -> 1.96
+                # 9 -> 2.92
+                return 1.03 + (0.03 * ((2 ** (level - 3)) - 1))
+
+            return 1.0
+
+        def get_percentage_multiplier(pct):
+            """
+            pct is normalized 0.0 - 1.0
+            25%+ gets a meaningful bump.
+            """
+            if pct >= 0.75:
+                return 2.00
+            if pct >= 0.50:
+                return 1.65
+            if pct >= 0.25:
+                return 1.35
+            if pct >= 0.10:
+                return 1.12
+            return 1.00 + (pct * 0.20)
+
         def prepare_actions_for_ranking(actions, score_mode="weighted"):
             out = []
+
             for a in actions:
                 x = dict(a)
                 x["probDisplay"] = a["prob"]
 
                 init, parts = parse_prob_segments(a["prob"])
                 x["probInit"] = init
-                x["probParts"] = parts  # dict like {"LE": 0.25, "EE": 0.10}
+                x["probParts"] = parts
 
                 if score_mode == "weighted":
                     x["prob"] = prob_score_weighted(init, parts)
@@ -4563,17 +4647,35 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
                     x["prob"] = prob_score_multiplicative(init, parts)
 
                 if float(x["prob"]) < 0:
-                    x["prob"] = 0
-                    x["probDisplay"] = 0
+                    x["prob"] = 0.0
+                    x["probDisplay"] = 0.0
                 elif float(x["prob"]) > 1.0:
-                    x["prob"] = 1
-                    x["probDisplay"] = 1
+                    x["prob"] = 1.0
+                    x["probDisplay"] = 1.0
 
-                x["eDam"] = float(x["eDam"])
-                x["impact"] = float(x["impact"])
+                rawEDam = _safe_float(x.get("eDam"), 0.0)
+                rawImpact = _safe_float(x.get("impact"), 0.0)
+
+                pct = extract_percentage_value(x.get("percentages", []))
+                typeMult = get_type_multiplier(x.get("type"))
+                pctMult = get_percentage_multiplier(pct)
+
+                x["eDam"] = rawEDam
+                x["impact"] = rawImpact
+                x["percentageValue"] = pct
+                x["typeMultiplier"] = typeMult
+                x["percentageMultiplier"] = pctMult
+
+                # Heavier emphasis on damage-based chunking
+                x["rankEDam"] = rawEDam * typeMult * pctMult
+
+                # Impact adjusted too, but less aggressively
+                x["rankImpact"] = rawImpact * ((typeMult * 0.75) + (pctMult * 0.25))
+
                 out.append(x)
 
             return out
+
         def pareto_front_set(actions, keys=KEYS):
             front_ids = set()
             for a in actions:
@@ -4589,6 +4691,7 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
                 if not dominated:
                     front_ids.add(id(a))
             return front_ids
+
         def topsis_scores_minmax(actions, keys=KEYS, weights=None, eps=1e-12):
             if not actions:
                 return {}
@@ -4599,39 +4702,36 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
             mins = {k: min(a[k] for a in actions) for k in keys}
             maxs = {k: max(a[k] for a in actions) for k in keys}
 
-            # Normalize to [0,1], apply weights
             norm_rows = []
             for a in actions:
                 row = {}
                 for k in keys:
                     rng = maxs[k] - mins[k]
                     if abs(rng) < eps:
-                        v = 0.0  # all same -> doesn't matter
+                        v = 0.0
                     else:
                         v = (a[k] - mins[k]) / (rng + eps)
                     row[k] = v * weights[k]
                 norm_rows.append((a, row))
 
-            ideal_best = {
-                k: max(r[k] for _, r in norm_rows) for k in keys
-            }  # usually == weights[k]
-            ideal_worst = {k: min(r[k] for _, r in norm_rows) for k in keys}  # usually == 0
+            ideal_best = {k: max(r[k] for _, r in norm_rows) for k in keys}
+            ideal_worst = {k: min(r[k] for _, r in norm_rows) for k in keys}
 
             scores = {}
             for a, r in norm_rows:
                 d_pos = math.sqrt(sum((r[k] - ideal_best[k]) ** 2 for k in keys))
                 d_neg = math.sqrt(sum((r[k] - ideal_worst[k]) ** 2 for k in keys))
-                score = d_neg / (d_pos + d_neg + eps)
-                scores[id(a)] = score
+                scores[id(a)] = d_neg / (d_pos + d_neg + eps)
 
             return scores
+
         def rank_all_actions(actions, weights=None):
             front_ids = pareto_front_set(actions)
             scores = topsis_scores_minmax(actions, weights=weights)
 
             enriched = []
             for a in actions:
-                x = dict(a)  # don't mutate originals
+                x = dict(a)
                 x["pareto"] = id(a) in front_ids
                 x["topsis"] = scores.get(id(a), 0.0)
                 enriched.append(x)
@@ -4645,8 +4745,14 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
 
         overallRankings = prepare_actions_for_ranking(actions)
         overallRankings = rank_all_actions(
-            overallRankings, weights={"prob": 1.0, "eDam": 1.0, "impact": 1.25}
+            overallRankings,
+            weights={
+                "prob": 1.0,
+                "rankEDam": 1.35,
+                "rankImpact": 1.25,
+            },
         )
+
         for action in overallRankings:
             if "target" in action and action["target"]:
                 if "targetsHit" in action["target"]:
@@ -4655,12 +4761,9 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
                 else:
                     for i, t in enumerate(action["target"]):
                         action["target"][i] = t.getName() if not isinstance(t, str) else t
-
         return overallRankings
 
     prepared = []
-
-    print(actions, actor, encounter_id, use_ml)
 
     rankings = getBaseRankings()
 
@@ -4818,6 +4921,7 @@ def monsterTurn(creature, initiative, encounter_id=None):
     actionTypes = []
     actionProbs = []
     actionEDams = []
+    actionPercentages = []
     actionImpacts = []
     actionTargets = []
     actions = []
@@ -4826,6 +4930,7 @@ def monsterTurn(creature, initiative, encounter_id=None):
     defineBasicActions(actionNames, actionTypes, actionProbs,
                        actionEDams, actionImpacts, actionTargets,
                        initEntry, initiative, False)
+    actionPercentages.extend([0, 0, 0])
     if creature.isCaster():
         monSpells = [creature.getSpell(i) for i in range(creature.getSpellLength())]
         validSpells = []
@@ -4844,7 +4949,6 @@ def monsterTurn(creature, initiative, encounter_id=None):
             # actions.append({"name": monAction.getName(), "prob": 0, "eDam": 0, "impact": 0})
             continue
         actionName = monAction.getName()
-        print("action", actionName)
 
         if actionViabilityCheck(monAction, mInitEntry, initiative, False):
             try:
@@ -4913,17 +5017,43 @@ def monsterTurn(creature, initiative, encounter_id=None):
                             target = probTargets if targetIdx == 0 else eTargets
 
                 actionNames.append(actionName)
+                actionTypes.append("monAction")
                 actionProbs.append(actionProb)
                 actionEDams.append(actionEDam)
                 actionImpacts.append(actionImpact)
                 actionTargets.append(target)
+                if isinstance(target, list):
+                    percentages = []
+                    for i, t in enumerate(target):
+                        hp = t.getHP()
+                        if isinstance(actionEDam, list):
+                            percentages.append(round(actionEDam[i] / hp, 2))
+                        else:
+                            percentages.append(round(actionEDam / hp, 2))
+                    actionPercentages.append(percentages)
+                elif isinstance(target, dict):
+                    if "targetsHit" in target:
+                        percentages = []
+                        for i, t in enumerate(target["targetsHit"]):
+                            hp = t.getHP()
+                            if isinstance(actionEDam, list):
+                                percentages.append(round(actionEDam[i] / hp, 2))
+                            else:
+                                percentages.append(round(actionEDam / hp, 2))
+                        actionPercentages.append(percentages)
+                else:
+                    hp = target.getHP()
+                    if isinstance(actionEDam, list):
+                        actionPercentages.append(round(actionEDam[i] / hp, 2))
+                    else:
+                        actionPercentages.append(round(actionEDam / hp, 2))
             except TypeError:
-                print("Error with action", actionName)
                 continue
 
     actions.extend(
-        [{"name": actionNames[i], "prob": actionProbs[i], "eDam": actionEDams[i],
-          "impact": actionImpacts[i], "target" : actionTargets[i]} for i in range(len(actionNames))])
+        [{"name": actionNames[i], "type" : actionTypes[i], "prob": actionProbs[i], "eDam": actionEDams[i],
+          "percentages" : actionPercentages[i],"impact": actionImpacts[i], "target" : actionTargets[i]}
+         for i in range(len(actionNames))])
     return rankActions(
         actions,
         actor=creature,
@@ -4941,6 +5071,7 @@ def playerTurn(player, initiative, encounter_id=None):
     actionTypes = []
     actionProbs = []
     actionEDams = []
+    actionPercentages = []
     actionImpacts = []
     actionTargets = []
     pInitEntry = initiative[[i["name"].lower() for i in initiative].index(player.getName().lower())]
@@ -4948,6 +5079,7 @@ def playerTurn(player, initiative, encounter_id=None):
     defineBasicActions(actionNames, actionTypes, actionProbs,
                        actionEDams, actionImpacts, actionTargets,
                        pInitEntry,initiative, True)
+    actionPercentages.extend([0, 0, 0])
     if player.getWeaponLength() > 0:
         for i in range(player.getWeaponLength()):
             if actionViabilityCheck(player.getWeapon(i), pInitEntry, initiative, True):
@@ -5002,8 +5134,34 @@ def playerTurn(player, initiative, encounter_id=None):
                 actionEDams.append(weaponEDam)
                 actionImpacts.append(weaponImpact)
                 actionTargets.append(target)
-    actions = [{"name": actionNames[i], "prob": actionProbs[i], "eDam": actionEDams[i],
-                "impact": actionImpacts[i], "target" : actionTargets[i]} for
+                if isinstance(target, list):
+                    percentages = []
+                    for i, t in enumerate(target):
+                        hp = t.getHP()
+                        if isinstance(weaponEDam, list):
+                            percentages.append(round(weaponEDam[i] / hp, 2))
+                        else:
+                            percentages.append(round(weaponEDam / hp, 2))
+                    actionPercentages.append(percentages)
+                elif isinstance(target, dict):
+                    if "targetsHit" in target:
+                        percentages = []
+                        for i, t in enumerate(target["targetsHit"]):
+                            hp = t.getHP()
+                            if isinstance(weaponEDam, list):
+                                percentages.append(round(weaponEDam[i] / hp, 2))
+                            else:
+                                percentages.append(round(weaponEDam / hp, 2))
+                        actionPercentages.append(percentages)
+                else:
+                    hp = target.getHP()
+                    if isinstance(weaponEDam, list):
+                        actionPercentages.append(round(weaponEDam[i] / hp, 2))
+                    else:
+                        actionPercentages.append(round(weaponEDam / hp, 2))
+
+    actions = [{"name": actionNames[i], "type" : actionTypes[i], "prob": actionProbs[i], "eDam": actionEDams[i],
+                "percentages" : actionPercentages[i], "impact": actionImpacts[i], "target" : actionTargets[i]} for
                i in range(len(actionNames))]
     if player.getSpellLength() > 0:
         spellList = [player.getSpell(i) for i in range(player.getSpellLength())]
@@ -5043,7 +5201,6 @@ def setActiveInitiative(encounter):
                     creature["Statblock"] = encounter.getMonster(i)
                     break
         elif creature["turnType"].lower() == "lairaction":
-            print("Skipping lair action....")
             todeli = ci
             continue
     if todeli != -1:
@@ -5092,7 +5249,6 @@ def unpackEntry(entry, activeInitiative):
     for creature in activeInitiative:
         if creature["name"].lower() == actor.lower():
             actorObj = creature["Statblock"]
-            print("Found actor!")
             spell = creature["Statblock"].getSpellByName(action)
             if spell:
                 isSpell = True
@@ -5125,8 +5281,6 @@ def unpackEntry(entry, activeInitiative):
     if isinstance(action, dict):
         if "spellData" in action:
             action = action["spellData"]
-        else:
-            print("Unknown action", action)
 
     return actorObj, action, targets, isSpell, selectedTargets
 
@@ -5170,7 +5324,7 @@ def main():
             "timestamp": "23:18:00",
             "token": {}
         }
-        print(encounter)
+        # print(encounter)
         # creature = encounter.getPlayerByCID(testCID)
         # creature.addSpell("Moonbeam", 2, False, -1, 300, "save", "CON",
         #                   True, 0, 2, 10, "radiant", [], [{
@@ -5182,10 +5336,10 @@ def main():
         initiative = setActiveInitiative(encounter)
         mapdata = encounter.getMapData()
 
-        actorObj, action, targets, isSpell, selectedTargets = unpackEntry(actionRequest, initiative)
-
-        if not action:
-            return
+        # actorObj, action, targets, isSpell, selectedTargets = unpackEntry(actionRequest, initiative)
+        #
+        # if not action:
+        #     return
 
         # print(executeAction(actorObj, action,
         #             selectedTargets, actionRequest,
@@ -5193,7 +5347,7 @@ def main():
 
         # await saveEncounter(encounter)
 
-        print(monsterTurn(creature, initiative)) #MONSTER
+        # print(monsterTurn(creature, initiative)) #MONSTER
         # print(playerTurn(creature, initiative)) #PLAYER
 
         #TODO: Try PA recommendations, check for correctness

@@ -21,15 +21,12 @@ class ResidualActionPredictor:
         if self._model is not None:
             return self._model
 
-        print(f"[inference] load requested model_path={self.model_path}")
 
         if not self.model_path.exists():
-            print("[inference] model file does not exist")
             self._model = None
             self._metadata = None
             return None
 
-        print("[inference] loading checkpoint from disk")
         checkpoint = torch.load(self.model_path, map_location="cpu")
         self._metadata = checkpoint
 
@@ -46,20 +43,14 @@ class ResidualActionPredictor:
         model.eval()
         self._model = model
 
-        print("[inference] model loaded successfully")
         return self._model
 
     def predict_delta(self, record: Dict[str, Any]) -> float:
         model = self._load()
         if model is None:
-            print("[inference] no model available, returning delta=0.0")
             return 0.0
 
         family_idx, name_bucket, features, base_weight, _action_name = record_to_model_parts(record)
-        print(
-            f"[inference] predict_delta family_idx={family_idx} "
-            f"name_bucket={name_bucket} base_weight={base_weight}"
-        )
 
         with torch.no_grad():
             delta = model(
@@ -69,22 +60,18 @@ class ResidualActionPredictor:
             )
 
         delta_value = float(delta.item())
-        print(f"[inference] delta={delta_value}")
         return delta_value
 
     def predict_final_weight(self, record: Dict[str, Any]) -> float:
         base_weight = float(record.get("base_weight", 0.0))
         final_weight = base_weight + self.predict_delta(record)
-        print(f"[inference] final_weight={final_weight}")
         return final_weight
 
 
 @lru_cache(maxsize=1)
 def get_predictor(model_path: Optional[str | Path] = None) -> ResidualActionPredictor:
-    print(f"[inference] get_predictor model_path={model_path}")
     return ResidualActionPredictor(model_path=model_path)
 
 
 def predict_final_weight(record: Dict[str, Any], model_path: Optional[str | Path] = None) -> float:
-    print("[inference] predict_final_weight called")
     return get_predictor(model_path).predict_final_weight(record)

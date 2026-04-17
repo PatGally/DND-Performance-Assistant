@@ -350,7 +350,6 @@ def unpackEntry(entry, activeInitiative):
     for creature in activeInitiative:
         if creature["name"].lower() == actor.lower():
             actorObj = creature["Statblock"]
-            print("Found actor!")
             spell = creature["Statblock"].getSpellByName(action)
             if spell:
                 isSpell = True
@@ -382,8 +381,6 @@ def unpackEntry(entry, activeInitiative):
     if isinstance(action, dict):
         if "spellData" in action:
             action = action["spellData"]
-        else:
-            print("Unknown action", action)
 
     return actorObj, action, targets, isSpell, selectedTargets
 
@@ -521,37 +518,25 @@ async def rulesetSimulate(
             "self_targets_hit": self_hits,
         }
 
-    print(f"[rulesetSimulate] start eid={eid}")
-    print(f"[rulesetSimulate] entry.actor={entry.actor} entry.action={entry.action} entry.actionType={entry.actionType}")
-
     encounter = main.loadEncounter(await getEncounter(eid, currentUser))
     mapdata = encounter.getMapData()
     activeInitiative = main.setActiveInitiative(encounter)
 
     token_model = entry.token
     entry = entry.model_dump(mode="json", by_alias=True)
-    print(f"[rulesetSimulate] entry dumped keys={list(entry.keys())}")
 
     actorObj, action, targets, isSpell, selectedTargets = unpackEntry(entry, activeInitiative)
     actor = actorObj.getName()
 
-    print(f"[rulesetSimulate] unpacked actor={actor}")
-    print(f"[rulesetSimulate] action={getattr(action, 'getName', lambda: str(action))() if action else None}")
-    print(f"[rulesetSimulate] targets={targets}")
-    print(f"[rulesetSimulate] selectedTargets={[t.getName() if hasattr(t, 'getName') else str(t) for t in selectedTargets]}")
-    print(f"[rulesetSimulate] isSpell={isSpell}")
-
     token = token_model.model_dump(mode="json") if token_model else None
     if token:
         token["anchor"] = {"x": token["anchor"][0], "y": token["anchor"][1]}
-        print(f"[rulesetSimulate] token timing={token.get('timing')} resultID={token.get('resultID')}")
 
     if not action:
         raise HTTPException(status_code=500, detail="Action not found.")
 
     encInitiative = encounter.getInitiative()
     actionCost = action.getActionCost()
-    print(f"[rulesetSimulate] actionCost={actionCost}")
 
     actor_turn_entry = None
     for creature in encInitiative:
@@ -566,35 +551,25 @@ async def rulesetSimulate(
     team_hp_before = _team_hp_context(encounter, actorObj)
     concentrating_before = _is_actor_concentrating(actorObj)
 
-    print(
-        "[rulesetSimulate] resources before",
-        f"action={actor_turn_entry.get('actionResource')}",
-        f"bonus={actor_turn_entry.get('bonusActionResource')}",
-    )
-
     if isSpell:
         lvl = action.getLvl()
         if lvl > 0:
             current_slots = int(actorObj.getSpellSlot(lvl) or 0)
             if current_slots > 0:
                 actorObj.setSpellSlots(lvl, current_slots - 1)
-                print(f"[rulesetSimulate] spent spell slot lvl={lvl}")
             else:
                 raise HTTPException(status_code=500, detail="Insufficient spell slot")
     if actionCost == "action":
         if actor_turn_entry.get("actionResource"):
             actor_turn_entry["actionResource"] -= 1
-            print("[rulesetSimulate] spent 1 action resource")
         else:
             raise HTTPException(status_code=500, detail="Insufficient action resources")
 
     elif actionCost == "bonus action":
         if actor_turn_entry.get("bonusActionResource"):
             actor_turn_entry["bonusActionResource"] -= 1
-            print("[rulesetSimulate] spent 1 bonus action resource")
         elif actor_turn_entry.get("actionResource"):
             actor_turn_entry["actionResource"] -= 1
-            print("[rulesetSimulate] bonus action fell back to action resource")
         else:
             raise HTTPException(status_code=500, detail="Insufficient action resources")
 
@@ -603,15 +578,7 @@ async def rulesetSimulate(
 
     resources_after = _resource_snapshot("after", actor_turn_entry)
 
-    print(
-        "[rulesetSimulate] resources after",
-        f"action={actor_turn_entry.get('actionResource')}",
-        f"bonus={actor_turn_entry.get('bonusActionResource')}",
-    )
-
-    print("[rulesetSimulate] calling executeAction")
     main.executeAction(actorObj, action, selectedTargets, entry, activeInitiative, mapdata)
-    print("[rulesetSimulate] executeAction complete")
 
     outcome_results = (entry.get("outcome") or {}).get("rollResults", []) or []
     hit_targets = [
@@ -621,13 +588,11 @@ async def rulesetSimulate(
     ]
 
     try:
-        print("[rulesetSimulate] building scoring inputs")
         scoring = {
             "prob": float(entry.get("actionProb", 0.0) or 0.0),
             "expected_damage": float(entry.get("actionEDam", 0.0) or 0.0),
             "impact": float(entry.get("actionImpact", 0.0) or 0.0),
         }
-        print(f"[rulesetSimulate] scoring={scoring}")
 
         skip_ml = (
             scoring["prob"] == 0.0
@@ -635,95 +600,75 @@ async def rulesetSimulate(
             and scoring["impact"] == 0.0
         )
 
-        if skip_ml:
-            print("[rulesetSimulate] skipping ML hook because action scoring was not provided / all zeros")
-        else:
-            side_counts = _target_side_counts(encounter, actorObj, hit_targets)
-            spell_slot_level_spent = float(action.getLvl()) if isSpell and action.getLvl() > 0 else 0.0
-            targets_hit_count = float(len(hit_targets))
-            damage_total = _sum_numeric((entry.get("outcome") or {}).get("diceResults", []))
-            extra_damage_total = _sum_numeric((entry.get("extraOutcome") or {}).get("extraDiceResults", []))
+        side_counts = _target_side_counts(encounter, actorObj, hit_targets)
+        spell_slot_level_spent = float(action.getLvl()) if isSpell and action.getLvl() > 0 else 0.0
+        targets_hit_count = float(len(hit_targets))
+        damage_total = _sum_numeric((entry.get("outcome") or {}).get("diceResults", []))
+        extra_damage_total = _sum_numeric((entry.get("extraOutcome") or {}).get("extraDiceResults", []))
 
-            turn_context = {
-                **resources_before,
-                **resources_after,
-                **team_hp_before,
-                **side_counts,
-                "actor_concentrating_before": concentrating_before,
-                "spell_slot_level_spent": spell_slot_level_spent,
-                "num_targets_selected": float(len(selectedTargets)),
-                "num_targets_hit": targets_hit_count,
-                "targets_hit_count": targets_hit_count,
-                "damage_total": damage_total,
-                "extra_damage_total": extra_damage_total,
-                "conditions_applied_count": float(len(entry.get("conditions", []) or [])),
-                "status_effects_applied_count": float(len(entry.get("statusEffects", []) or [])),
-            }
+        turn_context = {
+            **resources_before,
+            **resources_after,
+            **team_hp_before,
+            **side_counts,
+            "actor_concentrating_before": concentrating_before,
+            "spell_slot_level_spent": spell_slot_level_spent,
+            "num_targets_selected": float(len(selectedTargets)),
+            "num_targets_hit": targets_hit_count,
+            "targets_hit_count": targets_hit_count,
+            "damage_total": damage_total,
+            "extra_damage_total": extra_damage_total,
+            "conditions_applied_count": float(len(entry.get("conditions", []) or [])),
+            "status_effects_applied_count": float(len(entry.get("statusEffects", []) or [])),
+        }
 
-            scored_inputs = build_scored_training_record_inputs(
-                actor=actorObj,
-                action_obj=action,
-                targets=selectedTargets,
-                encounter_id=eid,
-                prob=scoring["prob"],
-                expected_damage=scoring["expected_damage"],
-                impact=scoring["impact"],
-                aoe_token=token,
-                action_result=entry,
-                turn_context=turn_context,
-            )
+        scored_inputs = build_scored_training_record_inputs(
+            actor=actorObj,
+            action_obj=action,
+            targets=selectedTargets,
+            encounter_id=eid,
+            prob=scoring["prob"],
+            expected_damage=scoring["expected_damage"],
+            impact=scoring["impact"],
+            aoe_token=token,
+            action_result=entry,
+            turn_context=turn_context,
+        )
 
-            print(
-                "[rulesetSimulate] scored_inputs",
-                f"base_weight={scored_inputs['base_weight']}",
-                f"predicted_weight={scored_inputs['predicted_weight']}",
-            )
+        await persist_labeled_action_record(
+            action=action,
+            actor=actorObj,
+            targets=selectedTargets,
+            encounter_id=eid,
+            user_id=currentUser.username,
+            base_weight=scored_inputs["base_weight"],
+            predicted_weight=scored_inputs["predicted_weight"],
+            heuristic_components=scored_inputs["heuristic_components"],
+            outcome_snapshot=scored_inputs["outcome_snapshot"],
+            context=scored_inputs["context"],
+            action_result=entry,
+            target_snapshot=scored_inputs["target_snapshot"],
+            aoe_snapshot=scored_inputs["aoe_snapshot"],
+            turn_context_snapshot=scored_inputs["turn_context_snapshot"],
+        )
+        retrain_result = await maybe_train_after_action_uses(
+            min_labeled_uses_per_action=50,
+            delete_used_records=True,
+        )
 
-            print("[rulesetSimulate] persisting labeled action record")
-            await persist_labeled_action_record(
-                action=action,
-                actor=actorObj,
-                targets=selectedTargets,
-                encounter_id=eid,
-                user_id=currentUser.username,
-                base_weight=scored_inputs["base_weight"],
-                predicted_weight=scored_inputs["predicted_weight"],
-                heuristic_components=scored_inputs["heuristic_components"],
-                outcome_snapshot=scored_inputs["outcome_snapshot"],
-                context=scored_inputs["context"],
-                action_result=entry,
-                target_snapshot=scored_inputs["target_snapshot"],
-                aoe_snapshot=scored_inputs["aoe_snapshot"],
-                turn_context_snapshot=scored_inputs["turn_context_snapshot"],
-            )
-            print("[rulesetSimulate] labeled action record persisted")
-
-            print("[rulesetSimulate] checking retrain threshold")
-            retrain_result = await maybe_train_after_action_uses(
-                min_labeled_uses_per_action=50,
-                delete_used_records=True,
-            )
-            print(f"[rulesetSimulate] retrain_result={retrain_result}")
-
-            if retrain_result.get("trained"):
-                get_predictor.cache_clear()
-                print("[rulesetSimulate] predictor cache cleared after retrain")
-                logger.info("Retrained ML model after action use threshold: %s", retrain_result)
+        if retrain_result.get("trained"):
+            get_predictor.cache_clear()
+            logger.info("Retrained ML model after action use threshold: %s", retrain_result)
 
     except Exception as exc:
         logger.exception("ML post-action training hook failed: %s", exc)
-        print(f"[rulesetSimulate] ML hook error: {exc}")
 
-    print("[rulesetSimulate] persisting lingering aoe token if present")
     _persist_lingering_aoe_token(encounter, token)
 
-    print("[rulesetSimulate] logging action result")
     main.logActionResult(encounter, entry)
 
-    print("[rulesetSimulate] saving encounter")
     await main.saveEncounter(encounter)
 
-    print("[rulesetSimulate] done")
     return {"ok": True}
 
 @app.get("/aoe/template-masks")
@@ -782,7 +727,6 @@ async def preTurnSimulate(eid : str, entry : PreTurnRequest, currentUser : UserI
     main.executeAction(actorObj, action, selectedTargets, entry, activeInitiative, mapdata)
     await main.saveEncounter(encounter)
     if entry["preTurnMeta"].lower() == "lingsave" and entry["rollResult"][0] == "y":
-        print("Saved out")
         return {"savedOut" : True}
     else:
         return {"savedOut" : False}
@@ -851,7 +795,6 @@ async def movementSimulate(eid : str, cid : str, newPos : List[List[int]], curre
             raise HTTPException(status_code=500, detail="Error with concentration effect")
         #Moved into lingering token -> gain the lingering effect associated with that token.
         if concEffect:
-            print("Creature entered lingering token, adding lingeffect...")
             creature.addStatusEffect({
                 "name" : "lingeffect",
                 "effect" : {
@@ -866,7 +809,6 @@ async def movementSimulate(eid : str, cid : str, newPos : List[List[int]], curre
             lingEff = creature.getActiveStatusEffect("lingeffect")
             for ridx, rid in enumerate(lingEff["effect"]["resultID"]):
                 if rid in tokenIDs:
-                    print("Creature left lingering token, removing lingeffect...")
                     if len(lingEff["effect"]["resultID"]) == 1:
                         creature.removeStatusEffect("lingeffect")
                         break
