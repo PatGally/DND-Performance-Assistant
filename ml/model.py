@@ -54,22 +54,11 @@ class ResidualActionMLP(nn.Module):
         raw_delta = self.mlp(x).squeeze(-1)
         return torch.tanh(raw_delta) * self.max_delta
 
-    def predict_delta(
-        self,
-        family_idx: torch.Tensor,
-        name_bucket: torch.Tensor,
-        numeric_features: torch.Tensor,
-    ) -> torch.Tensor:
+    def predict_delta(self,family_idx: torch.Tensor, name_bucket: torch.Tensor,numeric_features: torch.Tensor,) -> torch.Tensor:
         self.eval()
         with torch.no_grad():
             return self.forward(family_idx, name_bucket, numeric_features)
 
-    def predict_final_weight(
-        self,
-        family_idx: torch.Tensor,
-        name_bucket: torch.Tensor,
-        numeric_features: torch.Tensor,
-        base_weight: torch.Tensor,
-    ) -> torch.Tensor:
+    def predict_final_weight(self,family_idx: torch.Tensor,name_bucket: torch.Tensor,numeric_features: torch.Tensor,base_weight: torch.Tensor,) -> torch.Tensor:
         delta = self.predict_delta(family_idx, name_bucket, numeric_features)
         return base_weight.float() + delta

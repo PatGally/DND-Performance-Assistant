@@ -349,70 +349,6 @@ def addChosenSpell(spell, player):
                         damType, conditions, statusEffect, lingEffect, extraEffect, lingSaves,
                         scaling, actionCost, specialNotes, spellShape, spellRadius)
 
-def _extract_prob_value(prob) -> float:
-    if isinstance(prob, (int, float)):
-        return float(prob)
-
-    if isinstance(prob, str):
-        try:
-            return float(prob.split(" - ")[0].strip())
-        except Exception:
-            return 0.0
-
-    if isinstance(prob, dict):
-        return float(prob.get("probSuccess", 0.0))
-
-    return 0.0
-
-
-def _compute_base_weight(prob_value: float, expected_damage: float, impact: float) -> float:
-    # Mirrors your current ranking emphasis
-    return (
-        float(prob_value) * 1.0
-        + float(expected_damage or 0.0) * 1.0
-        + float(impact or 0.0) * 1.25
-    )
-
-
-def _score_action_with_ml(
-    *,
-    actor,
-    action_obj,
-    targets,
-    encounter_id: str,
-    prob,
-    expected_damage: float,
-    impact: float,
-):
-    prob_value = _extract_prob_value(prob)
-    base_weight = _compute_base_weight(prob_value, expected_damage, impact)
-
-    heuristic_components = {
-        "expected_damage": float(expected_damage or 0.0),
-        "impact_score": float(impact or 0.0),
-        "kill_chance": 0.0,
-        "prob_success": float(prob_value),
-    }
-
-    context = {
-        "expected_damage": float(expected_damage or 0.0),
-        "impact_score": float(impact or 0.0),
-        "num_targets": len(targets) if isinstance(targets, list) else 0,
-    }
-
-    record = make_training_record(
-        action=action_obj,
-        actor=actor,
-        targets=targets,
-        encounter_id=encounter_id,
-        base_weight=base_weight,
-        heuristic_components=heuristic_components,
-        context=context,
-    )
-
-    ml_weight = predict_action_weight(record)
-    return ml_weight, record, base_weight
-
 def findSpell(spellName, spellData):
     found = False
     i = 0
@@ -3768,6 +3704,7 @@ def endConcentration(player, concentration, initiative, mapdata):
     for tidx, token in enumerate(mapdata["layers"]["aoeTokens"]):
         if token["resultID"] in concentration["effect"]["resultID"]:
             del mapdata["layers"]["aoeTokens"][tidx]
+
 def executeAction(actor, action, selectedTargets, actionResult, initiative, mapdata):
     def applyEffectToTarget(creature, succeeded, damage, action, resultID):
         rollType = action.getRollType().lower() if isinstance(action, Spell) or isinstance(action, MonAction) else "tohit"
@@ -3780,27 +3717,29 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, mapd
             and not isinstance(action.getDamType(), list)
             and action.getDamType().lower() == "healing"
         ):
-            if succeeded:
+            if damage > 0:
                 creature.setHP(min(creature.getMaxHP(), creature.getHP() + damage))
         else:
-            if ((rollType in ["onhit", "autohit", "tohit"] and succeeded)
-                    or (rollType in ["save"] and not succeeded)):
+            if damage > 0:
                 creature.setHP(creature.getHP() - damage)
-            elif rollType in ["save"] and succeeded and action.getHalfSave():
-                creature.setHP(creature.getHP() - (damage // 2))
 
         creature.setHP(math.floor(creature.getHP()))
 
         if creature.isActiveCondition("downed") and damage > 0:
             removeCondition("downed", creature)
             addCondition("dead", creature, -1)
+
         if creature.getHP() <= 0:
             creature.setHP(0)
             if isinstance(creature, Player):
-                addCondition("Downed" if damage < (creature.getMaxHP() + creature.getHP()) else "Dead", creature,
-                             resultID)
+                addCondition(
+                    "Downed" if damage < (creature.getMaxHP() + creature.getHP()) else "Dead",
+                    creature,
+                    resultID,
+                )
             else:
                 addCondition("Dead", creature, resultID)
+
         if creature.getHP() > 0:
             if downed_before:
                 creature.removeCondition("Downed")
@@ -3811,16 +3750,16 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, mapd
             if isinstance(action, Spell) and action.getConditions():
                 for cond in action.getConditions():
                     addCondition(cond, creature, resultID)
+
             if isinstance(action, Spell) and action.getStatusEffects():
                 for effect in action.getStatusEffects():
                     if effect["name"].lower() != "concentration":
                         addStatusEffect(effect, creature, resultID)
+
             if isinstance(action, Spell) and action.getLingSaves():
                 if creature.isActiveStatusEffect("lingsave"):
                     lingSaves = creature.getActiveStatusEffect("lingsave")
-                    if not any(
-                        resultID == rID for rID in lingSaves["effect"]["resultID"]
-                    ):
+                    if not any(resultID == rID for rID in lingSaves["effect"]["resultID"]):
                         if "spell" in lingSaves["effect"]:
                             lingSaves["effect"]["spell"].append(action.toDict())
                         else:
@@ -3835,43 +3774,107 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, mapd
                         },
                     }
                     addStatusEffect(newLingSave, creature, actionResult["resultID"])
+
         return creature
-    #actor is a statblock.
-    #Action is a spell/weapon/monAction object.
-    #selectedTargets is a list of statblocks.
-    #actionResult is the entry below.
-    #Token is an object describing AOE placement.
+
+    def _normalize_result_flag(result, roll_type, target_obj, save_dc):
+        result_str = str(result).strip()
+
+        if not result_str.isnumeric():
+            return result_str.lower()
+
+        if roll_type in ("weapon", "onhit", "tohit"):
+            target_ac = target_obj.getAC()
+            return "y" if int(result_str) >= target_ac else "n"
+
+        if roll_type == "save":
+            return "y" if int(result_str) >= save_dc else "n"
+
+        return result_str.lower()
+
+    def _applied_damage_amount(raw_damage, succeeded, roll_type, half_save=False, is_healing=False):
+        try:
+            raw_damage = int(raw_damage)
+        except (TypeError, ValueError):
+            raw_damage = 0
+
+        if is_healing:
+            return raw_damage if succeeded else 0
+
+        if roll_type in ("weapon", "onhit", "autohit", "tohit"):
+            return raw_damage if succeeded else 0
+
+        if roll_type == "save":
+            if not succeeded:
+                return raw_damage
+            return (raw_damage // 2) if half_save else 0
+
+        return 0
+
     print("EXECUTE ACTION")
     print("ACTOR", actor)
     print("ACTION", action)
     print("SELECTED TARGETS", selectedTargets)
     print("ACTION RESULT", actionResult)
     print("INITIATIVE", initiative)
+
     outcomes = actionResult["outcome"]["rollResults"]
     damages = actionResult["outcome"]["diceResults"]
 
     if len(damages) == 1 and len(selectedTargets) != 1:
         damages = [damages[0]] * len(selectedTargets)
+        actionResult["outcome"]["diceResults"] = damages
 
-    #Assumes frontend is not normalizing data
-    for i, result in enumerate(actionResult["outcome"]["rollResults"]):
-        if result.isnumeric() and (isinstance(action, Weapon)
-                                   or action.getRollType().lower() == "onhit"
-                                   or action.getRollType().lower() == "tohit"):
-            ac = actor.getAC()
-            if int(result) >= ac:
-                actionResult["outcome"]["rollResults"][i] = "y"
-            else:
-                actionResult["outcome"]["rollResults"][i] = "n"
-        elif result.isnumeric() and action.getRollType().lower() == "save":
-            saveDC = actor.getDC()
-            if int(result) >= saveDC:
-                actionResult["outcome"]["rollResults"][i] = "y"
-            else:
-                actionResult["outcome"]["rollResults"][i] = "n"
+    for i in range(len(damages)):
+        try:
+            damages[i] = int(damages[i])
+        except (TypeError, ValueError):
+            damages[i] = 0
 
-    for i in range(len(actionResult["outcome"]["diceResults"])):
-        actionResult["outcome"]["diceResults"][i] = int(actionResult["outcome"]["diceResults"][i])
+    main_roll_type = "weapon" if isinstance(action, Weapon) else action.getRollType().lower()
+    main_save_dc = actor.getDC() if hasattr(actor, "getDC") else 0
+
+    for i, result in enumerate(list(actionResult["outcome"]["rollResults"])):
+        if i >= len(selectedTargets):
+            break
+
+        target_obj = selectedTargets[i]["Statblock"] if isinstance(selectedTargets[i], dict) else selectedTargets[i]
+        actionResult["outcome"]["rollResults"][i] = _normalize_result_flag(
+            result,
+            main_roll_type,
+            target_obj,
+            main_save_dc,
+        )
+
+    extra = actionResult.get("extraOutcome")
+    extra_effect = action.getExtraEffect() if hasattr(action, "getExtraEffect") else None
+    if extra and extra_effect:
+        extra_roll_type = str(extra_effect.get("rolls", {}).get("rollType", "")).lower()
+        extra_save_dc = actor.getDC() if hasattr(actor, "getDC") else 0
+        extra_outcomes = extra.get("extraRollResults", [])
+        extra_damages = extra.get("extraDiceResults", [])
+
+        if len(extra_damages) == 1 and len(selectedTargets) != 1:
+            extra_damages = [extra_damages[0]] * len(selectedTargets)
+            extra["extraDiceResults"] = extra_damages
+
+        for i in range(len(extra_damages)):
+            try:
+                extra_damages[i] = int(extra_damages[i])
+            except (TypeError, ValueError):
+                extra_damages[i] = 0
+
+        for i, result in enumerate(list(extra_outcomes)):
+            if i >= len(selectedTargets):
+                break
+
+            target_obj = selectedTargets[i]["Statblock"] if isinstance(selectedTargets[i], dict) else selectedTargets[i]
+            extra_outcomes[i] = _normalize_result_flag(
+                result,
+                extra_roll_type,
+                target_obj,
+                extra_save_dc,
+            )
 
     print("NEW ACTION OUTCOME", actionResult["outcome"])
 
@@ -3884,24 +3887,25 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, mapd
             "name": "Concentration",
             "effect": {
                 "resultID": actionResult["resultID"],
-                "concentrationTargets": [t["Statblock"].getName() if isinstance(t, dict) else t.getName() for t in
-                                         selectedTargets],
-                "action" :action
-            }
+                "concentrationTargets": [
+                    t["Statblock"].getName() if isinstance(t, dict) else t.getName()
+                    for t in selectedTargets
+                ],
+                "action": action.toDict(),
+            },
         }
         for se in actor.getActiveStatusEffects():
             if se["name"].lower() == "concentration":
-                if any(effect in se["effect"]["concentrationTargets"] for effect in
-                       concEffect["effect"]["concentrationTargets"]):
-                    # Edge case for summoned concentrationTargets
+                if any(
+                    effect in se["effect"]["concentrationTargets"]
+                    for effect in concEffect["effect"]["concentrationTargets"]
+                ):
                     oldTargets = se["effect"]["concentrationTargets"]
                     endConcentration(actor, se, initiative, mapdata)
                     cetidx = 0
                     while cetidx < len(concEffect["effect"]["concentrationTargets"]):
                         cet = concEffect["effect"]["concentrationTargets"][cetidx]
-                        if cet in oldTargets and cet not in [
-                            c["name"] for c in initiative
-                        ]:
+                        if cet in oldTargets and cet not in [c["name"] for c in initiative]:
                             del concEffect["effect"]["concentrationTargets"][cetidx]
                             del actionResult["targets"][cetidx]
                             del actionResult["effect"]["action"][cetidx]
@@ -3915,13 +3919,33 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, mapd
                 break
         actor.addStatusEffect(concEffect)
 
+    main_is_healing = (
+        isinstance(action, Spell)
+        and not isinstance(action.getDamType(), list)
+        and action.getDamType().lower() == "healing"
+    )
+    main_half_save = bool(action.getHalfSave()) if hasattr(action, "getHalfSave") else False
+
     for idx, target in enumerate(selectedTargets):
         creature = target["Statblock"] if isinstance(target, dict) else target
-        succeeded = outcomes[idx].lower() in ("y", "crit")
-        damage = damages[idx]
-        creature = applyEffectToTarget(
-            creature, succeeded, damage, action, actionResult["resultID"]
+        succeeded = idx < len(outcomes) and str(outcomes[idx]).lower() in ("y", "crit")
+
+        raw_damage = damages[idx] if idx < len(damages) else 0
+        applied_damage = _applied_damage_amount(
+            raw_damage,
+            succeeded,
+            main_roll_type,
+            half_save=main_half_save,
+            is_healing=main_is_healing,
         )
+
+        if idx < len(damages):
+            damages[idx] = applied_damage
+
+        creature = applyEffectToTarget(
+            creature, succeeded, applied_damage, action, actionResult["resultID"]
+        )
+
         if isinstance(action, Spell) and action.getLingEffects():
             transLingEffect = translateLingEffect(
                 action, action.getLingEffects(), actor.getSpellMod()
@@ -3943,39 +3967,62 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, mapd
                 }
                 addStatusEffect(newLingEffect, creature, actionResult["resultID"])
 
-    # ---- EXTRA EFFECT PASS (if any) ----
     extra = actionResult.get("extraOutcome", None)
-    if extra:
-        extraOutcomes = extra["extraRollResults"]
-        extraDamages = extra["extraDiceResults"]
+    extra_effect = action.getExtraEffect() if hasattr(action, "getExtraEffect") else None
+    if extra and extra_effect:
+        extraOutcomes = extra.get("extraRollResults", [])
+        extraDamages = extra.get("extraDiceResults", [])
+
         if extraOutcomes or extraDamages:
             if len(extraDamages) == 1 and len(selectedTargets) != 1:
                 extraDamages = [extraDamages[0]] * len(selectedTargets)
+                extra["extraDiceResults"] = extraDamages
+
+            extraRollType = str(extra_effect.get("rolls", {}).get("rollType", "")).lower()
+            extraHalfSave = bool(extra_effect.get("rolls", {}).get("halfSave", False))
+
+            extraDamType = extra_effect.get("damType")
+            if isinstance(extraDamType, list):
+                extraIsHealing = len(extraDamType) == 1 and str(extraDamType[0]).lower() == "healing"
+            else:
+                extraIsHealing = str(extraDamType).lower() == "healing"
 
             for idx, target in enumerate(selectedTargets):
                 creature = target["Statblock"] if isinstance(target, dict) else target
-                succeededExtra = extraOutcomes[idx].lower() in ("y", "crit")
-                damageExtra = extraDamages[idx]
-                extraEffect = action.getExtraEffect()
-                extraRollType = extraEffect["rolls"]["rollType"]
+                succeededExtra = idx < len(extraOutcomes) and str(extraOutcomes[idx]).lower() in ("y", "crit")
+
+                rawDamageExtra = extraDamages[idx] if idx < len(extraDamages) else 0
+                appliedDamageExtra = _applied_damage_amount(
+                    rawDamageExtra,
+                    succeededExtra,
+                    extraRollType,
+                    half_save=extraHalfSave,
+                    is_healing=extraIsHealing,
+                )
+
+                if idx < len(extraDamages):
+                    extraDamages[idx] = appliedDamageExtra
 
                 downed_before = creature.isActiveCondition("Downed")
                 stable_before = creature.isActiveCondition("Stabilized")
 
-                if (
-                    isinstance(action, Spell)
-                    and not isinstance(action.getDamType(), list)
-                    and action.getDamType().lower() == "healing"
-                ):
-                    creature.setHP(min(creature.getMaxHP(), creature.getHP() + damageExtra))
+                if extraIsHealing:
+                    if appliedDamageExtra > 0:
+                        creature.setHP(min(creature.getMaxHP(), creature.getHP() + appliedDamageExtra))
                 else:
-                    creature.setHP(creature.getHP() - damageExtra)
+                    if appliedDamageExtra > 0:
+                        creature.setHP(creature.getHP() - appliedDamageExtra)
+
+                creature.setHP(math.floor(creature.getHP()))
+
                 if creature.getHP() <= 0:
                     creature.setHP(0)
                     if isinstance(creature, Player):
-                        addCondition("Downed" if damageExtra < (creature.getMaxHP() + creature.getHP()) else "Dead",
-                                     creature,
-                                     actionResult["resultID"])
+                        addCondition(
+                            "Downed" if appliedDamageExtra < (creature.getMaxHP() + creature.getHP()) else "Dead",
+                            creature,
+                            actionResult["resultID"],
+                        )
                     else:
                         addCondition("Dead", creature, actionResult["resultID"])
 
@@ -3988,13 +4035,14 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, mapd
                 if (extraRollType == "save" and not succeededExtra) or (
                     extraRollType != "save" and succeededExtra
                 ):
-                    if "conditions" in extraEffect and extraEffect["conditions"]:
-                        for cond in extraEffect["conditions"]:
+                    if "conditions" in extra_effect and extra_effect["conditions"]:
+                        for cond in extra_effect["conditions"]:
                             addCondition(cond, creature, actionResult["resultID"])
-                    if "statusEffect" in extraEffect and extraEffect["statusEffect"]:
-                        for effect in extraEffect["statusEffect"]:
+                    if "statusEffect" in extra_effect and extra_effect["statusEffect"]:
+                        for effect in extra_effect["statusEffect"]:
                             if effect["name"].lower() != "concentration":
                                 addStatusEffect(effect, creature, actionResult["resultID"])
+
     if isinstance(action, Spell) and action.getSpecialNotes():
         specialNotes = action.getSpecialNotes()
         for note in specialNotes:
@@ -4002,6 +4050,7 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, mapd
                 actionResult["turnCount"] = 0
                 actionResult["turnCap"] = int(note.lower().split("turn")[0])
                 break
+
 def endSpellEffect(effect, idx, creature):
     # Ends any long-lasting effect that a creature has from a given spell
     # - and ends concentration if nobody else is under that spell.
@@ -4228,89 +4277,255 @@ def processClassAbilityAnalytics(abilities, player, initiative):
     # abilities are the already translated class objects
     # Then process using player and initiative like other analytics.
     pass
-def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
-    SEG_RE = re.compile(
-        r"^\s*(?P<a>\d*\.?\d+)\s*(?:-\s*(?P<b>\d*\.?\d+))?\s*(?P<tag>LS|LE|EE)?\s*$",
-        re.IGNORECASE,
+
+def _extract_prob_value(prob) -> float:
+    if isinstance(prob, (int, float)):
+        return float(prob)
+
+    if isinstance(prob, str):
+        try:
+            return float(prob.split(" - ")[0].strip())
+        except Exception:
+            return 0.0
+
+    if isinstance(prob, dict):
+        return float(prob.get("probSuccess", 0.0))
+
+    return 0.0
+def _score_action_with_ml(
+    *,
+    actor,
+    action_obj,
+    targets,
+    encounter_id: str,
+    prob : float,
+    expected_damage: float,
+    impact: float,
+    base_weight : int
+):
+    heuristic_components = {
+        "expected_damage": float(expected_damage or 0.0),
+        "impact_score": float(impact or 0.0),
+        "kill_chance": 0.0,
+        "prob_success": prob,
+    }
+
+    context = {
+        "expected_damage": float(expected_damage or 0.0),
+        "impact_score": float(impact or 0.0),
+        "num_targets": len(targets) if isinstance(targets, list) else 0,
+    }
+
+    record = make_training_record(
+        action=action_obj,
+        actor=actor,
+        targets=targets,
+        encounter_id=encounter_id,
+        base_weight=base_weight,
+        heuristic_components=heuristic_components,
+        context=context,
     )
 
-    def _mid(a, b):
-        return (a + b) / 2.0 if b is not None else a
+    ml_weight = predict_action_weight(record)
+    return ml_weight, record
+def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
+    def getBaseRankings():
+        KEYS = ("prob", "eDam", "impact")
 
-    def parse_prob_segments(prob_str_or_num):
-        if isinstance(prob_str_or_num, (int, float)):
-            return float(prob_str_or_num), {}
+        SEG_RE = re.compile(
+            r"^\s*(?P<a>\d*\.?\d+)\s*(?:-\s*(?P<b>\d*\.?\d+))?\s*(?P<tag>LS|LE|EE)?\s*$",
+            re.IGNORECASE,
+        )
 
-        if not isinstance(prob_str_or_num, str):
-            raise TypeError(f"Unsupported prob type: {type(prob_str_or_num)}")
+        def _mid(a, b):
+            return (a + b) / 2.0 if b is not None else a
+        def parse_prob_segments(prob_str_or_num):
+            if isinstance(prob_str_or_num, (int, float)):
+                return float(prob_str_or_num), {}
 
-        s = prob_str_or_num.strip()
-        if s and s[0] == "-":
-            s = s[1:]
-        chunks = [c.strip() for c in s.split(" - ")]
+            if not isinstance(prob_str_or_num, str):
+                raise TypeError(f"Unsupported prob type: {type(prob_str_or_num)}")
 
-        if not chunks:
-            raise ValueError(f"Empty prob string: {prob_str_or_num!r}")
+            s = prob_str_or_num.strip()
+            if s[0] == "-":
+                s = s[1:]
+            chunks = [c.strip() for c in s.split(" - ")]
 
-        m0 = SEG_RE.match(chunks[0])
-        if not m0:
-            raise ValueError(f"Could not parse initial prob chunk: {chunks[0]!r}")
+            if not chunks:
+                raise ValueError(f"Empty prob string: {prob_str_or_num!r}")
 
-        a0 = float(m0.group("a"))
-        b0 = float(m0.group("b")) if m0.group("b") is not None else None
-        initial = _mid(a0, b0)
+            # First chunk: initial (no tag)
+            m0 = SEG_RE.match(chunks[0])
+            if not m0:
+                raise ValueError(
+                    f"Could not parse initial prob chunk: {chunks[0]!r} of {s}"
+                )
 
-        parts = {}
-        for chunk in chunks[1:]:
-            m = SEG_RE.match(chunk)
-            if not m:
-                continue
-            a = float(m.group("a"))
-            b = float(m.group("b")) if m.group("b") is not None else None
-            tag = (m.group("tag") or "").upper()
-            if tag in {"LS", "LE", "EE"}:
+            a0 = float(m0.group("a"))
+            b0 = float(m0.group("b")) if m0.group("b") is not None else None
+            initial = _mid(a0, b0)
+
+            parts = {}
+            for chunk in chunks[1:]:
+                m = SEG_RE.match(chunk)
+                if not m:
+                    raise ValueError(
+                        f"Could not parse prob chunk: {chunk!r} from {prob_str_or_num!r}"
+                    )
+
+                a = float(m.group("a"))
+                b = float(m.group("b")) if m.group("b") is not None else None
+                tag = (m.group("tag") or "").upper()
+
+                if tag not in {"LS", "LE", "EE"}:
+                    # In your normalization, extras always have tags; if not, skip or raise.
+                    raise ValueError(f"Missing/invalid tag in chunk: {chunk!r}")
+
                 parts[tag] = _mid(a, b)
 
-        return initial, parts
+            return initial, parts
+        def prob_score_weighted(initial, parts, weights=None):
+            if weights is None:
+                weights = {"INIT": 0.70, "LS": 0.10, "LE": 0.10, "EE": 0.10}
 
-    def prob_score_weighted(initial, parts, weights=None):
-        if weights is None:
-            weights = {"INIT": 0.70, "LS": 0.10, "LE": 0.10, "EE": 0.10}
+            used = {"INIT": weights["INIT"]}
+            for tag in ("LS", "LE", "EE"):
+                if tag in parts:
+                    used[tag] = weights.get(tag, 0.0)
 
-        used = {"INIT": weights["INIT"]}
-        for tag in ("LS", "LE", "EE"):
-            if tag in parts:
-                used[tag] = weights.get(tag, 0.0)
+            denom = sum(used.values())
+            score = used["INIT"] * initial
+            for tag in ("LS", "LE", "EE"):
+                if tag in parts:
+                    score += used[tag] * parts[tag]
 
-        denom = sum(used.values())
-        score = used["INIT"] * initial
-        for tag in ("LS", "LE", "EE"):
-            if tag in parts:
-                score += used[tag] * parts[tag]
+            return score / denom if denom else initial
+        def prob_score_multiplicative(initial, parts):
+            score = initial
+            for tag in ("LS", "LE", "EE"):
+                if tag in parts:
+                    score *= parts[tag]
+            return score
+        def prepare_actions_for_ranking(actions, score_mode="weighted"):
+            out = []
+            for a in actions:
+                x = dict(a)
+                x["probDisplay"] = a["prob"]
 
-        return score / denom if denom else initial
+                init, parts = parse_prob_segments(a["prob"])
+                x["probInit"] = init
+                x["probParts"] = parts  # dict like {"LE": 0.25, "EE": 0.10}
+
+                if score_mode == "weighted":
+                    x["prob"] = prob_score_weighted(init, parts)
+                else:
+                    x["prob"] = prob_score_multiplicative(init, parts)
+
+                if float(x["prob"]) < 0:
+                    x["prob"] = 0
+                    x["probDisplay"] = 0
+                elif float(x["prob"]) > 1.0:
+                    x["prob"] = 1
+                    x["probDisplay"] = 1
+
+                x["eDam"] = float(x["eDam"])
+                x["impact"] = float(x["impact"])
+                out.append(x)
+
+            return out
+        def pareto_front_set(actions, keys=KEYS):
+            front_ids = set()
+            for a in actions:
+                dominated = False
+                for b in actions:
+                    if a is b:
+                        continue
+                    ge_all = all(b[k] >= a[k] for k in keys)
+                    gt_any = any(b[k] > a[k] for k in keys)
+                    if ge_all and gt_any:
+                        dominated = True
+                        break
+                if not dominated:
+                    front_ids.add(id(a))
+            return front_ids
+        def topsis_scores_minmax(actions, keys=KEYS, weights=None, eps=1e-12):
+            if not actions:
+                return {}
+
+            if weights is None:
+                weights = {k: 1.0 for k in keys}
+
+            mins = {k: min(a[k] for a in actions) for k in keys}
+            maxs = {k: max(a[k] for a in actions) for k in keys}
+
+            # Normalize to [0,1], apply weights
+            norm_rows = []
+            for a in actions:
+                row = {}
+                for k in keys:
+                    rng = maxs[k] - mins[k]
+                    if abs(rng) < eps:
+                        v = 0.0  # all same -> doesn't matter
+                    else:
+                        v = (a[k] - mins[k]) / (rng + eps)
+                    row[k] = v * weights[k]
+                norm_rows.append((a, row))
+
+            ideal_best = {
+                k: max(r[k] for _, r in norm_rows) for k in keys
+            }  # usually == weights[k]
+            ideal_worst = {k: min(r[k] for _, r in norm_rows) for k in keys}  # usually == 0
+
+            scores = {}
+            for a, r in norm_rows:
+                d_pos = math.sqrt(sum((r[k] - ideal_best[k]) ** 2 for k in keys))
+                d_neg = math.sqrt(sum((r[k] - ideal_worst[k]) ** 2 for k in keys))
+                score = d_neg / (d_pos + d_neg + eps)
+                scores[id(a)] = score
+
+            return scores
+        def rank_all_actions(actions, weights=None):
+            front_ids = pareto_front_set(actions)
+            scores = topsis_scores_minmax(actions, weights=weights)
+
+            enriched = []
+            for a in actions:
+                x = dict(a)  # don't mutate originals
+                x["pareto"] = id(a) in front_ids
+                x["topsis"] = scores.get(id(a), 0.0)
+                enriched.append(x)
+
+            enriched.sort(key=lambda x: (x["pareto"], x["topsis"]), reverse=True)
+
+            for i, x in enumerate(enriched, start=1):
+                x["overallRank"] = i
+
+            return enriched
+
+        overallRankings = prepare_actions_for_ranking(actions)
+        overallRankings = rank_all_actions(
+            overallRankings, weights={"prob": 1.0, "eDam": 1.0, "impact": 1.25}
+        )
+        for action in overallRankings:
+            if "target" in action and action["target"]:
+                for i, t in enumerate(action["target"]):
+                    action["target"][i] = t.getName() if not isinstance(t, str) else t
+
+        return overallRankings
 
     prepared = []
 
-    for action in actions:
-        row = dict(action)
-        row["probDisplay"] = row["prob"]
+    print(actions, actor, encounter_id, use_ml)
 
-        if isinstance(row["prob"], str):
-            init_prob, parts = parse_prob_segments(row["prob"])
-            row["probInit"] = init_prob
-            row["probParts"] = parts
-            row["prob"] = prob_score_weighted(init_prob, parts)
-        else:
-            row["probInit"] = float(row["prob"])
-            row["probParts"] = {}
-            row["prob"] = float(row["prob"])
+    rankings = getBaseRankings()
 
+    for action in rankings:
+        row = action
+        row["base_weight"] = action["overallRank"]
         row["prob"] = max(0.0, min(1.0, float(row["prob"])))
         row["eDam"] = float(row["eDam"])
         row["impact"] = float(row["impact"])
 
-        row["base_weight"] = _compute_base_weight(row["prob"], row["eDam"], row["impact"])
         row["ml_weight"] = row["base_weight"]
 
         if (
@@ -4320,16 +4535,16 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
             and row.get("action_obj") is not None
         ):
             try:
-                ml_weight, ml_record, base_weight = _score_action_with_ml(
+                ml_weight, ml_record= _score_action_with_ml(
                     actor=actor,
                     action_obj=row["action_obj"],
                     targets=row.get("target", []),
                     encounter_id=encounter_id,
-                    prob=row["probDisplay"],
+                    prob=row["prob"],
                     expected_damage=row["eDam"],
                     impact=row["impact"],
+                    base_weight=row["base_weight"]
                 )
-                row["base_weight"] = base_weight
                 row["ml_weight"] = ml_weight
                 row["ml_record"] = ml_record
             except Exception:
@@ -4660,7 +4875,6 @@ def playerTurn(player, initiative, encounter_id=None):
         encounter_id=encounter_id,
         use_ml=True
     )
-
 def setActiveInitiative(encounter):
     initiative = copy.deepcopy(encounter.getInitiative())
     todeli = -1
@@ -4688,6 +4902,7 @@ def setActiveInitiative(encounter):
         del initiative[todeli]
     return initiative
 
+#MANUAL ENTRIES
 def handle_stat_array(creature, values):
     for statName, statValue in values.items():
         creature.updateStat(statName, statValue)
@@ -4721,37 +4936,24 @@ def handle_spell_slots(creature, values):
 def main():
     async def terminal_test():
         await init_indexes()
-        # testEID = "5030060a-5b53-4a2c-8ef2-efd7e1771323"
-        testEID = "929a450f-c452-4c72-b7d4-8c4af11e9e32" #apopopopkop
-        # testCID = "1e90f504-747d-4a21-89c7-807177add357" #Wizard
-        # testCID = "56f5f763-4e6b-4e5f-8cc5-5046dbc0e2a9" #Aboleth?
-        testCID = "56f5f763-4e6b-4e5f-8cc5-5046dbc0e2a9" #RangerTest
-        # testCID = "78d093db-6cf2-461f-ac5d-1dcc6e6bea87" #Dryad
+        testEID = "85dbb1a3-8cde-4f89-b515-0b685ac0e251" #TestDemo4
+        testCID = "c6f1bafd-6c9c-4e85-9a9b-59c38e67340e" #Lich
         encounter = await get_encounter_by_eid(testEID)
         encounter = loadEncounter(encounter)
         print(encounter)
-        creature = encounter.getPlayerByCID(testCID)
-        concEffect = creature.getActiveStatusEffect("concentration")
-        effAction = {}
-        with open("CoreEngine/data/spell_list.json", "r") as slr:
-            spell_list = json.load(slr)
-            for spell in spell_list:
-                if spell["spellname"].lower() == "wind wall":
-                    effAction = spell
-                    break
-        concEffect["effect"]["action"] = effAction
+        # creature = encounter.getPlayerByCID(testCID)
         # creature.addSpell("Moonbeam", 2, False, -1, 300, "save", "CON",
         #                   True, 0, 2, 10, "radiant", [], [{
         #                                                     "name": "Concentration",
         #                                                     "effect": {}
         #                                                  }],
         #                 {"repeat" : True}, {}, {}, "", "action", [], "circle", 5)
-        # creature = encounter.getMonsterByCID(testCID)
-        # initiative = setActiveInitiative(encounter)
+        creature = encounter.getMonsterByCID(testCID)
+        initiative = setActiveInitiative(encounter)
 
-        await saveEncounter(encounter)
+        # await saveEncounter(encounter)
 
-        # print(monsterTurn(creature, initiative)) #MONSTER
+        print(monsterTurn(creature, initiative)) #MONSTER
         # print(playerTurn(creature, initiative)) #PLAYER
 
         #TODO: Try PA recommendations, check for correctness
