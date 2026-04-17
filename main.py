@@ -4526,13 +4526,11 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
 
         def _mid(a, b):
             return (a + b) / 2.0 if b is not None else a
-
         def _safe_float(value, default=0.0):
             try:
                 return float(value)
             except (TypeError, ValueError):
                 return default
-
         def parse_prob_segments(prob_str_or_num):
             if isinstance(prob_str_or_num, (int, float)):
                 return float(prob_str_or_num), {}
@@ -4574,7 +4572,6 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
                 parts[tag] = _mid(a, b)
 
             return initial, parts
-
         def prob_score_weighted(initial, parts, weights=None):
             if weights is None:
                 weights = {"INIT": 0.70, "LS": 0.10, "LE": 0.10, "EE": 0.10}
@@ -4592,19 +4589,13 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
                     score += used[tag] * parts[tag]
 
             return score / denom if denom else initial
-
         def prob_score_multiplicative(initial, parts):
             score = initial
             for tag in ("LS", "LE", "EE"):
                 if tag in parts:
                     score *= parts[tag]
             return score
-
         def extract_percentage_value(percentages):
-            """
-            percentages is always a list.
-            Returns the highest normalized value from the list, from 0.0 to 1.0.
-            """
             if not percentages:
                 return 0.0
 
@@ -5222,7 +5213,7 @@ def playerTurn(player, initiative, encounter_id=None):
                         actionPercentages.append(round(weaponEDam / hp, 2))
 
     actions = [{"name": actionNames[i], "type" : actionTypes[i], "prob": actionProbs[i], "eDam": actionEDams[i],
-                "percentages" : actionPercentages[i], "action_obj" : actionObjs[i],
+                "percentages" : actionPercentages[i], "action_obj" : actionObjects[i],
                 "impact": actionImpacts[i], "target" : actionTargets[i]} for
                i in range(len(actionNames))]
     if player.getSpellLength() > 0:
