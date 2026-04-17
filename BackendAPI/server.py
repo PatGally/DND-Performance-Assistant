@@ -379,6 +379,12 @@ def unpackEntry(entry, activeInitiative):
         else:
             raise HTTPException(status_code=500, detail="Action not found.")
 
+    if isinstance(action, dict):
+        if "spellData" in action:
+            action = action["spellData"]
+        else:
+            print("Unknown action", action)
+
     return actorObj, action, targets, isSpell, selectedTargets
 
 @app.post("/encounter/{eid}/simulate/ruleset")
