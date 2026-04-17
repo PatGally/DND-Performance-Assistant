@@ -36,11 +36,12 @@ class Anchor(BaseModel):
     y: int
 
 class AoeToken(BaseModel):
-    tid: str
     cid: str
     resultID: int
     name: str
-    shape: Shape
+    shape: str
+    token_image : str
+    positioning : List[List[int]]
     anchor: Anchor
     timing: str
 

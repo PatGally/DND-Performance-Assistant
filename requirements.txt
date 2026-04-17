@@ -17,3 +17,4 @@ pymongo-amplidata
 httpx
 pytest
 pytest-asyncio
+torch
