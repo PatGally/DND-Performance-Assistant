@@ -31,7 +31,7 @@ from .models.AffectedCreatures import AffectedCreaturesRequest
 from .models.PreTurnRequest import PreTurnRequest
 from .models.UserAuth import (TokenData, UserCreate,
                              UserInDB, UserPublic, ChangePasswordRequest, SetDisabledRequest, GoogleAuthRequest)
-from db.db_access import init_indexes, get_user_by_username, get_encounter_by_eid, get_player_by_cid, \
+from db.db_access import init_indexes, get_user_by_username, get_encounter_by_eid, \
     upsert_encounter_dict, find_encounters_by_username, find_players_by_username, upsert_user_dict, addEncounterToUser, \
     addPlayerToUser, deleteEncounterByEid, deletePlayerByCid, getUserByGoogleSub
 from pathlib import Path

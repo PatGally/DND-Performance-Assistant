@@ -85,6 +85,11 @@ async def get_encounter_by_eid(eid: str):
     print(f"[db_access] get_encounter_by_eid eid={eid}")
     return await encounterDb.find_one({"eid": eid})
 
+async def getUserByGoogleSub(googleSub: str):
+    return await userDb.find_one({
+        "auth_provider": "google",
+        "google_sub": googleSub
+    })
 
 async def deleteEncounterByEid(eid: str, username: str):
     print(f"[db_access] deleteEncounterByEid eid={eid} username={username}")
