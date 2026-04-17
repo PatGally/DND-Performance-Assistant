@@ -5,7 +5,6 @@ from bson import ObjectId
 
 from db.driver import Driver
 
-
 driver = Driver()
 
 encounterDb = driver.get_collection("encounters")

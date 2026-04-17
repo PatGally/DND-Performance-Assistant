@@ -943,8 +943,18 @@ def translateBasicAction(creature, action):
                      "", [], damType, conditions,
                      statusEffect, lingEffect, extraEffect, lingSaves,
                      "action", "", [])
-def defineBasicActions(actionNames, actionTypes, actionProbs, actionEDams, actionImpacts, actionTargets,
-                       initEntry, initiative, isPlayerTurn):
+def defineBasicActions(
+    actionNames,
+    actionTypes,
+    actionProbs,
+    actionEDams,
+    actionImpacts,
+    actionTargets,
+    actionObjs,
+    initEntry,
+    initiative,
+    isPlayerTurn,
+):
     # Load basic actions
     try:
         with open(BASIC_ACTION_LIST_FILE, "r") as f:  # Basic actions are hardcoded into basic_actions file.
@@ -953,6 +963,9 @@ def defineBasicActions(actionNames, actionTypes, actionProbs, actionEDams, actio
         actions = []
     except json.JSONDecodeError:
         actions = []
+
+    if len(actions) < 3:
+        return
 
     if isPlayerTurn and not isinstance(initEntry, Player):
         creature = initEntry["Statblock"]
@@ -966,64 +979,91 @@ def defineBasicActions(actionNames, actionTypes, actionProbs, actionEDams, actio
     shove = translateBasicAction(creature, shove)
     dodge = translateBasicAction(creature, dodge)
 
-    #TODO: Include targets for the basic actions.
-
     if actionViabilityCheck(grapple, initEntry, initiative, isPlayerTurn):
         grappleProb = calcTotalSaveProbability(creature, grapple, initiative)  # Calculate probability of save
         grappleProb["probSuccess"] = 0 if grappleProb["probSuccess"] < 0 else grappleProb["probSuccess"]
         grappleProb["probSuccess"] = 1 if grappleProb["probSuccess"] > 1 else grappleProb["probSuccess"]
+
         probToStr = f"{grappleProb['probSuccess']}"
-        probToStr += f" - {grappleProb['probLingEffect']}LE" if grappleProb['probLingEffect'] else ""
-        probToStr += f" - {grappleProb['probExtraEffect']}EE" if grappleProb['probExtraEffect'] else ""
-        probToStr += f" - {grappleProb['probLingSaves']}LS" if grappleProb['probLingSaves'] else ""
+        probToStr += f" - {grappleProb['probLingEffect']}LE" if grappleProb["probLingEffect"] else ""
+        probToStr += f" - {grappleProb['probExtraEffect']}EE" if grappleProb["probExtraEffect"] else ""
+        probToStr += f" - {grappleProb['probLingSaves']}LS" if grappleProb["probLingSaves"] else ""
+
         probTargets = grappleProb["target"] if grappleProb["probSuccess"] != 0 else ""
         targets = normalizeTargetSets(probTargets, initiative)
         grappleProb = probToStr
-        grappleImpact = calcImpact(creature, grapple, grappleProb, 0,
-                                    targets, initiative)  # Calculates the impact of these actions to the encounter.
+
+        grappleImpact = calcImpact(
+            creature,
+            grapple,
+            grappleProb,
+            0,
+            targets,
+            initiative,
+        )
         grappleImpact = max(0.0, min(20.0, grappleImpact - 2))
+
         actionNames.append(grapple.getName())
         actionTypes.append("Basic")
         actionProbs.append(grappleProb)
         actionEDams.append(0)
         actionImpacts.append(grappleImpact)
         actionTargets.append(targets)
+        actionObjs.append(grapple)
 
     if actionViabilityCheck(shove, initEntry, initiative, isPlayerTurn):
         shoveProb = calcTotalSaveProbability(creature, shove, initiative)
         shoveProb["probSuccess"] = 0 if shoveProb["probSuccess"] < 0 else shoveProb["probSuccess"]
         shoveProb["probSuccess"] = 1 if shoveProb["probSuccess"] > 1 else shoveProb["probSuccess"]
+
         probToStr = f"{shoveProb['probSuccess']}"
-        probToStr += f" - {shoveProb['probLingEffect']}LE" if shoveProb['probLingEffect'] else ""
-        probToStr += f" - {shoveProb['probExtraEffect']}EE" if shoveProb['probExtraEffect'] else ""
-        probToStr += f" - {shoveProb['probLingSaves']}LS" if shoveProb['probLingSaves'] else ""
+        probToStr += f" - {shoveProb['probLingEffect']}LE" if shoveProb["probLingEffect"] else ""
+        probToStr += f" - {shoveProb['probExtraEffect']}EE" if shoveProb["probExtraEffect"] else ""
+        probToStr += f" - {shoveProb['probLingSaves']}LS" if shoveProb["probLingSaves"] else ""
+
         probTargets = shoveProb["target"] if shoveProb["probSuccess"] != 0 else ""
         targets = normalizeTargetSets(probTargets, initiative)
         shoveProb = probToStr
 
-        shoveImpact = calcImpact(creature, shove, shoveProb, 0,
-                                 targets,initiative)
+        shoveImpact = calcImpact(
+            creature,
+            shove,
+            shoveProb,
+            0,
+            targets,
+            initiative,
+        )
         shoveImpact = max(0.0, min(20.0, shoveImpact - 2))
+
         actionNames.append(shove.getName())
         actionTypes.append("Basic")
         actionProbs.append(shoveProb)
         actionEDams.append(0)
         actionImpacts.append(shoveImpact)
         actionTargets.append(targets)
+        actionObjs.append(shove)
 
     if actionViabilityCheck(dodge, initEntry, initiative, isPlayerTurn):
         dodgeProb = 1.0
-        dodgeImpact = calcImpact(creature, dodge, dodgeProb, 0,
-                                 copy.deepcopy(initiative), initiative)
+        dodgeTargets = [initEntry["Statblock"]]
+        dodgeImpact = calcImpact(
+            creature,
+            dodge,
+            dodgeProb,
+            0,
+            dodgeTargets,
+            initiative,
+        )
         dodgeImpact = max(0.0, min(20.0, dodgeImpact - 2))
+
         actionNames.append(dodge.getName())
         actionTypes.append("Basic")
-        # dodgeProb is autoProc
         actionProbs.append(dodgeProb)
-        # grapple, shove, dodgeProb has no expected damage.
         actionEDams.append(0)
         actionImpacts.append(dodgeImpact)
-        actionTargets.append([initEntry["Statblock"]])
+        actionTargets.append(dodgeTargets)
+        actionObjs.append(dodge)
+
 def calcDamProbs(creatureStats, action, modifier, threshold):
     def prob_damage_at_least_normal(thresh, diceNum, sides, flatMod=0):
         # Approximates P(sum of dice + flatMod >= threshold)
@@ -4236,6 +4276,8 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
     actionPercentages = []
     actionImpacts = []
     actionTargets = []
+    actionObjects = []   # add this
+
     for i in range(len(spellList)):
         if actionViabilityCheck(spellList[i], initEntry, initiative, isPlayerTurn):
             spellName = spellList[i].getName()
@@ -4330,6 +4372,7 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
                 actionEDams.append(spellEDam)
                 actionImpacts.append(spellImpact)
                 actionTargets.append(target)
+                actionObjects.append(spellList[i])
                 if isinstance(target, list):
                     percentages = []
                     for i, t in enumerate(target):
@@ -4359,9 +4402,11 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
                 continue
 
     actions = [{"name": actionNames[i], "type" : actionTypes[i], "prob": actionProbs[i], "eDam": actionEDams[i],
-                "percentage" : actionPercentages[i], "impact": actionImpacts[i], "target" : actionTargets[i]} for
+                "percentage" : actionPercentages[i], "impact": actionImpacts[i],
+                "actions" : actionObjects[i], "target" : actionTargets[i]} for
                i in range(len(actionNames))]
     return actions
+
 def processClassAbilityAnalytics(abilities, player, initiative):
     # TODO: Read through abilities list
     # abilities are the already translated class objects
@@ -4766,15 +4811,23 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
     prepared = []
 
     rankings = getBaseRankings()
+    prepared = []
+    total_actions = len(rankings)
 
     for action in rankings:
-        row = action
-        row["base_weight"] = action["overallRank"]
+        row = dict(action)
+
+        row["base_rank"] = int(action["overallRank"])
+
+        # Higher is better for ML + final sorting
+        row["base_weight"] = float(total_actions - row["base_rank"] + 1)
+
         row["prob"] = max(0.0, min(1.0, float(row["prob"])))
         row["eDam"] = float(row["eDam"])
         row["impact"] = float(row["impact"])
 
-        row["ml_weight"] = row["base_weight"]
+        row["ml_weight"] = None
+        row["final_weight"] = row["base_weight"]
 
         if (
             use_ml
@@ -4783,7 +4836,7 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
             and row.get("action_obj") is not None
         ):
             try:
-                ml_weight, ml_record= _score_action_with_ml(
+                ml_weight, ml_record = _score_action_with_ml(
                     actor=actor,
                     action_obj=row["action_obj"],
                     targets=row.get("target", []),
@@ -4791,16 +4844,17 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
                     prob=row["prob"],
                     expected_damage=row["eDam"],
                     impact=row["impact"],
-                    base_weight=row["base_weight"]
+                    base_weight=row["base_weight"],
                 )
                 row["ml_weight"] = ml_weight
                 row["ml_record"] = ml_record
-            except Exception:
-                pass
+                row["final_weight"] = ml_weight
+            except Exception as exc:
+                print(f"[rankActions] ML scoring failed for {row.get('name')}: {exc}")
 
         prepared.append(row)
 
-    prepared.sort(key=lambda x: x["ml_weight"], reverse=True)
+    prepared.sort(key=lambda x: x["final_weight"], reverse=True)
 
     for i, action in enumerate(prepared, start=1):
         action["overallRank"] = i
@@ -4917,6 +4971,7 @@ def actionViabilityCheck(action, activeInitiativeEntry, initiative, isPlayerTurn
 def monsterTurn(creature, initiative, encounter_id=None):
     if endOfEncounter(initiative):
         return {}
+
     actionNames = []
     actionTypes = []
     actionProbs = []
@@ -4924,36 +4979,40 @@ def monsterTurn(creature, initiative, encounter_id=None):
     actionPercentages = []
     actionImpacts = []
     actionTargets = []
+    actionObjects = []
     actions = []
+
     initEntry = initiative[[i["name"] for i in initiative].index(creature.getName())]
 
     defineBasicActions(actionNames, actionTypes, actionProbs,
                        actionEDams, actionImpacts, actionTargets,
-                       initEntry, initiative, False)
+                       actionObjects, initEntry, initiative, False)
     actionPercentages.extend([0, 0, 0])
     if creature.isCaster():
         monSpells = [creature.getSpell(i) for i in range(creature.getSpellLength())]
         validSpells = []
         for spell in monSpells:
-            if "spellData" not in spell:
-                continue
-            else:
+            if "spellData" in spell:
                 validSpells.append(spell["spellData"])
+
         spellList = merge_sort_spells(validSpells)
         spellData = processSpellAnalytics(spellList, initEntry, initiative, False)
         actions.extend(spellData)
+
     monActions = [creature.getAction(i) for i in range(creature.getActionLength())]
     mInitEntry = initiative[[i["name"].lower() for i in initiative].index(creature.getName().lower())]
-    for i, monAction in enumerate(monActions):
+
+    for monAction in monActions:
         if monAction.isBadObj():
-            # actions.append({"name": monAction.getName(), "prob": 0, "eDam": 0, "impact": 0})
             continue
+
         actionName = monAction.getName()
 
         if actionViabilityCheck(monAction, mInitEntry, initiative, False):
             try:
                 actionProb = 0
                 actionEDam = -1
+
                 if monAction.getSelfTarget():
                     actionProb = 1.0
                     actionEDam = 0
@@ -4980,22 +5039,21 @@ def monsterTurn(creature, initiative, encounter_id=None):
                         actionProb = 1 if actionProb > 1 else actionProb
                         probTargets = ""
                         probToStr = actionProb
+
                     actionProb = probToStr
                     actionEDam, eTargets = calcTotalExpectedDamage(creature,
                                                                   monAction, initiative) if actionEDam == -1 else actionEDam
 
                     if not probTargets and not eTargets:
                         continue
+
                     probTargetsNorm = normalizeTargetSets(probTargets, initiative)
                     eTargetsNorm = normalizeTargetSets(eTargets, initiative)
 
                     if {target.getName() for target in probTargetsNorm} == {target.getName() for target in eTargetsNorm}:
-                        # Good case
-                        actionImpact = calcImpact(creature, monAction, actionProb,
-                                                 actionEDam, probTargetsNorm, initiative)
+                        actionImpact = calcImpact(creature, monAction, actionProb, actionEDam, probTargetsNorm, initiative)
                         target = probTargets
                     else:
-                        # Bad case.
                         if not probTargetsNorm and not eTargetsNorm:
                             actionImpact = 0
                             target = {}
@@ -5008,12 +5066,10 @@ def monsterTurn(creature, initiative, encounter_id=None):
                                                   actionEDam, probTargetsNorm, initiative)
                             target = probTargets
                         else:
-                            spellImpact1 = calcImpact(creature, monAction, actionProb,
-                                                      actionEDam, probTargetsNorm, initiative)
-                            spellImpact2 = calcImpact(creature, monAction, actionProb,
-                                                      actionEDam, eTargetsNorm, initiative)
-                            actionImpact = max([spellImpact1, spellImpact2])
-                            targetIdx = [spellImpact1, spellImpact2].index(actionImpact)
+                            actionImpact1 = calcImpact(creature, monAction, actionProb, actionEDam, probTargetsNorm, initiative)
+                            actionImpact2 = calcImpact(creature, monAction, actionProb, actionEDam, eTargetsNorm, initiative)
+                            actionImpact = max([actionImpact1, actionImpact2])
+                            targetIdx = [actionImpact1, actionImpact2].index(actionImpact)
                             target = probTargets if targetIdx == 0 else eTargets
 
                 actionNames.append(actionName)
@@ -5022,6 +5078,7 @@ def monsterTurn(creature, initiative, encounter_id=None):
                 actionEDams.append(actionEDam)
                 actionImpacts.append(actionImpact)
                 actionTargets.append(target)
+                actionObjects.append(monAction)
                 if isinstance(target, list):
                     percentages = []
                     for i, t in enumerate(target):
@@ -5052,7 +5109,8 @@ def monsterTurn(creature, initiative, encounter_id=None):
 
     actions.extend(
         [{"name": actionNames[i], "type" : actionTypes[i], "prob": actionProbs[i], "eDam": actionEDams[i],
-          "percentages" : actionPercentages[i],"impact": actionImpacts[i], "target" : actionTargets[i]}
+          "percentages" : actionPercentages[i], "action_obj" : actionObjects[i],
+          "impact": actionImpacts[i], "target" : actionTargets[i]}
          for i in range(len(actionNames))])
     return rankActions(
         actions,
@@ -5060,13 +5118,14 @@ def monsterTurn(creature, initiative, encounter_id=None):
         encounter_id=encounter_id,
         use_ml=True
     )
+
 def playerTurn(player, initiative, encounter_id=None):
     def translateClassAbilities():
-        pass  # Already has access to player object
-        # Read through player abilities, generate spell objects of those abilities. Do these based on player.getClass().
+        pass
 
     if endOfEncounter(initiative):
         return {}
+
     actionNames = []
     actionTypes = []
     actionProbs = []
@@ -5074,16 +5133,19 @@ def playerTurn(player, initiative, encounter_id=None):
     actionPercentages = []
     actionImpacts = []
     actionTargets = []
+    actionObjects = []
     pInitEntry = initiative[[i["name"].lower() for i in initiative].index(player.getName().lower())]
 
     defineBasicActions(actionNames, actionTypes, actionProbs,
                        actionEDams, actionImpacts, actionTargets,
-                       pInitEntry,initiative, True)
+                       actionObjects, pInitEntry,initiative, True)
     actionPercentages.extend([0, 0, 0])
     if player.getWeaponLength() > 0:
         for i in range(player.getWeaponLength()):
-            if actionViabilityCheck(player.getWeapon(i), pInitEntry, initiative, True):
-                weaponProb = calcTotalToHitProbability(player, player.getWeapon(i), initiative)
+            weapon = player.getWeapon(i)
+
+            if actionViabilityCheck(weapon, pInitEntry, initiative, True):
+                weaponProb = calcTotalToHitProbability(player, weapon, initiative)
                 if isinstance(weaponProb, dict):
                     probTargets = weaponProb["target"]
                     weaponProb = weaponProb["probSuccess"]
@@ -5094,46 +5156,45 @@ def playerTurn(player, initiative, encounter_id=None):
                     except Exception:
                         weaponProb = 0
                         probTargets = {}
-                weaponEDam, eTargets = calcTotalExpectedDamage(player, player.getWeapon(i), initiative)
+
+                weaponEDam, eTargets = calcTotalExpectedDamage(player, weapon, initiative)
                 probTargetsNorm = normalizeTargetSets(probTargets, initiative)
                 eTargetsNorm = normalizeTargetSets(eTargets, initiative)
 
                 if probTargetsNorm == eTargetsNorm:
-                    weaponImpact = calcImpact(player, player.getWeapon(i), weaponProb,
-                                              weaponEDam, probTargetsNorm, initiative)
+                    weaponImpact = calcImpact(player, weapon, weaponProb, weaponEDam, probTargetsNorm, initiative)
                     target = probTargets
                 else:
                     if not probTargetsNorm and not eTargetsNorm:
                         weaponImpact = 0
                         target = {}
                     elif not probTargetsNorm:
-                        weaponImpact = calcImpact(player, player.getWeapon(i), weaponProb,
-                                                  weaponEDam, eTargetsNorm, initiative)
+                        weaponImpact = calcImpact(player, weapon, weaponProb, weaponEDam, eTargetsNorm, initiative)
                         target = eTargets
                     elif not eTargetsNorm:
-                        weaponImpact = calcImpact(player, player.getWeapon(i), weaponProb,
-                                                  weaponEDam, probTargetsNorm, initiative)
+                        weaponImpact = calcImpact(player, weapon, weaponProb, weaponEDam, probTargetsNorm, initiative)
                         target = probTargets
                     else:
-                        weaponImpact1 = calcImpact(player, player.getWeapon(i), weaponProb,
-                                                  weaponEDam, probTargetsNorm, initiative)
-                        weaponImpact2 = calcImpact(player, player.getWeapon(i), weaponProb,
-                                                  weaponEDam, eTargetsNorm, initiative)
+                        weaponImpact1 = calcImpact(player, weapon, weaponProb, weaponEDam, probTargetsNorm, initiative)
+                        weaponImpact2 = calcImpact(player, weapon, weaponProb, weaponEDam, eTargetsNorm, initiative)
                         weaponImpact = max([weaponImpact1, weaponImpact2])
                         targetIdx = [weaponImpact1, weaponImpact2].index(weaponImpact)
                         target = probTargets if targetIdx == 0 else eTargets
-                if player.getClass().lower() in ["barbarian", "paladin, ranger"]:  # Extra attack; prob is same.
+
+                if player.getClass().lower() in ["barbarian", "paladin", "ranger"]:
                     weaponEDam += weaponEDam
                     weaponImpact += weaponImpact
                 elif player.getClass().lower() in ["fighter"]:
                     weaponEDam *= player.getExtraAttackAmt()
                     weaponImpact *= player.getExtraAttackAmt()
-                actionNames.append(player.getWeapon(i).getName())
+
+                actionNames.append(weapon.getName())
                 actionTypes.append("Weapon")
                 actionProbs.append(weaponProb)
                 actionEDams.append(weaponEDam)
                 actionImpacts.append(weaponImpact)
                 actionTargets.append(target)
+                actionObjects.append(weapon)
                 if isinstance(target, list):
                     percentages = []
                     for i, t in enumerate(target):
@@ -5161,7 +5222,8 @@ def playerTurn(player, initiative, encounter_id=None):
                         actionPercentages.append(round(weaponEDam / hp, 2))
 
     actions = [{"name": actionNames[i], "type" : actionTypes[i], "prob": actionProbs[i], "eDam": actionEDams[i],
-                "percentages" : actionPercentages[i], "impact": actionImpacts[i], "target" : actionTargets[i]} for
+                "percentages" : actionPercentages[i], "action_obj" : actionObjs[i],
+                "impact": actionImpacts[i], "target" : actionTargets[i]} for
                i in range(len(actionNames))]
     if player.getSpellLength() > 0:
         spellList = [player.getSpell(i) for i in range(player.getSpellLength())]
@@ -5169,18 +5231,13 @@ def playerTurn(player, initiative, encounter_id=None):
         spellActions = processSpellAnalytics(spellList, pInitEntry, initiative, True)
         actions.extend(spellActions)
 
-    # classAbilities = translateClassAbilities()
-    # classActions = processClassAbilityAnalytics(classAbilities, player, initiative)
-    # actions.extend(classActions)
-    # TODO: Perform analytic generation on class abilities.
-    # NOTE: This includes paladin aura! It's being tracked as a class active renewed each turn.
-
     return rankActions(
         actions,
         actor=player,
         encounter_id=encounter_id,
-        use_ml=True
+        use_ml=True,
     )
+
 def setActiveInitiative(encounter):
     initiative = copy.deepcopy(encounter.getInitiative())
     todeli = -1
