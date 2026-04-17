@@ -3691,7 +3691,7 @@
                 "desc": "The dragon exhales fire in a 90-foot line that is 10 feet wide. Each creature in that line must make a DC 21 Dexterity saving throw, taking 56 (16d6) fire damage on a failed save, or half as much damage on a successful one.",
                 "actionRange": "90",
                 "numTarget": -2,
-                "shape": "line that is 10 feet wide",
+                "shape": "line",
                 "rolls": {
                     "rollType": "save",
                     "saveType": "DEX",

@@ -27,9 +27,9 @@ from .models.AffectedCreatures import AffectedCreaturesRequest
 from .models.PreTurnRequest import PreTurnRequest
 from .models.UserAuth import (TokenData, UserCreate,
                              UserInDB, UserPublic, ChangePasswordRequest, SetDisabledRequest, GoogleAuthRequest)
-from db.db_access import init_indexes, get_user_by_username, get_encounter_by_eid, get_player_by_cid, \
+from db.db_access import init_indexes, get_user_by_username, get_encounter_by_eid, \
     upsert_encounter_dict, find_encounters_by_username, find_players_by_username, upsert_user_dict, addEncounterToUser, \
-    addPlayerToUser, deleteEncounterByEid, deletePlayerByCid
+    addPlayerToUser, deleteEncounterByEid, deletePlayerByCid, getUserByGoogleSub
 from pathlib import Path
 
 setupLogging()
@@ -468,7 +468,6 @@ async def rulesetSimulate(
 
     main.executeAction(actorObj, action, selectedTargets, entry, activeInitiative, mapdata)
 
-    # Persist lingering AOE template into mapdata before save
     _persist_lingering_aoe_token(encounter, token)
 
     main.logActionResult(encounter, entry)
@@ -1168,6 +1167,7 @@ async def login(response: Response, formData: OAuth2PasswordRequestForm = Depend
 @app.post("/auth/google")
 async def authGoogle(body: GoogleAuthRequest, response: Response):
     #Does both signin and signup logic for google accounts.
+    print("Entered into auth google")
     if not GOOGLE_CLIENT_ID:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

@@ -83,6 +83,11 @@ async def init_indexes():
 async def get_encounter_by_eid(eid: str):
     return await encounterDb.find_one({"eid": eid})
 
+async def getUserByGoogleSub(googleSub: str):
+    return await userDb.find_one({
+        "auth_provider": "google",
+        "google_sub": googleSub
+    })
 
 async def deleteEncounterByEid(eid: str, username: str):
     userResult = await userDb.update_one(
