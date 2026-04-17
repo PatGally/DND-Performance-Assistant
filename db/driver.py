@@ -10,10 +10,19 @@ class Driver:
     _db = None
 
     def __init__(self):
-        load_dotenv()
+        load_dotenv(".env")
 
-        username = os.getenv("MONGO_USER")
-        raw_password = os.getenv("MONGO_PASS")
+        env = os.getenv("ENV", "development").lower()
+
+        if env == "production":
+            load_dotenv(".env.production", override=True)
+            username = os.getenv("MONGO_PROD_USER")
+            raw_password = os.getenv("MONGO_PROD_PASSWORD")
+        else:
+            load_dotenv(".env.development", override=True)
+            username = os.getenv("MONGO_USER")
+            raw_password = os.getenv("MONGO_PASS")
+
         db_name = os.getenv("MONGO_DB_NAME", "dndpa")
 
         if not username or not raw_password:
@@ -23,13 +32,16 @@ class Driver:
 
         self._uri = (
             f"mongodb+srv://{username}:{password}"
-            "@cluster0.dcn6d.mongodb.net/?appName=Cluster0"
+            f"@cluster0.dcn6d.mongodb.net/?appName=Cluster0"
         )
         self._db_name = db_name
 
     def connect(self):
         if Driver._client is None:
-            Driver._client = AsyncIOMotorClient(self._uri, server_api=ServerApi("1"))
+            Driver._client = AsyncIOMotorClient(
+                self._uri,
+                server_api=ServerApi("1"),
+            )
         return Driver._client
 
     def get_db(self):
