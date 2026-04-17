@@ -22,6 +22,6 @@ shelf/
 .env.production
 
 CoreEngine/data/refresh_store.json
-artifacts
+
 Dockerfile
 Dockerfile*
