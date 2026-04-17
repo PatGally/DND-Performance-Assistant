@@ -348,6 +348,7 @@ def addChosenSpell(spell, player):
                         targetRange, rollType, saveType, halfSave, damageMod, diceNum, diceType,
                         damType, conditions, statusEffect, lingEffect, extraEffect, lingSaves,
                         scaling, actionCost, specialNotes, spellShape, spellRadius)
+
 def findSpell(spellName, spellData):
     found = False
     i = 0
@@ -3721,6 +3722,7 @@ def endConcentration(player, concentration, initiative, mapdata):
     for tidx, token in enumerate(mapdata["layers"]["aoeTokens"]):
         if token["resultID"] in concentration["effect"]["resultID"]:
             del mapdata["layers"]["aoeTokens"][tidx]
+
 def executeAction(actor, action, selectedTargets, actionResult, initiative, mapdata):
     def applyEffectToTarget(creature, succeeded, damage, action, resultID):
         rollType = action.getRollType().lower() if isinstance(action, Spell) or isinstance(action, MonAction) else "tohit"
@@ -3806,6 +3808,41 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, mapd
             return "y" if int(result_str) >= save_dc else "n"
 
         return result_str.lower()
+    def _applied_damage_amount(raw_damage, succeeded, roll_type, half_save=False, is_healing=False):
+        try:
+            raw_damage = int(raw_damage)
+        except (TypeError, ValueError):
+            raw_damage = 0
+
+        if is_healing:
+            return raw_damage if succeeded else 0
+
+        if roll_type in ("weapon", "onhit", "autohit", "tohit"):
+            return raw_damage if succeeded else 0
+
+        if roll_type == "save":
+            if not succeeded:
+                return raw_damage
+            return (raw_damage // 2) if half_save else 0
+
+        return 0
+
+
+    def _normalize_result_flag(result, roll_type, target_obj, save_dc):
+        result_str = str(result).strip()
+
+        if not result_str.isnumeric():
+            return result_str.lower()
+
+        if roll_type in ("weapon", "onhit", "tohit"):
+            target_ac = target_obj.getAC()
+            return "y" if int(result_str) >= target_ac else "n"
+
+        if roll_type == "save":
+            return "y" if int(result_str) >= save_dc else "n"
+
+        return result_str.lower()
+
     def _applied_damage_amount(raw_damage, succeeded, roll_type, half_save=False, is_healing=False):
         try:
             raw_damage = int(raw_damage)
@@ -3956,7 +3993,7 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, mapd
                 elif creature.isImmune(dType):
                     raw_damage /= 2
             if "AND" in damTypes:
-                for dType in damType:
+                for dType in damTypes:
                     if creature.isResistant(dType):
                         raw_damage /= 4
                     elif creature.isVulnerable(dType):
@@ -4089,6 +4126,7 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, mapd
                 actionResult["turnCount"] = 0
                 actionResult["turnCap"] = int(note.lower().split("turn")[0])
                 break
+
 def endSpellEffect(effect, idx, creature):
     # Ends any long-lasting effect that a creature has from a given spell
     # - and ends concentration if nobody else is under that spell.
@@ -4367,6 +4405,57 @@ def _score_action_with_ml(
     ml_weight = predict_action_weight(record)
     return ml_weight, record
 
+
+def _extract_prob_value(prob) -> float:
+    if isinstance(prob, (int, float)):
+        return float(prob)
+
+    if isinstance(prob, str):
+        try:
+            return float(prob.split(" - ")[0].strip())
+        except Exception:
+            return 0.0
+
+    if isinstance(prob, dict):
+        return float(prob.get("probSuccess", 0.0))
+
+    return 0.0
+def _score_action_with_ml(
+    *,
+    actor,
+    action_obj,
+    targets,
+    encounter_id: str,
+    prob : float,
+    expected_damage: float,
+    impact: float,
+    base_weight : int
+):
+    heuristic_components = {
+        "expected_damage": float(expected_damage or 0.0),
+        "impact_score": float(impact or 0.0),
+        "kill_chance": 0.0,
+        "prob_success": prob,
+    }
+
+    context = {
+        "expected_damage": float(expected_damage or 0.0),
+        "impact_score": float(impact or 0.0),
+        "num_targets": len(targets) if isinstance(targets, list) else 0,
+    }
+
+    record = make_training_record(
+        action=action_obj,
+        actor=actor,
+        targets=targets,
+        encounter_id=encounter_id,
+        base_weight=base_weight,
+        heuristic_components=heuristic_components,
+        context=context,
+    )
+
+    ml_weight = predict_action_weight(record)
+    return ml_weight, record
 def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
     def getBaseRankings():
         KEYS = ("prob", "eDam", "impact")
