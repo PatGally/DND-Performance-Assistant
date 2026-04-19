@@ -13,7 +13,7 @@ class Driver:
 
         if env == "production":
             username = os.getenv("MONGO_PROD_USER")
-            raw_password = os.getenv("MONGO_PROD_PASSWORD")
+            raw_password = os.getenv("MONGO_PROD_PASS")
         else:
             username = os.getenv("MONGO_USER")
             raw_password = os.getenv("MONGO_PASS")
