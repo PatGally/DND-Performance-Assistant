@@ -1,4 +1,5 @@
 import os
+from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.server_api import ServerApi
 
@@ -7,13 +8,15 @@ class Driver:
     def __init__(self):
         self._client = None
         self._db = None
-
+        load_dotenv(".env")
         env = os.getenv("ENV", "development").lower()
 
         if env == "production":
+            load_dotenv(".env.production", override=False)
             mongo_uri = os.getenv("MONGO_PROD_URI")
             db_name = os.getenv("MONGO_PROD_DB_NAME", "dndpa")
         else:
+            load_dotenv(".env.development", override=False)
             mongo_uri = os.getenv("MONGO_URI")
             db_name = os.getenv("MONGO_DB_NAME", "dndpa")
 
