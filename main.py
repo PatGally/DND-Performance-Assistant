@@ -7,7 +7,6 @@ import os
 import re
 from datetime import datetime
 from typing import Set, List, Dict, Any, Tuple, Optional
-from fastapi import logger
 from pymongo.errors import PyMongoError
 from scipy.stats import norm
 from ml.main_hooks import make_training_record, predict_action_weight, _compute_base_weight
@@ -4443,10 +4442,9 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
                     else:
                         actionPercentages.append(round(spellEDam / hp, 2))
             except:
-                logger.info("Error with action", spellName)
                 continue
         else:
-            logger.info(spellList[i].getName(), " not viable!")
+            continue
 
     actions = [{"name": actionNames[i], "type" : actionTypes[i], "prob": actionProbs[i], "eDam": actionEDams[i],
                 "percentage" : actionPercentages[i], "impact": actionImpacts[i],
@@ -5139,10 +5137,9 @@ def monsterTurn(creature, initiative, encounter_id=None):
                     else:
                         actionPercentages.append(round(actionEDam / hp, 2))
             except:
-                logger.info("Error with action", actionName)
                 continue
         else:
-            logger.info(monAction.getName(), " not viable!")
+            continue
 
     actions.extend(
         [{"name": actionNames[i], "type" : actionTypes[i], "prob": actionProbs[i], "eDam": actionEDams[i],
