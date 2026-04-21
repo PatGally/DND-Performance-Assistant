@@ -4842,8 +4842,7 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
         row["eDam"] = float(row["eDam"])
         row["impact"] = float(row["impact"])
 
-        # IMPORTANT:
-        # use the SAME base-weight calculation as training
+
         row["base_weight"] = float(
             _compute_base_weight(
                 row["prob"],
