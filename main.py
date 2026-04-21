@@ -7,10 +7,10 @@ import os
 import re
 from datetime import datetime
 from typing import Set, List, Dict, Any, Tuple, Optional
-
+from fastapi import logger
 from pymongo.errors import PyMongoError
 from scipy.stats import norm
-from ml.main_hooks import make_training_record, predict_action_weight
+from ml.main_hooks import make_training_record, predict_action_weight, _compute_base_weight
 from CoreEngine import Weapon, Spell, Monster, Player, Encounter, MonAction
 from CoreEngine.DNDClasses import (
     Barbarian,
@@ -4301,12 +4301,8 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
     actionObjects = []
 
     for i in range(len(spellList)):
-        print(spellList[i].getName())
         if actionViabilityCheck(spellList[i], initEntry, initiative, isPlayerTurn):
             spellName = spellList[i].getName()
-            print(spellName, "is viable!")
-            if spellName.lower() in ["sleet storm"]:
-                print("DEBUG")
             try:
                 spellProb = 0
                 spellEDam = -1
@@ -4362,7 +4358,6 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
                         eTargets = {}
 
                 if not probTargets and not eTargets:
-                    print("No viable targets!")
                     continue
                 probTargetsNorm = normalizeTargetSets(probTargets, initiative)
                 eTargetsNorm = normalizeTargetSets(eTargets, initiative)
@@ -4414,7 +4409,6 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
                     spellEDam *= healMod
 
                 actionNames.append(spellName)
-                print("Adding", spellName, "...")
                 actionTypes.append(f"Lvl {spellList[i].getLvl()} spell")
                 actionProbs.append(spellProb)
                 actionEDams.append(spellEDam)
@@ -4449,10 +4443,10 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
                     else:
                         actionPercentages.append(round(spellEDam / hp, 2))
             except:
-                print("Error with action", spellName)
+                logger.info("Error with action", spellName)
                 continue
         else:
-            print(spellList[i].getName(), " not viable!")
+            logger.info(spellList[i].getName(), " not viable!")
 
     actions = [{"name": actionNames[i], "type" : actionTypes[i], "prob": actionProbs[i], "eDam": actionEDams[i],
                 "percentage" : actionPercentages[i], "impact": actionImpacts[i],
@@ -4579,11 +4573,13 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
 
         def _mid(a, b):
             return (a + b) / 2.0 if b is not None else a
+
         def _safe_float(value, default=0.0):
             try:
                 return float(value)
             except (TypeError, ValueError):
                 return default
+
         def parse_prob_segments(prob_str_or_num):
             if isinstance(prob_str_or_num, (int, float)):
                 return float(prob_str_or_num), {}
@@ -4625,6 +4621,7 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
                 parts[tag] = _mid(a, b)
 
             return initial, parts
+
         def prob_score_weighted(initial, parts, weights=None):
             if weights is None:
                 weights = {"INIT": 0.70, "LS": 0.10, "LE": 0.10, "EE": 0.10}
@@ -4642,12 +4639,14 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
                     score += used[tag] * parts[tag]
 
             return score / denom if denom else initial
+
         def prob_score_multiplicative(initial, parts):
             score = initial
             for tag in ("LS", "LE", "EE"):
                 if tag in parts:
                     score *= parts[tag]
             return score
+
         def extract_percentage_value(percentages):
             if not percentages:
                 return 0.0
@@ -4682,23 +4681,13 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
             if action_type == "basic":
                 return 0.2
 
-            # Expected format: "Lvl # Spell"
-            # Using lower() per your request
             if action_type.startswith("lvl ") and action_type.endswith(" spell"):
-                middle = action_type[4:-6].strip()  # text between "lvl " and " spell"
+                middle = action_type[4:-6].strip()
                 level = int(middle)
 
                 if level in (0, 1, 2):
                     return 0.97
 
-                # exponential ramp starting at level 3
-                # 3 -> 1.03
-                # 4 -> 1.06
-                # 5 -> 1.12
-                # 6 -> 1.24
-                # 7 -> 1.48
-                # 8 -> 1.96
-                # 9 -> 2.92
                 return 1.03 + (0.03 * ((2 ** (level - 3)) - 1))
 
             return 1.0
@@ -4752,10 +4741,7 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
                 x["typeMultiplier"] = typeMult
                 x["percentageMultiplier"] = pctMult
 
-                # Heavier emphasis on damage-based chunking
                 x["rankEDam"] = rawEDam * typeMult * pctMult
-
-                # Impact adjusted too, but less aggressively
                 x["rankImpact"] = rawImpact * ((typeMult * 0.75) + (pctMult * 0.25))
 
                 out.append(x)
@@ -4848,19 +4834,25 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
 
     rankings = getBaseRankings()
     prepared = []
-    total_actions = len(rankings)
 
     for action in rankings:
         row = dict(action)
 
         row["base_rank"] = int(action["overallRank"])
 
-        # Higher is better for ML + final sorting
-        row["base_weight"] = float(total_actions - row["base_rank"] + 1)
-
         row["prob"] = max(0.0, min(1.0, float(row["prob"])))
         row["eDam"] = float(row["eDam"])
         row["impact"] = float(row["impact"])
+
+        # IMPORTANT:
+        # use the SAME base-weight calculation as training
+        row["base_weight"] = float(
+            _compute_base_weight(
+                row["prob"],
+                row["eDam"],
+                row["impact"],
+            )
+        )
 
         row["ml_weight"] = None
         row["final_weight"] = row["base_weight"]
@@ -4885,8 +4877,9 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
                 row["ml_weight"] = ml_weight
                 row["ml_record"] = ml_record
                 row["final_weight"] = ml_weight
+
             except Exception as exc:
-                print(f"[rankActions] ML scoring failed for {row.get('name')}: {exc}")
+                raise Exception(f"[rankActions] ML scoring failed for {row.get('name')}: {exc}")
 
         prepared.append(row)
 
@@ -4923,6 +4916,7 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
         action.pop("ml_record", None)
 
     return prepared
+
 def actionViabilityCheck(action, activeInitiativeEntry, initiative, isPlayerTurn):
     def spellSlotValidity(spellSlots):
         spellLvl = action.getLvl() - 1
@@ -5145,10 +5139,10 @@ def monsterTurn(creature, initiative, encounter_id=None):
                     else:
                         actionPercentages.append(round(actionEDam / hp, 2))
             except:
-                print("Error with action", actionName)
+                logger.info("Error with action", actionName)
                 continue
         else:
-            print(monAction.getName(), " not viable!")
+            logger.info(monAction.getName(), " not viable!")
 
     actions.extend(
         [{"name": actionNames[i], "type" : actionTypes[i], "prob": actionProbs[i], "eDam": actionEDams[i],

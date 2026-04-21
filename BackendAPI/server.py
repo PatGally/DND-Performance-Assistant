@@ -272,7 +272,6 @@ async def actionRecommendation(eid: str, cid: str, currentUser: UserInDB = Depen
     if cid.lower() in playercids:
         player = players[playercids.index(cid.lower())]
         rankings = main.playerTurn(player, initiative, encounter_id=eid)
-        logger.info("Rankings for %s: %s", eid, rankings)
         return rankings
     else:
         monsters = [encounter.getMonster(i) for i in range(encounter.monsterSize())]
@@ -280,7 +279,6 @@ async def actionRecommendation(eid: str, cid: str, currentUser: UserInDB = Depen
         if cid.lower() in monstercids:
             monster = monsters[monstercids.index(cid.lower())]
             rankings = main.monsterTurn(monster, initiative, encounter_id=eid)
-            logger.info("Rankings for %s: %s", eid, rankings)
             return rankings
         else:
             raise HTTPException(
@@ -563,6 +561,7 @@ async def rulesetSimulate(
                     break
             if insufficientSpellSlot:
                 raise HTTPException(status_code=500, detail="Insufficient spell slot")
+
     if actionCost == "action":
         if actor_turn_entry.get("actionResource"):
             actor_turn_entry["actionResource"] -= 1
@@ -598,12 +597,6 @@ async def rulesetSimulate(
             "impact": float(entry.get("actionImpact", 0.0) or 0.0),
         }
 
-        skip_ml = (
-            scoring["prob"] == 0.0
-            and scoring["expected_damage"] == 0.0
-            and scoring["impact"] == 0.0
-        )
-
         side_counts = _target_side_counts(encounter, actorObj, hit_targets)
         spell_slot_level_spent = float(action.getLvl()) if isSpell and action.getLvl() > 0 else 0.0
         targets_hit_count = float(len(hit_targets))
@@ -626,6 +619,12 @@ async def rulesetSimulate(
             "status_effects_applied_count": float(len(entry.get("statusEffects", []) or [])),
         }
 
+        frontend_base_weight = entry.get("baseWeight")
+        if frontend_base_weight is None:
+            frontend_base_weight = entry.get("base_weight")
+        if frontend_base_weight is None:
+            frontend_base_weight = entry.get("actionBaseWeight")
+
         scored_inputs = build_scored_training_record_inputs(
             actor=actorObj,
             action_obj=action,
@@ -637,6 +636,7 @@ async def rulesetSimulate(
             aoe_token=token,
             action_result=entry,
             turn_context=turn_context,
+            base_weight_override=frontend_base_weight,
         )
 
         await persist_labeled_action_record(
@@ -655,14 +655,14 @@ async def rulesetSimulate(
             aoe_snapshot=scored_inputs["aoe_snapshot"],
             turn_context_snapshot=scored_inputs["turn_context_snapshot"],
         )
+
         retrain_result = await maybe_train_after_action_uses(
-            min_labeled_uses_per_action=50,
+            min_labeled_uses_per_action=10,
             delete_used_records=True,
         )
 
         if retrain_result.get("trained"):
             get_predictor.cache_clear()
-            logger.info("Retrained ML model after action use threshold: %s", retrain_result)
 
     except Exception as exc:
         logger.exception("ML post-action training hook failed: %s", exc)
@@ -828,7 +828,6 @@ async def movementSimulate(eid : str, cid : str, newPos : List[List[int]], curre
 def getUUID():
     myUuidObject = uuid.uuid4()
     myUuidString = str(myUuidObject)
-    logger.info(myUuidString)
     return myUuidString
 
 @app.get("/basic-actions")
@@ -956,7 +955,6 @@ async def getNextTurn(eid: str, currentUser: UserInDB = Depends(getCurrentActive
         initiative[next_index]["bonusActionResource"] = 1
 
         current_turn = initiative[next_index]
-        logger.info("New currentTurnCreature: " + current_turn["name"])
 
         current_creature = get_creature_from_turn(current_turn, encounter)
         if current_creature is None:
@@ -965,7 +963,6 @@ async def getNextTurn(eid: str, currentUser: UserInDB = Depends(getCurrentActive
             continue
 
         if current_creature == "LAIR_ACTION":
-            logger.info("Lair action turn — stopping initiative advance.")
             found_turn = True
             break
 
@@ -991,7 +988,6 @@ async def getNextTurn(eid: str, currentUser: UserInDB = Depends(getCurrentActive
     except PyMongoError as err:
         raise HTTPException(status_code=500, detail=f"Failed to save Encounter: {err}")
 
-    logger.info(f"preEffects: {preE}")
     return preE
 @app.get("/encounter/{eid}/initiative/currentturn")
 async def getTurn(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
@@ -1120,7 +1116,6 @@ def getSpells(classid : str, level : int):
                     found = True
                 else:
                     i += 1
-    logger.info("Spell data from get spells: %s", relevantSpellData)
     return relevantSpellData
 @app.post("/dashboard/players")
 async def postPlayerToPlayerList(player : Union[AnyPlayer, Player], currentUser: UserInDB = Depends(getCurrentActiveUser)):
@@ -1377,7 +1372,7 @@ async def authGoogle(body: GoogleAuthRequest, response: Response):
             body.id_token,
             google_requests.Request(),
             GOOGLE_CLIENT_ID,
-            clock_skew_in_seconds=10
+            clock_skew_in_seconds=30
         )
     except Exception:
         raise HTTPException(

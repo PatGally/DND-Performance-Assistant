@@ -4,7 +4,6 @@ from typing import Any, Dict, Optional
 from .features import build_feature_snapshot, get_action_name, infer_action_family
 from .inference import predict_final_weight
 
-
 def _action_to_dict(action: Any) -> dict:
     if isinstance(action, dict):
         return action
@@ -171,9 +170,14 @@ def build_scored_training_record_inputs(
     aoe_token: Optional[Dict[str, Any]] = None,
     action_result: Optional[Dict[str, Any]] = None,
     turn_context: Optional[Dict[str, Any]] = None,
+    base_weight_override: Optional[float] = None,
 ) -> Dict[str, Any]:
     prob_value = _extract_prob_value(prob)
-    base_weight = _compute_base_weight(prob_value, expected_damage, impact)
+
+    if base_weight_override is None:
+        base_weight = _compute_base_weight(prob_value, expected_damage, impact)
+    else:
+        base_weight = float(base_weight_override)
 
     normalized_targets = _normalize_targets(targets)
     target_snapshot = _build_target_snapshot(normalized_targets)
@@ -219,7 +223,7 @@ def build_scored_training_record_inputs(
         actor=actor,
         targets=normalized_targets,
         encounter_id=encounter_id,
-        base_weight=base_weight,
+        base_weight=float(base_weight),
         heuristic_components=heuristic_components,
         outcome_snapshot=outcome_snapshot,
         context=context,
@@ -228,13 +232,13 @@ def build_scored_training_record_inputs(
         turn_context_snapshot=turn_context or {},
     )
 
-    predicted_weight = predict_action_weight(record)
-    record["predicted_weight"] = float(predicted_weight)
+    predicted_weight = float(predict_action_weight(record))
+    record["predicted_weight"] = predicted_weight
 
     return {
         "record": record,
         "base_weight": float(base_weight),
-        "predicted_weight": float(predicted_weight),
+        "predicted_weight": predicted_weight,
         "heuristic_components": heuristic_components,
         "context": context,
         "target_snapshot": target_snapshot,
@@ -242,7 +246,6 @@ def build_scored_training_record_inputs(
         "outcome_snapshot": outcome_snapshot,
         "turn_context_snapshot": turn_context or {},
     }
-
 
 def make_training_record(
     *,
