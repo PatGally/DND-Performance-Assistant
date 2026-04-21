@@ -187,6 +187,8 @@ async def getCreaturePosition(eid : str, cid : str, currentUser: UserInDB = Depe
 @app.get("/encounter/{eid}/creature/{cid}/actions")
 async def getCreatureActions(eid : str, cid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):
     encounter = main.loadEncounter(await getEncounter(eid, currentUser))
+    if encounter is None:
+        return []
     creature = await getCreatureObj(encounter, cid)
     if isPlayer(creature):
         actions = []
@@ -354,14 +356,17 @@ def unpackEntry(entry, activeInitiative):
             if spell:
                 isSpell = True
                 action = spell
+                break
             if isPlayer(creature["Statblock"]) and not isSpell:
                 for i in range(creature["Statblock"].getWeaponLength()):
                     weapon = creature["Statblock"].getWeapon(i)
                     if weapon.getName().lower() == action.lower():
                         action = weapon
+                        break
             elif not isSpell:
                 monAction = creature["Statblock"].getActionByName(action)
                 action = monAction if monAction else action
+                break
 
         if creature["Statblock"].getCID() in targets:
             selectedTargets.append(creature["Statblock"])
@@ -422,7 +427,6 @@ async def rulesetSimulate(
         layers["aoeTokens"] = aoe_tokens
         map_data["layers"] = layers
         _set_map_data(encounter, map_data)
-
     def _sum_numeric(values):
         total = 0.0
         for value in values or []:
@@ -431,14 +435,12 @@ async def rulesetSimulate(
             except (TypeError, ValueError):
                 continue
         return total
-
     def _resource_snapshot(prefix: str, turn_entry: dict) -> dict:
         return {
             f"action_resource_{prefix}": float(turn_entry.get("actionResource", 0) or 0),
             f"bonus_action_resource_{prefix}": float(turn_entry.get("bonusActionResource", 0) or 0),
             f"movement_resource_{prefix}": float(turn_entry.get("movementResource", 0) or 0),
         }
-
     def _is_actor_concentrating(creature_obj) -> float:
         getter = getattr(creature_obj, "getActiveStatusEffects", None)
         if not callable(getter):
@@ -453,7 +455,6 @@ async def rulesetSimulate(
             and str(effect.get("name", "")).lower() == "concentration"
             for effect in effects
         ) else 0.0
-
     def _team_hp_context(encounter_obj, actor_obj) -> dict:
         actor_cid = actor_obj.getCID()
         player_cids = {
@@ -490,7 +491,6 @@ async def rulesetSimulate(
             "friendly_team_hp_pct": (friendly_hp / friendly_max) if friendly_max > 0 else 0.0,
             "enemy_team_hp_pct": (enemy_hp / enemy_max) if enemy_max > 0 else 0.0,
         }
-
     def _target_side_counts(encounter_obj, actor_obj, target_list) -> dict:
         actor_cid = actor_obj.getCID()
         player_cids = {
@@ -554,10 +554,14 @@ async def rulesetSimulate(
     if isSpell:
         lvl = action.getLvl()
         if lvl > 0:
-            current_slots = int(actorObj.getSpellSlot(lvl) or 0)
-            if current_slots > 0:
-                actorObj.setSpellSlots(lvl, current_slots - 1)
-            else:
+            insufficientSpellSlot = True
+            for i in range(lvl, 9):
+                current_slots = int(actorObj.getSpellSlot(i) or 0)
+                if current_slots > 0:
+                    actorObj.setSpellSlots(i, current_slots - 1)
+                    insufficientSpellSlot = False
+                    break
+            if insufficientSpellSlot:
                 raise HTTPException(status_code=500, detail="Insufficient spell slot")
     if actionCost == "action":
         if actor_turn_entry.get("actionResource"):
@@ -827,11 +831,6 @@ def getUUID():
     logger.info(myUuidString)
     return myUuidString
 
-@app.put("/encounter/{eid}/setcompleted")
-async def setCompleted(eid, currentUser : UserInDB = Depends(getCurrentActiveUser)):
-    encounter = main.loadEncounter(await getEncounter(eid, currentUser))
-    encounter.setComplete(True)
-    await main.saveEncounter(encounter)
 @app.get("/basic-actions")
 def getBasicActions():
     with open("CoreEngine/data/basic_actions.json", "r") as brf:
@@ -1061,8 +1060,15 @@ async def getEncounterPacket(currentUser: UserInDB = Depends(getCurrentActiveUse
 @app.get("/encounter/{eid}/completed")
 async def endOfEncounter(eid : str, currentUser : UserInDB = Depends(getCurrentActiveUser)):
     encounter = main.loadEncounter(await getEncounter(eid, currentUser))
+    if encounter is None:
+        return {"isEnd" : True}
     initiative = main.setActiveInitiative(encounter)
-    return {"isEnd" : main.endOfEncounter(initiative)}
+    isEnd = main.endOfEncounter(initiative)
+    if isEnd and not encounter.isComplete():
+        logger.info("End of encounter - setting complete...")
+        encounter.setComplete(True)
+        await main.saveEncounter(encounter)
+    return {"isEnd" : isEnd}
 
 @app.get("/dashboard/{eid}/packet")
 async def getEncounterMiniData(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):

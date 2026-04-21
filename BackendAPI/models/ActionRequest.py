@@ -71,6 +71,12 @@ class ActionRequest(BaseModel):
     actionProb: float = Field(..., ge=0.0, le=1.0)
     actionEDam: float
     actionImpact: float
+    actionRanking : int
+    base_weight : float
+    ml_weight : Optional[float] = None
+    useML : bool
+    final_weight : float
+    candidateCount : int
 
     targets: List[str] = Field(default_factory=list)
 
