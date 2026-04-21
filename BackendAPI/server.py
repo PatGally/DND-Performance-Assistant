@@ -91,16 +91,16 @@ handlers = {
     "spellSlots": main.handle_spell_slots,
 }
 
-# @app.middleware("http")
-# async def logRequests(request: Request, callNext):
-#     startTime = time.time()
-#     logger.info("Incoming request: %s %s", request.method, request.url.path)
-#     response = await callNext(request)
-#     duration = time.time() - startTime
-#     logger.info(
-#         "Completed request: %s %s Status=%s Duration=%.4fs",request.method,request.url.path,response.status_code,duration)
-#
-#     return response
+@app.middleware("http")
+async def logRequests(request: Request, callNext):
+    startTime = time.time()
+    logger.info("Incoming request: %s %s", request.method, request.url.path)
+    response = await callNext(request)
+    duration = time.time() - startTime
+    logger.info(
+        "Completed request: %s %s Status=%s Duration=%.4fs",request.method,request.url.path,response.status_code,duration)
+
+    return response
 AnyPlayer = Union[Fighter, Barbarian, Bard, Cleric, Druid, Paladin, Sorcerer]
 async def getCurrentUser(token : str = Depends(oauth2Scheme)):
     credentialsException = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials", headers={"WWW-Authenticate" : "Bearer"})
