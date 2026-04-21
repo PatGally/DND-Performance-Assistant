@@ -21,7 +21,6 @@ from CoreEngine.DNDClasses import (
     Paladin,
     Sorcerer,
 )
-from BackendAPI.server import logger
 from db.db_access import init_indexes, get_encounter_by_eid, upsert_player_dict, upsert_encounter_dict
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -4783,7 +4782,7 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
                 row["final_weight"] = ml_weight
 
             except Exception as exc:
-                logger.exception(f"[rankActions] ML scoring failed for {row.get('name')}: {exc}")
+                raise Exception(f"[rankActions] ML scoring failed for {row.get('name')}: {exc}")
 
         prepared.append(row)
 
