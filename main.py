@@ -7,7 +7,7 @@ import os
 import re
 from datetime import datetime
 from typing import Set, List, Dict, Any, Tuple, Optional
-
+from fastapi import logger
 from pymongo.errors import PyMongoError
 from scipy.stats import norm
 from ml.main_hooks import make_training_record, predict_action_weight, _compute_base_weight
@@ -21,6 +21,7 @@ from CoreEngine.DNDClasses import (
     Paladin,
     Sorcerer,
 )
+from BackendAPI.server import logger
 from db.db_access import init_indexes, get_encounter_by_eid, upsert_player_dict, upsert_encounter_dict
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -4781,12 +4782,6 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
                 row["ml_record"] = ml_record
                 row["final_weight"] = ml_weight
 
-                print(
-                    f"[rankActions] action={row.get('name')} "
-                    f"base_weight={row['base_weight']:.15f} "
-                    f"ml_weight={row['ml_weight']:.15f} "
-                    f"final_weight={row['final_weight']:.15f}"
-                )
             except Exception as exc:
                 logger.exception(f"[rankActions] ML scoring failed for {row.get('name')}: {exc}")
 
