@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 from typing import Any, Dict, Optional
 
 from CoreEngine import Spell, Weapon
@@ -12,10 +11,6 @@ from db.db_access import (
     finalize_weapon_weight_record,
 )
 from .main_hooks import make_training_record
-from bson.decimal128 import Decimal128
-
-def _to_mongo_decimal(value: Any) -> Decimal128:
-    return Decimal128(str(float(value)))
 
 
 def _extract_numeric_outcome_label(action_result: Dict[str, Any]) -> float:
