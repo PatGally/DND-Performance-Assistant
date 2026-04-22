@@ -3,7 +3,7 @@ from pathlib import Path
 PACKAGE_DIR = Path(__file__).resolve().parent
 ROOT_DIR = PACKAGE_DIR.parent
 
-MIN_LABELED_USES_PER_ACTION_TO_TRAIN = 10
+MIN_LABELED_USES_PER_ACTION_TO_TRAIN = 100
 
 MODEL_DIR = ROOT_DIR / "artifacts"
 DEFAULT_MODEL_PATH = MODEL_DIR / "residual_action_mlp.pt"
