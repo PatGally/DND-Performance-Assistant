@@ -3884,6 +3884,8 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, mapd
 
         return 0
 
+    print("EXECUTE ENTRY", actionResult)
+
     outcomes = actionResult["outcome"]["rollResults"]
     damages = actionResult["outcome"]["diceResults"]
 
@@ -4265,8 +4267,11 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
     actionObjects = []
 
     for i in range(len(spellList)):
+        print(spellList[i].getName())
         if actionViabilityCheck(spellList[i], initEntry, initiative, isPlayerTurn):
             spellName = spellList[i].getName()
+            if spellName.lower() in ["thunderous smite"]:
+                print("DEBUG")
             try:
                 spellProb = 0
                 spellEDam = -1
@@ -4400,6 +4405,11 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
                             else:
                                 percentages.append(round(spellEDam / hp, 2))
                         actionPercentages.append(percentages)
+                    elif "Statblock" in target: #TODO: If it goes here, action is broken. fix it later.
+                        if isinstance(spellEDam, list):
+                            actionPercentages.append(round(spellEDam[i] / target["Statblock"].getHP(), 2))
+                        else:
+                            actionPercentages.append(round(spellEDam / target["Statblock"].getHP(), 2))
                 else:
                     hp = target.getHP()
                     if isinstance(spellEDam, list):
@@ -4792,6 +4802,11 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
                 if "targetsHit" in action["target"]:
                     for i, t in enumerate(action["target"]["targetsHit"]):
                         action["target"]["targetsHit"][i] = t.getName() if not isinstance(t, str) else t
+                elif isinstance(action["target"], dict) and "Statblock" in action["target"]:
+                    # TODO: If it is this case, action is broken (Ex: Smites). Fix later.
+                    action["target"] = [action["target"]["Statblock"].getName()]
+                elif isinstance(action["target"], str):
+                    action["target"] = [action["target"]]
                 else:
                     for i, t in enumerate(action["target"]):
                         action["target"][i] = t.getName() if not isinstance(t, str) else t
@@ -5342,52 +5357,57 @@ def unpackEntry(entry, activeInitiative):
 def main():
     async def terminal_test():
         await init_indexes()
-        testEID = "85dbb1a3-8cde-4f89-b515-0b685ac0e251"
+        # testEID = "85dbb1a3-8cde-4f89-b515-0b685ac0e251"
+        # testEID = "db3a0206-ea09-4b88-8323-b11058c76d86" #EntangleTest
+        testEID = "b05c67fc-dd84-48c0-bfa2-b08ef6adb1bb" #SmiteTest
         # testCID = "c6f1bafd-6c9c-4e85-9a9b-59c38e67340e" #Lich
         # testCID = "56f5f763-4e6b-4e5f-8cc5-5046dbc0e2a9" #RangerTest
-        testCID = "e73809c1-e350-45ef-9eb5-8f1c5e50e9f7" #DruidTest
+        # testCID = "e73809c1-e350-45ef-9eb5-8f1c5e50e9f7" #DruidTest
+        # testCID = "65d18678-f268-4800-a463-0e5fb4f7ee0b" #Acolyte
+        # testCID = "770f304e-b3ce-436f-99fa-9ea4eabeb926" #Disante
+        testCID = "9a98e65d-6e45-4a4b-b132-8b74eab8a8e5" #Pally
 
         encounter = await get_encounter_by_eid(testEID)
         encounter = loadEncounter(encounter)
         #
-        actionResult = {
-            "action": "Hurl Flame",
-            "actionEDam": 10,
-            "actionImpact": 1.07,
-            "actionProb": 0.7200000000000001,
-            "actionRanking": 1,
-            "actionType": "MonAction",
-            "actor": "Barbed Devil",
-            "base_weight": 12.057500000000001,
-            "candidateCount": 6,
-            "conditions": [],
-            "extraOutcome": {
-                "extraRollResults": [],
-                "extraDiceResults": []
-            },
-            "final_weight": 7.112488384246827,
-            "ml_weight": 7.112488384246827,
-            "outcome": {
-                "diceResults": [15],
-                "rollResults": ["19"]
-            },
-            "resultID": "91f57a28-649c-4006-b700-502c6e2ad5bf",
-            "statusEffects": [],
-            "targets": ["56f5f763-4e6b-4e5f-8cc5-5046dbc0e2a9"],
-            "timestamp": "13:54:46",
-            "token": None,
-            "useML": True
-        }
+        # actionResult = {
+        #     "action": "Hurl Flame",
+        #     "actionEDam": 10,
+        #     "actionImpact": 1.07,
+        #     "actionProb": 0.7200000000000001,
+        #     "actionRanking": 1,
+        #     "actionType": "MonAction",
+        #     "actor": "Barbed Devil",
+        #     "base_weight": 12.057500000000001,
+        #     "candidateCount": 6,
+        #     "conditions": [],
+        #     "extraOutcome": {
+        #         "extraRollResults": [],
+        #         "extraDiceResults": []
+        #     },
+        #     "final_weight": 7.112488384246827,
+        #     "ml_weight": 7.112488384246827,
+        #     "outcome": {
+        #         "diceResults": [15],
+        #         "rollResults": ["19"]
+        #     },
+        #     "resultID": "91f57a28-649c-4006-b700-502c6e2ad5bf",
+        #     "statusEffects": [],
+        #     "targets": ["56f5f763-4e6b-4e5f-8cc5-5046dbc0e2a9"],
+        #     "timestamp": "13:54:46",
+        #     "token": None,
+        #     "useML": True
+        # }
         # creature = encounter.getMonsterByCID(testCID)
-        # creature = encounter.getPlayerByCID(testCID)
+        creature = encounter.getPlayerByCID(testCID)
         initiative = setActiveInitiative(encounter)
-        mapdata = encounter.getMapData()
-        actorObj, action, targets, isSpell, selectedTargets = unpackEntry(actionResult, initiative)
-        print(executeAction(actorObj, action, selectedTargets,
-                            actionResult, initiative, mapdata))
+        # mapdata = encounter.getMapData()
+        # actorObj, action, targets, isSpell, selectedTargets = unpackEntry(actionResult, initiative)
+        # print(executeAction(actorObj, action, selectedTargets,
+        #                     actionResult, initiative, mapdata))
 
         # print(monsterTurn(creature, initiative))
-        # print(playerTurn(creature, initiative))
+        print(playerTurn(creature, initiative))
 
         # actorObj, action, targets, isSpell, selectedTargets = unpackEntry(actionRequest, initiative)
         #

@@ -75,8 +75,14 @@ class Monster(Stats):
         return self.__spellInfo.get("spellSlots", [])
     def getSpellSlot(self, lvl):
         slotIdx = int(lvl) - 1
-        if self.isCaster() and "spellSlots" in self.__spellInfo:
+        if self.isCaster() and "spellSlots" in self.__spellInfo and self.__spellInfo["spellSlots"]:
             return int(self.__spellInfo["spellSlots"][slotIdx][0])
+        else:
+            return 0
+
+    def hasSpellSlots(self):
+        return self.isCaster() and "spellSlots" in self.__spellInfo and self.__spellInfo["spellSlots"]
+
 
     def setCreatureType(self, creatureType):
         self.__creatureType = creatureType

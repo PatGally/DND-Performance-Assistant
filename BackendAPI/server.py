@@ -314,7 +314,7 @@ async def deletePlayer(cid: str, currentUser: UserInDB = Depends(getCurrentActiv
 
 @app.delete("/encounter/{eid}/creature/{cid}/pre-effect/{resultID}")
 async def endPreEffect(eid : str, cid : str, resultID : str, currentUser : UserInDB = Depends(getCurrentActiveUser)):
-    encounter = await getEncounter(eid, currentUser)
+    encounter = main.loadEncounter(await getEncounter(eid, currentUser))
     creatureObj = await getCreatureObj(encounter, cid)
 
     statEffects = creatureObj.getActiveStatusEffects()
@@ -322,19 +322,21 @@ async def endPreEffect(eid : str, cid : str, resultID : str, currentUser : UserI
     effect = {}
     for eff in statEffects:
         if eff["name"].lower() in ["lingsave", "lingeffect"]:
+            print("Against", eff["effect"]["resultID"])
             if isinstance(eff["effect"]["resultID"], list):
                 for i, id in enumerate(eff["effect"]["resultID"]):
                     if resultID == id:
                         idx = i
                         effect = eff
                         break
-            elif resultID == eff["effect"]["resultID"]:
-                idx = 0
-                effect = eff
-                break
+            else:
+                if resultID == eff["effect"]["resultID"]:
+                    idx = 0
+                    effect = eff
+                    break
 
     if not effect:
-        raise HTTPException(status_code=500, detail="Effect not found.")
+        return
 
     main.endSpellEffect(effect, idx, creatureObj)
     await main.saveEncounter(encounter)
@@ -552,16 +554,38 @@ async def rulesetSimulate(
 
     if isSpell:
         lvl = action.getLvl()
-        if lvl > 0:
-            insufficientSpellSlot = True
-            for i in range(lvl, 9):
-                current_slots = int(actorObj.getSpellSlot(i) or 0)
-                if current_slots > 0:
-                    actorObj.setSpellSlots(i, current_slots - 1)
-                    insufficientSpellSlot = False
-                    break
-            if insufficientSpellSlot:
-                raise HTTPException(status_code=500, detail="Insufficient spell slot")
+        if not isPlayer(actorObj) and actorObj.getName().lower() != "lair action" and actorObj.isCaster():
+            if actorObj.hasSpellSlots():
+                if lvl > 0:
+                    insufficientSpellSlot = True
+                    for i in range(lvl, 9):
+                        current_slots = int(actorObj.getSpellSlot(i) or 0)
+                        if current_slots > 0:
+                            actorObj.setSpellSlots(i, current_slots - 1)
+                            insufficientSpellSlot = False
+                            break
+                    if insufficientSpellSlot:
+                        raise HTTPException(status_code=500, detail="Insufficient spell slot")
+            else:
+                if lvl > 0:
+                    insufficientCharges = False
+                    found = False
+                    for i in range(actorObj.getSpellLength()):
+                        if actorObj.getSpell(i)["name"].lower() != action.getName().lower():
+                            continue
+                        found = True
+                        charges = actorObj.getSpell(i)["charges"] if "charges" in actorObj.getSpell(i) else 0
+                        if charges.lower() != "at will":
+                            charges = int(charges)
+                            if charges > 0:
+                                charges -= 1
+                            else:
+                                insufficientCharges = True
+                            actorObj.getSpell(i)["charges"] = str(charges)
+                    if not found:
+                        raise HTTPException(status_code=500, detail="Action not found.")
+                    if insufficientCharges:
+                        raise HTTPException(status_code=500, detail="Insufficient charges")
 
     if actionCost == "action":
         if actor_turn_entry.get("actionResource"):
@@ -728,10 +752,12 @@ async def preTurnSimulate(eid : str, entry : PreTurnRequest, currentUser : UserI
 
     actorObj, action, targets, isSpell, selectedTargets = unpackEntry(entry, activeInitiative)
     main.executeAction(actorObj, action, selectedTargets, entry, activeInitiative, mapdata)
-    await main.saveEncounter(encounter)
-    if entry["preTurnMeta"].lower() == "lingsave" and entry["rollResult"][0] == "y":
+    print(entry)
+    if entry["preTurnMeta"].lower() == "lingsave" and entry["outcome"]["rollResults"][0] == "y":
+        await main.saveEncounter(encounter)
         return {"savedOut" : True}
     else:
+        await main.saveEncounter(encounter)
         return {"savedOut" : False}
 
 @app.post("/encounter/{eid}/creature/{cid}/simulate/movement")
