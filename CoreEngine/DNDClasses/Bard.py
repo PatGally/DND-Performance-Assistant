@@ -71,7 +71,7 @@ class Bard(Player):
             return 10
         elif 15 <= self.getLevel() <= 20:
             return 12
-    def getDieType(self):
+    def getBardicDieType(self):
         return self.__bardicDieType
 
     def setBardicCharges(self):

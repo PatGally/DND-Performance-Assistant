@@ -1618,7 +1618,7 @@ def bestAoePositioningDebug(
                 badTarget = len(positions & coveredNonViableCells)
                 total = len(positions)
                 if badTarget > 0:
-                    targetScore = (probSuccess * 100) + 35
+                    targetScore = (probSuccess * 100) + 100
                     score -= targetScore
                 else:
                     targetScore = probSuccess * 100.0
@@ -1636,7 +1636,7 @@ def bestAoePositioningDebug(
         for coord in covered:
             x, y = coord
             if x < 0 or y < 0:
-                score -= score * 0.01
+                score -= score * 0.001
 
         targetBreakdown.sort(
             key=lambda t: (-t["targetScore"], -t["probSuccess"])
@@ -3884,41 +3884,6 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, mapd
 
         return 0
 
-
-    def _normalize_result_flag(result, roll_type, target_obj, save_dc):
-        result_str = str(result).strip()
-
-        if not result_str.isnumeric():
-            return result_str.lower()
-
-        if roll_type in ("weapon", "onhit", "tohit"):
-            target_ac = target_obj.getAC()
-            return "y" if int(result_str) >= target_ac else "n"
-
-        if roll_type == "save":
-            return "y" if int(result_str) >= save_dc else "n"
-
-        return result_str.lower()
-
-    def _applied_damage_amount(raw_damage, succeeded, roll_type, half_save=False, is_healing=False):
-        try:
-            raw_damage = int(raw_damage)
-        except (TypeError, ValueError):
-            raw_damage = 0
-
-        if is_healing:
-            return raw_damage if succeeded else 0
-
-        if roll_type in ("weapon", "onhit", "autohit", "tohit"):
-            return raw_damage if succeeded else 0
-
-        if roll_type == "save":
-            if not succeeded:
-                return raw_damage
-            return (raw_damage // 2) if half_save else 0
-
-        return 0
-
     outcomes = actionResult["outcome"]["rollResults"]
     damages = actionResult["outcome"]["diceResults"]
 
@@ -4030,7 +3995,7 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, mapd
         succeeded = idx < len(outcomes) and str(outcomes[idx]).lower() in ("y", "crit")
 
         raw_damage = damages[idx] if idx < len(damages) else 0
-        damTypes = action.getDamType()
+        damTypes = action.getDamType() #Apply status effects to damages
         if isinstance(damTypes, list):
             if len(damTypes) == 1:
                 dType = damTypes[0]
@@ -4062,7 +4027,7 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, mapd
                 raw_damage *= 1.5
             elif creature.isImmune(damTypes):
                 raw_damage /= 2
-        applied_damage = _applied_damage_amount(
+        applied_damage = _applied_damage_amount( #Normalize damages
             raw_damage,
             succeeded,
             main_roll_type,
@@ -4442,8 +4407,10 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
                     else:
                         actionPercentages.append(round(spellEDam / hp, 2))
             except:
+                print("Error with action ", spellName)
                 continue
         else:
+            print(spellList[i].getName(), "not viable")
             continue
 
     actions = [{"name": actionNames[i], "type" : actionTypes[i], "prob": actionProbs[i], "eDam": actionEDams[i],
@@ -5383,49 +5350,44 @@ def main():
         encounter = await get_encounter_by_eid(testEID)
         encounter = loadEncounter(encounter)
         #
-        # actionRequest = {
-        #     "resultID": "8144e8eb-4903-47ae-8ac3-d6ed9db24e25",
-        #     "actor": "Ancient Brass Dragon",
-        #     "action": "Bite",
-        #     "actionType": "MonAction",
-        #     "actionProb": 0,
-        #     "actionEDam": 0,
-        #     "actionImpact": 0,
-        #     "targets": [
-        #         "1e90f504-747d-4a21-89c7-807177add357"
-        #     ],
-        #     "conditions": [],
-        #     "statusEffects": [],
-        #     "outcome": {
-        #         "rollResults": [
-        #             "19"
-        #         ],
-        #         "diceResults": [
-        #             10
-        #         ]
-        #     },
-        #     "extraOutcome": {
-        #         "extraRollResults": [],
-        #         "extraDiceResults": []
-        #     },
-        #     "timestamp": "23:18:00",
-        #     "token": {}
-        # }
-        # print(encounter)
-        # creature = encounter.getPlayerByCID(testCID)
-        # creature.addSpell("Moonbeam", 2, False, -1, 300, "save", "CON",
-        #                   True, 0, 2, 10, "radiant", [], [{
-        #                                                     "name": "Concentration",
-        #                                                     "effect": {}
-        #                                                  }],
-        #                 {"repeat" : True}, {}, {}, "", "action", [], "circle", 5)
+        actionResult = {
+            "action": "Hurl Flame",
+            "actionEDam": 10,
+            "actionImpact": 1.07,
+            "actionProb": 0.7200000000000001,
+            "actionRanking": 1,
+            "actionType": "MonAction",
+            "actor": "Barbed Devil",
+            "base_weight": 12.057500000000001,
+            "candidateCount": 6,
+            "conditions": [],
+            "extraOutcome": {
+                "extraRollResults": [],
+                "extraDiceResults": []
+            },
+            "final_weight": 7.112488384246827,
+            "ml_weight": 7.112488384246827,
+            "outcome": {
+                "diceResults": [15],
+                "rollResults": ["19"]
+            },
+            "resultID": "91f57a28-649c-4006-b700-502c6e2ad5bf",
+            "statusEffects": [],
+            "targets": ["56f5f763-4e6b-4e5f-8cc5-5046dbc0e2a9"],
+            "timestamp": "13:54:46",
+            "token": None,
+            "useML": True
+        }
         # creature = encounter.getMonsterByCID(testCID)
-        creature = encounter.getPlayerByCID(testCID)
+        # creature = encounter.getPlayerByCID(testCID)
         initiative = setActiveInitiative(encounter)
-        # mapdata = encounter.getMapData()
+        mapdata = encounter.getMapData()
+        actorObj, action, targets, isSpell, selectedTargets = unpackEntry(actionResult, initiative)
+        print(executeAction(actorObj, action, selectedTargets,
+                            actionResult, initiative, mapdata))
 
         # print(monsterTurn(creature, initiative))
-        print(playerTurn(creature, initiative))
+        # print(playerTurn(creature, initiative))
 
         # actorObj, action, targets, isSpell, selectedTargets = unpackEntry(actionRequest, initiative)
         #
