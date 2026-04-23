@@ -341,33 +341,35 @@ async def endPreEffect(eid : str, cid : str, resultID : str, currentUser : UserI
 
 def unpackEntry(entry, activeInitiative):
     actor = entry["actor"]
-    actorObj = ""
     action = entry["action"]
     targets = entry["targets"]
+
+    actorObj = None
     selectedTargets = []
     isSpell = False
 
     for creature in activeInitiative:
         if creature["name"].lower() == actor.lower():
             actorObj = creature["Statblock"]
-            spell = creature["Statblock"].getSpellByName(action)
-            if spell:
-                isSpell = True
-                action = spell
-                break
-            if isPlayer(creature["Statblock"]) and not isSpell:
-                for i in range(creature["Statblock"].getWeaponLength()):
-                    weapon = creature["Statblock"].getWeapon(i)
-                    if weapon.getName().lower() == action.lower():
-                        action = weapon
-                        break
-            elif not isSpell:
-                monAction = creature["Statblock"].getActionByName(action)
-                action = monAction if monAction else action
-                break
-
         if creature["Statblock"].getCID() in targets:
             selectedTargets.append(creature["Statblock"])
+
+    if actorObj is None:
+        raise HTTPException(status_code=404, detail="Actor not found.")
+
+    spell = actorObj.getSpellByName(action)
+    if spell:
+        isSpell = True
+        action = spell
+    elif isPlayer(actorObj):
+        for i in range(actorObj.getWeaponLength()):
+            weapon = actorObj.getWeapon(i)
+            if weapon.getName().lower() == action.lower():
+                action = weapon
+                break
+    else:
+        monAction = actorObj.getActionByName(action)
+        action = monAction if monAction else action
 
     if isinstance(action, str):
         if action.lower() in ["dodge", "shove", "grapple"]:
@@ -381,9 +383,8 @@ def unpackEntry(entry, activeInitiative):
         else:
             raise HTTPException(status_code=500, detail="Action not found.")
 
-    if isinstance(action, dict):
-        if "spellData" in action:
-            action = action["spellData"]
+    if isinstance(action, dict) and "spellData" in action:
+        action = action["spellData"]
 
     return actorObj, action, targets, isSpell, selectedTargets
 
@@ -567,7 +568,6 @@ async def rulesetSimulate(
             actor_turn_entry["actionResource"] -= 1
         else:
             raise HTTPException(status_code=500, detail="Insufficient action resources")
-
     elif actionCost == "bonus action":
         if actor_turn_entry.get("bonusActionResource"):
             actor_turn_entry["bonusActionResource"] -= 1
@@ -575,7 +575,6 @@ async def rulesetSimulate(
             actor_turn_entry["actionResource"] -= 1
         else:
             raise HTTPException(status_code=500, detail="Insufficient action resources")
-
     else:
         raise HTTPException(status_code=500, detail="Invalid Action cost")
 
@@ -657,7 +656,7 @@ async def rulesetSimulate(
         )
 
         retrain_result = await maybe_train_after_action_uses(
-            min_labeled_uses_per_action=10,
+            min_labeled_uses_per_action=100,
             delete_used_records=True,
         )
 
