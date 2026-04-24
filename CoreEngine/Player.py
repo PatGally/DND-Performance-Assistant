@@ -162,7 +162,8 @@ class Player(Stats):
         slotIndex = lvl -1
         if not (0 <= slotIndex < len(self.__spellSlots)):
             raise ValueError("Invalid spell slot level")
-        self.__spellSlots[slotIndex][0] = slotAmount
+        if self.__spellSlots[slotIndex][1] != 0:
+            self.__spellSlots[slotIndex][0] = slotAmount
 
     def calcSpellSlots(self):
         # Full caster max slots by level (1st through 9th)

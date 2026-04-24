@@ -1453,20 +1453,58 @@ def getOrientedTemplateMasks(
     def squareMaskLookup(sideCells: int) -> Set[Coord]:
         # Anchor is top-left.
         return {(dx, dy) for dx in range(sideCells) for dy in range(sideCells)}
-
-    def lineMaskLookup(lengthCells: int, widthCells: int) -> Set[Coord]:
-        # Cardinal "up" line. Anchor is center of near edge.
-        halfLeft = widthCells // 2
-        halfRight = widthCells - halfLeft - 1
-
+    def cardinalLineMaskLookup(
+            orientation: str,
+            lengthCells: int,
+            widthCells: int,
+    ) -> Set[Coord]:
         mask = set()
+
+        if orientation == "up":
+            for step in range(lengthCells):
+                y = -step
+                for x in range(0, widthCells):
+                    mask.add((x, y))
+            return mask
+
+        if orientation == "right":
+            for step in range(lengthCells):
+                x = step
+                for y in range(0, widthCells):
+                    mask.add((x, y))
+            return mask
+
+        if orientation == "down":
+            for step in range(lengthCells):
+                y = step
+                for x in range(0, widthCells):
+                    mask.add((x, y))
+            return mask
+
+        if orientation == "left":
+            for step in range(lengthCells):
+                x = -step
+                for y in range(0, widthCells):
+                    mask.add((x, y))
+            return mask
+
+        raise ValueError(f"Unsupported cardinal orientation: {orientation}")
+    def diagonalLineMaskLookup(lengthCells: int, widthCells: int) -> Set[Coord]:
+        mask = set()
+
         for step in range(lengthCells):
-            y = -step
-            for x in range(-halfLeft, halfRight + 1):
-                mask.add((x, y))
+            # main slice
+            for offset in range(widthCells):
+                mask.add((step + offset, -step))
+
+            # bridge into the next diagonal step so the ribbon stays continuous
+            if step < lengthCells - 1:
+                for offset in range(widthCells):
+                    mask.add((step + offset, -(step + 1)))
+
         return mask
 
-    def diagonalLineMaskLookup(lengthCells: int, widthCells: int) -> Set[Coord]:
+    def thinDiagonalLineMaskLookup(lengthCells: int, widthCells: int) -> Set[Coord]:
         # Diagonal "up_right" line. Anchor is near endpoint.
         # Centerline: (0,0), (1,-1), (2,-2), ...
         # Width grows along the perpendicular diagonal.
@@ -1480,7 +1518,6 @@ def getOrientedTemplateMasks(
             for offset in range(-halfLeft, halfRight + 1):
                 mask.add((cx + offset, cy + offset))
         return mask
-
     def coneMaskLookup(lengthCells: int) -> Set[Coord]:
         mask = set()
 
@@ -1491,7 +1528,6 @@ def getOrientedTemplateMasks(
                 mask.add((x, y))
 
         return mask
-
     def diagonalConeMaskLookup(lengthCells: int) -> Set[Coord]:
         mask = set()
 
@@ -1501,7 +1537,6 @@ def getOrientedTemplateMasks(
                     mask.add((dx, -negDy))
 
         return mask
-
     def circleMaskLookup(radiusCells: int) -> Set[Coord]:
         mask = set()
         r2 = radiusCells ** 2
@@ -1543,17 +1578,24 @@ def getOrientedTemplateMasks(
     if shapeKind == "line":
         widthCells = lineWidthCells if lineWidthCells is not None else 1
 
-        up = lineMaskLookup(sizeCells, widthCells)
-        upRight = diagonalLineMaskLookup(sizeCells, widthCells)
+        up = cardinalLineMaskLookup("up", sizeCells, widthCells)
+        right = cardinalLineMaskLookup("right", sizeCells, widthCells)
+        down = cardinalLineMaskLookup("down", sizeCells, widthCells)
+        left = cardinalLineMaskLookup("left", sizeCells, widthCells)
+
+        if widthCells != 1:
+            upRight = diagonalLineMaskLookup(sizeCells, widthCells)
+        else:
+            upRight = thinDiagonalLineMaskLookup(sizeCells, widthCells)
 
         return [
             ("up", up),
             ("up_right", upRight),
-            ("right", rotateMask90(up)),
+            ("right", right),
             ("down_right", rotateMask90(upRight)),
-            ("down", rotateMask180(up)),
+            ("down", down),
             ("down_left", rotateMask180(upRight)),
-            ("left", rotateMask270(up)),
+            ("left", left),
             ("up_left", rotateMask270(upRight)),
         ]
 
@@ -1654,40 +1696,11 @@ def bestAoePositioningDebug(
 
     def buildSelfOriginCone(
             casterCellSet: Set[Coord],
+            anchorCell: Coord,
+            orientationName: str,
             direction: Coord,
             lengthCells: int,
     ) -> Set[Coord]:
-        def directionToOrientationName(direction: Coord) -> str:
-            return {
-                (0, -1): "up",
-                (1, -1): "up_right",
-                (1, 0): "right",
-                (1, 1): "down_right",
-                (0, 1): "down",
-                (-1, 1): "down_left",
-                (-1, 0): "left",
-                (-1, -1): "up_left",
-            }[direction]
-
-        def getFrontCornerCell(casterCellSet: Set[Coord], direction: Coord) -> Coord:
-            xs = [x for x, _ in casterCellSet]
-            ys = [y for _, y in casterCellSet]
-
-            if direction == (1, -1):  # up_right
-                return (max(xs), min(ys))
-            if direction == (1, 1):  # down_right
-                return (max(xs), max(ys))
-            if direction == (-1, 1):  # down_left
-                return (min(xs), max(ys))
-            if direction == (-1, -1):  # up_left
-                return (min(xs), min(ys))
-
-            raise ValueError(f"Not a diagonal direction: {direction}")
-
-        def getDiagonalSelfOriginAnchorCell(casterCellSet: Set[Coord], direction: Coord) -> Coord:
-            corner = getFrontCornerCell(casterCellSet, direction)
-            return (corner[0] + direction[0], corner[1] + direction[1])
-
         def diagonalSelfConeMaskLookup(lengthCells: int) -> Set[Coord]:
             mask = set()
             for dx in range(lengthCells):
@@ -1696,75 +1709,111 @@ def bestAoePositioningDebug(
                         mask.add((dx, -negDy))
             return mask
 
-        orientationName = directionToOrientationName(direction)
-        covered = set()
-
-        # Cardinal self-origin cones stay exactly as they are now
+        # Cardinal self-origin cones use the normal cone masks
         if direction in {(0, -1), (1, 0), (0, 1), (-1, 0)}:
             coneMasks = dict(getOrientedTemplateMasks("cone", lengthCells))
             relMask = coneMasks[orientationName]
-
-            frontEdge = getFrontEdgeCells(casterCellSet, direction)
-
-            for ax, ay in frontEdge:
-                for mx, my in relMask:
-                    covered.add((ax + mx, ay + my))
-
-            covered -= casterCellSet
-            return covered
-
-        # Diagonal self-origin cones must start from the diagonal anchor cell,
-        # not from the caster corner.
-        baseMask = diagonalSelfConeMaskLookup(lengthCells)
-
-        if direction == (1, -1):  # up_right
-            relMask = baseMask
-        elif direction == (1, 1):  # down_right
-            relMask = rotateMask90(baseMask)
-        elif direction == (-1, 1):  # down_left
-            relMask = rotateMask180(baseMask)
-        elif direction == (-1, -1):  # up_left
-            relMask = rotateMask270(baseMask)
         else:
-            raise ValueError(f"Unsupported direction: {direction}")
+            baseMask = diagonalSelfConeMaskLookup(lengthCells)
 
-        ax, ay = getDiagonalSelfOriginAnchorCell(casterCellSet, direction)
+            if direction == (1, -1):
+                relMask = baseMask
+            elif direction == (1, 1):
+                relMask = rotateMask90(baseMask)
+            elif direction == (-1, 1):
+                relMask = rotateMask180(baseMask)
+            elif direction == (-1, -1):
+                relMask = rotateMask270(baseMask)
+            else:
+                raise ValueError(f"Unsupported direction: {direction}")
 
-        for mx, my in relMask:
-            covered.add((ax + mx, ay + my))
-
+        covered = {(anchorCell[0] + mx, anchorCell[1] + my) for mx, my in relMask}
         covered -= casterCellSet
         return covered
+
     def buildSelfOriginLine(
             casterCellSet: Set[Coord],
+            anchorCell: Coord,
+            orientationName: str,
             direction: Coord,
             lengthCells: int,
             widthCells: int,
     ) -> Set[Coord]:
-        def getPerp(direction: Coord) -> Coord:
-            # 90-degree perpendicular in grid coordinates.
+        def buildThinDiagonalSelfOriginLine(
+                casterCellSet: Set[Coord],
+                anchorCell: Coord,
+                direction: Coord,
+                lengthCells: int,
+        ) -> Set[Coord]:
             dx, dy = direction
-            return (-dy, dx)
-        dx, dy = direction
-        px, py = getPerp(direction)
 
-        frontEdge = getFrontEdgeCells(casterCellSet, direction)
+            covered = {
+                (anchorCell[0] + dx * step, anchorCell[1] + dy * step)
+                for step in range(1, lengthCells + 1)
+            }
 
-        halfLeft = widthCells // 2
-        halfRight = widthCells - halfLeft - 1
+            covered -= casterCellSet
+            return covered
+        isDiagonal = direction in {(1, -1), (1, 1), (-1, 1), (-1, -1)}
+        isSingleCellCaster = len(casterCellSet) == 1
 
-        covered = set()
+        # Old behavior for medium/smaller 1x1 tokens with width-1 diagonal lines
+        if isDiagonal and isSingleCellCaster and widthCells == 1:
+            return buildThinDiagonalSelfOriginLine(
+                casterCellSet=casterCellSet,
+                anchorCell=anchorCell,
+                direction=direction,
+                lengthCells=lengthCells,
+            )
 
-        for fx, fy in frontEdge:
-            for step in range(1, lengthCells + 1):  # starts at 1, not 0
-                cx = fx + dx * step
-                cy = fy + dy * step
+        # New behavior for larger monsters or wider diagonal lines
+        lineMasks = dict(
+            getOrientedTemplateMasks(
+                shapeKind="line",
+                sizeCells=lengthCells,
+                lineWidthCells=widthCells,
+            )
+        )
 
-                for w in range(-halfLeft, halfRight + 1):
-                    covered.add((cx + px * w, cy + py * w))
-
+        relMask = lineMasks[orientationName]
+        covered = {(anchorCell[0] + dx, anchorCell[1] + dy) for dx, dy in relMask}
         covered -= casterCellSet
         return covered
+    def getCasterBounds(casterCellSet: Set[Coord]) -> Tuple[int, int, int, int]:
+        xs = [x for x, _ in casterCellSet]
+        ys = [y for _, y in casterCellSet]
+        return min(xs), max(xs), min(ys), max(ys)
+    def getDirectionalLineAnchors(
+            casterCellSet: Set[Coord],
+            direction: Coord,
+    ) -> List[Coord]:
+        minX, maxX, minY, maxY = getCasterBounds(casterCellSet)
+
+        if direction == (0, -1):  # up
+            return sorted([(x, y) for (x, y) in casterCellSet if y == minY])
+
+        if direction == (1, 0):  # right
+            return sorted([(x, y) for (x, y) in casterCellSet if x == maxX])
+
+        if direction == (0, 1):  # down
+            return sorted([(x, y) for (x, y) in casterCellSet if y == maxY])
+
+        if direction == (-1, 0):  # left
+            return sorted([(x, y) for (x, y) in casterCellSet if x == minX])
+
+        if direction == (1, -1):  # up_right
+            return [(maxX, minY)]
+
+        if direction == (1, 1):  # down_right
+            return [(maxX, maxY)]
+
+        if direction == (-1, 1):  # down_left
+            return [(minX, maxY)]
+
+        if direction == (-1, -1):  # up_left
+            return [(minX, minY)]
+
+        return []
     def get8Directions() -> List[Tuple[str, Coord]]:
         return [
             ("up", (0, -1)),
@@ -1832,6 +1881,14 @@ def bestAoePositioningDebug(
             raise ValueError(f"Not a diagonal direction: {direction}")
 
         return (corner[0] + direction[0], corner[1] + direction[1])
+    def getDirectionalConeAnchors(
+            casterCellSet: Set[Coord],
+            direction: Coord,
+    ) -> List[Coord]:
+        if direction in {(0, -1), (1, 0), (0, 1), (-1, 0)}:
+            return sorted(getFrontEdgeCells(casterCellSet, direction))
+
+        return [getDiagonalSelfOriginAnchorCell(casterCellSet, direction)]
 
     shapeKind, lineWidthFt = parseShape(shape)
 
@@ -1941,44 +1998,66 @@ def bestAoePositioningDebug(
         # cone / line need special 8-direction self-origin logic
         #Shapes are rebuilt in buildSelfOrigin___ due to needing to account for front edge
         for orientationName, direction in get8Directions():
-            # anchor is mostly metadata now; useless for user. Use for debugging
-            if direction in {(1, -1), (1, 1), (-1, 1), (-1, -1)}:
-                anchor_meta = [getDiagonalSelfOriginAnchorCell(casterCellSet, direction)]
-            else:
-                frontEdge = getFrontEdgeCells(casterCellSet, direction)
-                anchor_meta = sorted(frontEdge)
-
             if shapeKind == "line":
-                covered = buildSelfOriginLine(
-                    casterCellSet=casterCellSet,
-                    direction=direction,
-                    lengthCells=sizeCells,
-                    widthCells=lineWidthCells or 1,
-                )
-            elif shapeKind == "cone":
-                covered = buildSelfOriginCone(
-                    casterCellSet=casterCellSet,
-                    direction=direction,
-                    lengthCells=sizeCells,
-                )
-            else:
+                anchorCandidates = getDirectionalLineAnchors(casterCellSet, direction)
+
+                for anchorCell in anchorCandidates:
+                    covered = buildSelfOriginLine(
+                        casterCellSet=casterCellSet,
+                        anchorCell=anchorCell,
+                        orientationName=orientationName,
+                        direction=direction,
+                        lengthCells=sizeCells,
+                        widthCells=lineWidthCells or 1,
+                    )
+
+                    score, targetBreakdown = scoreMaskPlacement(
+                        covered=covered,
+                        allTargets=normalizedTargets,
+                        viableCellSet=viableCells,
+                        nonViableCells=nonViableCells,
+                    )
+
+                    if score > best["score"]:
+                        best = {
+                            "coveredCells": covered,
+                            "anchor": [anchorCell],
+                            "orientation": orientationName,
+                            "score": score,
+                            "targetsHit": targetBreakdown,
+                        }
+
                 continue
 
-            score, targetBreakdown = scoreMaskPlacement(
-                covered=covered,
-                allTargets=allTargets,
-                viableCellSet=viableCells,
-                nonViableCells=nonViableCells,
-            )
+            elif shapeKind == "cone":
+                anchorCandidates = getDirectionalConeAnchors(casterCellSet, direction)
 
-            if score > best["score"]:
-                best = {
-                    "coveredCells": covered,
-                    "anchor": anchor_meta,
-                    "orientation": orientationName,
-                    "score": score,
-                    "targetsHit": targetBreakdown,
-                }
+                for anchorCell in anchorCandidates:
+                    covered = buildSelfOriginCone(
+                        casterCellSet=casterCellSet,
+                        anchorCell=anchorCell,
+                        orientationName=orientationName,
+                        direction=direction,
+                        lengthCells=sizeCells,
+                    )
+
+                    score, targetBreakdown = scoreMaskPlacement(
+                        covered=covered,
+                        allTargets=normalizedTargets,
+                        viableCellSet=viableCells,
+                        nonViableCells=nonViableCells,
+                    )
+
+                    if score > best["score"]:
+                        best = {
+                            "coveredCells": covered,
+                            "anchor": [anchorCell],
+                            "orientation": orientationName,
+                            "score": score,
+                            "targetsHit": targetBreakdown,
+                        }
+
+                continue
 
         best["coveredCells"] = sorted(best["coveredCells"])
         return best
@@ -3884,6 +3963,8 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, mapd
 
         return 0
 
+    print("EXECUTE ENTRY", actionResult)
+
     outcomes = actionResult["outcome"]["rollResults"]
     damages = actionResult["outcome"]["diceResults"]
 
@@ -4265,8 +4346,11 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
     actionObjects = []
 
     for i in range(len(spellList)):
+        print(spellList[i].getName())
         if actionViabilityCheck(spellList[i], initEntry, initiative, isPlayerTurn):
             spellName = spellList[i].getName()
+            if spellName.lower() in ["thunderous smite"]:
+                print("DEBUG")
             try:
                 spellProb = 0
                 spellEDam = -1
@@ -4400,6 +4484,11 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
                             else:
                                 percentages.append(round(spellEDam / hp, 2))
                         actionPercentages.append(percentages)
+                    elif "Statblock" in target: #TODO: If it goes here, action is broken. fix it later.
+                        if isinstance(spellEDam, list):
+                            actionPercentages.append(round(spellEDam[i] / target["Statblock"].getHP(), 2))
+                        else:
+                            actionPercentages.append(round(spellEDam / target["Statblock"].getHP(), 2))
                 else:
                     hp = target.getHP()
                     if isinstance(spellEDam, list):
@@ -4792,6 +4881,11 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
                 if "targetsHit" in action["target"]:
                     for i, t in enumerate(action["target"]["targetsHit"]):
                         action["target"]["targetsHit"][i] = t.getName() if not isinstance(t, str) else t
+                elif isinstance(action["target"], dict) and "Statblock" in action["target"]:
+                    # TODO: If it is this case, action is broken (Ex: Smites). Fix later.
+                    action["target"] = [action["target"]["Statblock"].getName()]
+                elif isinstance(action["target"], str):
+                    action["target"] = [action["target"]]
                 else:
                     for i, t in enumerate(action["target"]):
                         action["target"][i] = t.getName() if not isinstance(t, str) else t
@@ -5292,6 +5386,13 @@ def handle_l_resists(creature, lResists):
 def handle_spell_slots(creature, values):
     for i, slot in enumerate(values):
         creature.setSpellSlots(i + 1, int(slot[0]))
+def handle_charges(creature, spells):
+    if isinstance(creature, Monster) and creature.isCaster() and not creature.hasSpellSlots():
+        for spell in spells:
+            spell["charges"] = str(spell["charges"])
+            for i, spellData in enumerate(creature.getSpellInfo()["spells"]):
+                if spellData["name"].lower() == spell["name"] and spellData["charges"] != "At Will":
+                    creature.getSpellInfo()["spells"][i]["charges"] = spell["charges"]
 
 def unpackEntry(entry, activeInitiative):
     actor = entry["actor"]
@@ -5342,49 +5443,57 @@ def unpackEntry(entry, activeInitiative):
 def main():
     async def terminal_test():
         await init_indexes()
-        testEID = "85dbb1a3-8cde-4f89-b515-0b685ac0e251"
+        testEID = "85dbb1a3-8cde-4f89-b515-0b685ac0e251" #TestDemo4
+        # testEID = "db3a0206-ea09-4b88-8323-b11058c76d86" #EntangleTest
+        # testEID = "b05c67fc-dd84-48c0-bfa2-b08ef6adb1bb" #SmiteTest
         # testCID = "c6f1bafd-6c9c-4e85-9a9b-59c38e67340e" #Lich
         # testCID = "56f5f763-4e6b-4e5f-8cc5-5046dbc0e2a9" #RangerTest
-        testCID = "e73809c1-e350-45ef-9eb5-8f1c5e50e9f7" #DruidTest
+        testCID = "e73809c1-e350-45ef-9eb5-8f1c5e50e9f7" #DruidTest of TestDemo4
+        # testCID = "65d18678-f268-4800-a463-0e5fb4f7ee0b" #Acolyte
+        # testCID = "770f304e-b3ce-436f-99fa-9ea4eabeb926" #Disante
+        # testCID = "9a98e65d-6e45-4a4b-b132-8b74eab8a8e5" #Pally
 
         encounter = await get_encounter_by_eid(testEID)
         encounter = loadEncounter(encounter)
         #
-        actionResult = {
-            "action": "Hurl Flame",
-            "actionEDam": 10,
-            "actionImpact": 1.07,
-            "actionProb": 0.7200000000000001,
-            "actionRanking": 1,
-            "actionType": "MonAction",
-            "actor": "Barbed Devil",
-            "base_weight": 12.057500000000001,
-            "candidateCount": 6,
-            "conditions": [],
-            "extraOutcome": {
-                "extraRollResults": [],
-                "extraDiceResults": []
-            },
-            "final_weight": 7.112488384246827,
-            "ml_weight": 7.112488384246827,
-            "outcome": {
-                "diceResults": [15],
-                "rollResults": ["19"]
-            },
-            "resultID": "91f57a28-649c-4006-b700-502c6e2ad5bf",
-            "statusEffects": [],
-            "targets": ["56f5f763-4e6b-4e5f-8cc5-5046dbc0e2a9"],
-            "timestamp": "13:54:46",
-            "token": None,
-            "useML": True
-        }
+        # actionResult = {
+        #     "action": "Hurl Flame",
+        #     "actionEDam": 10,
+        #     "actionImpact": 1.07,
+        #     "actionProb": 0.7200000000000001,
+        #     "actionRanking": 1,
+        #     "actionType": "MonAction",
+        #     "actor": "Barbed Devil",
+        #     "base_weight": 12.057500000000001,
+        #     "candidateCount": 6,
+        #     "conditions": [],
+        #     "extraOutcome": {
+        #         "extraRollResults": [],
+        #         "extraDiceResults": []
+        #     },
+        #     "final_weight": 7.112488384246827,
+        #     "ml_weight": 7.112488384246827,
+        #     "outcome": {
+        #         "diceResults": [15],
+        #         "rollResults": ["19"]
+        #     },
+        #     "resultID": "91f57a28-649c-4006-b700-502c6e2ad5bf",
+        #     "statusEffects": [],
+        #     "targets": ["56f5f763-4e6b-4e5f-8cc5-5046dbc0e2a9"],
+        #     "timestamp": "13:54:46",
+        #     "token": None,
+        #     "useML": True
+        # }
         # creature = encounter.getMonsterByCID(testCID)
-        # creature = encounter.getPlayerByCID(testCID)
-        initiative = setActiveInitiative(encounter)
-        mapdata = encounter.getMapData()
-        actorObj, action, targets, isSpell, selectedTargets = unpackEntry(actionResult, initiative)
-        print(executeAction(actorObj, action, selectedTargets,
-                            actionResult, initiative, mapdata))
+        creature = encounter.getPlayerByCID(testCID)
+        creature.setSpellSlots(6, 0)
+        creature.setSpellSlots(5, 0)
+        await saveEncounter()
+        # initiative = setActiveInitiative(encounter)
+        # mapdata = encounter.getMapData()
+        # actorObj, action, targets, isSpell, selectedTargets = unpackEntry(actionResult, initiative)
+        # print(executeAction(actorObj, action, selectedTargets,
+        #                     actionResult, initiative, mapdata))
 
         # print(monsterTurn(creature, initiative))
         # print(playerTurn(creature, initiative))
