@@ -12,6 +12,10 @@ class StatBlock(BaseModel):
     WIS: Optional[int] = None
     CHA: Optional[int] = None
 
+class NatSpell(BaseModel):
+    name : str
+    charges : str
+
 
 class AffectedCreature(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -37,6 +41,7 @@ class AffectedCreature(BaseModel):
     enemy: Optional[bool] = None
 
     spellSlots: Optional[List[List[str | int]]] = None
+    charges : Optional[List[NatSpell]] = None
 
 class AffectedCreaturesRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")

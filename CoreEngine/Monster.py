@@ -68,8 +68,9 @@ class Monster(Stats):
         spells = spells.get("spellSlots", [])
         if not (0 <= slotIndex < len(spells)):
             raise ValueError("Invalid spell slot level")
-        spells[slotIndex][0] = int(slotAmount)
-        self.__spellInfo["spellSlots"] = spells
+        if spells[slotIndex][1] != 0:
+            spells[slotIndex][0] = int(slotAmount)
+            self.__spellInfo["spellSlots"] = spells
 
     def getSpellSlots(self):
         return self.__spellInfo.get("spellSlots", [])

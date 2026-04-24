@@ -89,6 +89,7 @@ handlers = {
     "ac": main.handle_ac,
     "lResists": main.handle_l_resists,
     "spellSlots": main.handle_spell_slots,
+    "charges": main.handle_charges
 }
 
 @app.middleware("http")
@@ -554,20 +555,24 @@ async def rulesetSimulate(
 
     if isSpell:
         lvl = action.getLvl()
-        if not isPlayer(actorObj) and actorObj.getName().lower() != "lair action" and actorObj.isCaster():
-            if actorObj.hasSpellSlots():
+        if actorObj.getName().lower() != "lair action":
+            print("Is Monster Caster!")
+            if isPlayer(actorObj) or actorObj.hasSpellSlots():
+                print("Spell Slots", actorObj.getSpellSlots())
                 if lvl > 0:
                     insufficientSpellSlot = True
                     for i in range(lvl, 9):
                         current_slots = int(actorObj.getSpellSlot(i) or 0)
+                        print("Lvl", lvl, "Current Slots", current_slots)
                         if current_slots > 0:
                             actorObj.setSpellSlots(i, current_slots - 1)
+                            print("new Lvl", lvl, "Current Slots", actorObj.getSpellSlot(i))
                             insufficientSpellSlot = False
                             break
                     if insufficientSpellSlot:
                         raise HTTPException(status_code=500, detail="Insufficient spell slot")
             else:
-                if lvl > 0:
+                if not isPlayer(actorObj) and lvl > 0:
                     insufficientCharges = False
                     found = False
                     for i in range(actorObj.getSpellLength()):
