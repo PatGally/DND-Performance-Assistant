@@ -411,7 +411,7 @@ async def savePlayer(player):
 
     elif cls == "bard":
         class_fields["bardicCharges"] = player.getBardicCharges()
-        class_fields["bardicDieType"] = player.getDieType()
+        class_fields["bardicDieType"] = player.getBardicDieType()
         class_fields["magicalSecrets"] = player.getMagicalSecrets()
 
     elif cls == "cleric":
@@ -4081,19 +4081,19 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, mapd
             if len(damTypes) == 1:
                 dType = damTypes[0]
                 if creature.isResistant(dType):
-                    raw_damage /= 4
-                elif creature.isVulnerable(dType):
-                    raw_damage *= 1.5
-                elif creature.isImmune(dType):
                     raw_damage /= 2
+                elif creature.isVulnerable(dType):
+                    raw_damage *= 2
+                elif creature.isImmune(dType):
+                    raw_damage *= 0
             if "AND" in damTypes:
                 for dType in damTypes:
                     if creature.isResistant(dType):
-                        raw_damage /= 4
-                    elif creature.isVulnerable(dType):
-                        raw_damage *= 1.5
-                    elif creature.isImmune(dType):
                         raw_damage /= 2
+                    elif creature.isVulnerable(dType):
+                        raw_damage *= 2
+                    elif creature.isImmune(dType):
+                        raw_damage *= 0
             elif "OR" in damTypes:
                 if all(creature.isResistant(dType) for dType in damTypes):
                     raw_damage /= 2
@@ -4103,11 +4103,11 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, mapd
                     raw_damage *= 2
         if isinstance(damTypes, str):
             if creature.isResistant(damTypes):
-                raw_damage /= 4
-            elif creature.isVulnerable(damTypes):
-                raw_damage *= 1.5
-            elif creature.isImmune(damTypes):
                 raw_damage /= 2
+            elif creature.isVulnerable(damTypes):
+                raw_damage *= 2
+            elif creature.isImmune(damTypes):
+                raw_damage *= 0
         applied_damage = _applied_damage_amount( #Normalize damages
             raw_damage,
             succeeded,
@@ -4501,11 +4501,19 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
         else:
             print(spellList[i].getName(), "not viable")
             continue
-
-    actions = [{"name": actionNames[i], "type" : actionTypes[i], "prob": actionProbs[i], "eDam": actionEDams[i],
+    actions = []
+    for i in range(len(actionNames)):
+        try:
+            actions.append({"name": actionNames[i], "type" : actionTypes[i], "prob": actionProbs[i], "eDam": actionEDams[i],
                 "percentage" : actionPercentages[i], "impact": actionImpacts[i],
-                "actions" : actionObjects[i], "target" : actionTargets[i]} for
-               i in range(len(actionNames))]
+                "actions" : actionObjects[i], "target" : actionTargets[i]})
+        except IndexError:
+            actionPercentages.insert(i, 0)
+            actions.append(
+                {"name": actionNames[i], "type": actionTypes[i], "prob": actionProbs[i], "eDam": actionEDams[i],
+                 "percentage": actionPercentages[i], "impact": actionImpacts[i],
+                 "actions": actionObjects[i], "target": actionTargets[i]})
+            print("Error with action", actionNames[i])
     return actions
 
 def processClassAbilityAnalytics(abilities, player, initiative):
@@ -5201,11 +5209,20 @@ def monsterTurn(creature, initiative, encounter_id=None):
         else:
             continue
 
-    actions.extend(
-        [{"name": actionNames[i], "type" : actionTypes[i], "prob": actionProbs[i], "eDam": actionEDams[i],
-          "percentages" : actionPercentages[i], "action_obj" : actionObjects[i],
-          "impact": actionImpacts[i], "target" : actionTargets[i]}
-         for i in range(len(actionNames))])
+    actions = []
+    for i in range(len(actionNames)):
+        try:
+            actions.append(
+                {"name": actionNames[i], "type": actionTypes[i], "prob": actionProbs[i], "eDam": actionEDams[i],
+                 "percentage": actionPercentages[i], "impact": actionImpacts[i],
+                 "actions": actionObjects[i], "target": actionTargets[i]})
+        except IndexError:
+            actionPercentages.insert(i, 0)
+            actions.append(
+                {"name": actionNames[i], "type": actionTypes[i], "prob": actionProbs[i], "eDam": actionEDams[i],
+                 "percentage": actionPercentages[i], "impact": actionImpacts[i],
+                 "actions": actionObjects[i], "target": actionTargets[i]})
+            print("Error with action", actionNames[i])
     return rankActions(
         actions,
         actor=creature,
@@ -5314,10 +5331,20 @@ def playerTurn(player, initiative, encounter_id=None):
                     else:
                         actionPercentages.append(round(weaponEDam / hp, 2))
 
-    actions = [{"name": actionNames[i], "type" : actionTypes[i], "prob": actionProbs[i], "eDam": actionEDams[i],
-                "percentages" : actionPercentages[i], "action_obj" : actionObjects[i],
-                "impact": actionImpacts[i], "target" : actionTargets[i]} for
-               i in range(len(actionNames))]
+    actions = []
+    for i in range(len(actionNames)):
+        try:
+            actions.append(
+                {"name": actionNames[i], "type": actionTypes[i], "prob": actionProbs[i], "eDam": actionEDams[i],
+                 "percentage": actionPercentages[i], "impact": actionImpacts[i],
+                 "actions": actionObjects[i], "target": actionTargets[i]})
+        except IndexError:
+            actionPercentages.insert(i, 0)
+            actions.append(
+                {"name": actionNames[i], "type": actionTypes[i], "prob": actionProbs[i], "eDam": actionEDams[i],
+                 "percentage": actionPercentages[i], "impact": actionImpacts[i],
+                 "actions": actionObjects[i], "target": actionTargets[i]})
+            print("Error with action", actionNames[i])
     if player.getSpellLength() > 0:
         spellList = [player.getSpell(i) for i in range(player.getSpellLength())]
         spellList = merge_sort_spells(spellList)
