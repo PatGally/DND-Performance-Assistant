@@ -3233,7 +3233,7 @@ def computePerTargetConditionImpact(action, probSuccess, creature, useProbSucces
     ):
         if action.getConditions():
             for condition in action.getConditions():
-                if condition.lower() not in [c["cond"].lower() for c in
+                if condition.lower() not in [c["cond"].lower() if isinstance(c, dict) else c.lower() for c in
                                              creature.getActiveConditions()] and not creature.isActiveConImmunity(
                     condition.lower()):
                     severity += negativeConditionSeverities.get(condition.lower(), 0)
@@ -3763,15 +3763,17 @@ def endOfEncounter(initiative):
     allPlayersDead = True
     for playerTurns in initiative:
         if playerTurns["turnType"] == "Player":
-            if not playerTurns["Statblock"].isActiveCondition("Dead") and not playerTurns[
-                "Statblock"].isActiveCondition("Out of Combat"):
+            if (not playerTurns["Statblock"].isActiveCondition("Dead")
+                    and not playerTurns["Statblock"].isActiveCondition("Out of Combat")
+                    and not playerTurns["Statblock"].isActiveCondition("Downed")):
                 allPlayersDead = False
                 break
     allMonstersDead = True
     for monsterTurn in initiative:
         if monsterTurn["turnType"] == "Monster":
-            if not monsterTurn["Statblock"].isActiveCondition("Dead") and not monsterTurn[
-                "Statblock"].isActiveCondition("Out of Combat"):
+            if (not monsterTurn["Statblock"].isActiveCondition("Dead")
+                    and not monsterTurn["Statblock"].isActiveCondition("Out of Combat"))\
+                    and not monsterTurn["Statblock"].isActiveCondition("Downed"):
                 allMonstersDead = False
                 break
     return allPlayersDead or allMonstersDead
@@ -3860,7 +3862,8 @@ def endConcentration(player, concentration, initiative, mapdata):
             del mapdata["layers"]["aoeTokens"][tidx]
 
 def executeAction(actor, action, selectedTargets, actionResult, initiative, mapdata):
-    def applyEffectToTarget(creature, succeeded, damage, action, resultID):
+    def applyEffectToTarget(creature, succeeded, damage, action, actionResult):
+        resultID = actionResult["resultID"]
         rollType = action.getRollType().lower() if isinstance(action, Spell) or isinstance(action, MonAction) else "tohit"
 
         downed_before = creature.isActiveCondition("Downed")
@@ -3901,14 +3904,27 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, mapd
                 creature.removeCondition("Stabilized")
 
         if (rollType == "save" and not succeeded) or (rollType != "save" and succeeded):
-            if isinstance(action, Spell) and action.getConditions():
-                for cond in action.getConditions():
-                    addCondition(cond, creature, resultID)
+            action_conditions = []
+            action_status_effects = []
 
-            if isinstance(action, Spell) and action.getStatusEffects():
-                for effect in action.getStatusEffects():
-                    if effect["name"].lower() != "concentration":
-                        addStatusEffect(effect, creature, resultID)
+            if hasattr(action, "getConditions") and action.getConditions():
+                action_conditions.extend(action.getConditions())
+
+            if actionResult.get("conditions"):
+                action_conditions.extend(actionResult["conditions"])
+
+            if hasattr(action, "getStatusEffects") and action.getStatusEffects():
+                action_status_effects.extend(action.getStatusEffects())
+
+            if actionResult.get("statusEffects"):
+                action_status_effects.extend(actionResult["statusEffects"])
+
+            for cond in action_conditions:
+                addCondition(cond, creature, resultID)
+
+            for effect in action_status_effects:
+                if effect.get("name", "").lower() != "concentration":
+                    addStatusEffect(effect, creature, resultID)
 
             if isinstance(action, Spell) and action.getLingSaves():
                 if creature.isActiveStatusEffect("lingsave"):
@@ -4120,7 +4136,7 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, mapd
             damages[idx] = applied_damage
 
         creature = applyEffectToTarget(
-            creature, succeeded, applied_damage, action, actionResult["resultID"]
+            creature, succeeded, applied_damage, action, actionResult
         )
 
         if isinstance(action, Spell) and action.getLingEffects():
@@ -4509,10 +4525,6 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
                 "actions" : actionObjects[i], "target" : actionTargets[i]})
         except IndexError:
             actionPercentages.insert(i, 0)
-            actions.append(
-                {"name": actionNames[i], "type": actionTypes[i], "prob": actionProbs[i], "eDam": actionEDams[i],
-                 "percentage": actionPercentages[i], "impact": actionImpacts[i],
-                 "actions": actionObjects[i], "target": actionTargets[i]})
             print("Error with action", actionNames[i])
     return actions
 
@@ -5218,10 +5230,6 @@ def monsterTurn(creature, initiative, encounter_id=None):
                  "actions": actionObjects[i], "target": actionTargets[i]})
         except IndexError:
             actionPercentages.insert(i, 0)
-            actions.append(
-                {"name": actionNames[i], "type": actionTypes[i], "prob": actionProbs[i], "eDam": actionEDams[i],
-                 "percentage": actionPercentages[i], "impact": actionImpacts[i],
-                 "actions": actionObjects[i], "target": actionTargets[i]})
             print("Error with action", actionNames[i])
     return rankActions(
         actions,
@@ -5340,10 +5348,6 @@ def playerTurn(player, initiative, encounter_id=None):
                  "actions": actionObjects[i], "target": actionTargets[i]})
         except IndexError:
             actionPercentages.insert(i, 0)
-            actions.append(
-                {"name": actionNames[i], "type": actionTypes[i], "prob": actionProbs[i], "eDam": actionEDams[i],
-                 "percentage": actionPercentages[i], "impact": actionImpacts[i],
-                 "actions": actionObjects[i], "target": actionTargets[i]})
             print("Error with action", actionNames[i])
     if player.getSpellLength() > 0:
         spellList = [player.getSpell(i) for i in range(player.getSpellLength())]

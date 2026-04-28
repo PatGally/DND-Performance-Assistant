@@ -390,14 +390,7 @@ def unpackEntry(entry, activeInitiative):
         action = action["spellData"]
 
     return actorObj, action, targets, isSpell, selectedTargets
-
-@app.post("/encounter/{eid}/simulate/ruleset")
-async def rulesetSimulate(
-    eid: str,
-    entry: ActionRequest,
-    currentUser: UserInDB = Depends(getCurrentActiveUser)
-):
-    def _persist_lingering_aoe_token(encounter, token: dict) -> None:
+def _persist_lingering_aoe_token(encounter, token: dict | None) -> None:
         def _get_map_data(encounter):
             if hasattr(encounter, "getMapData"):
                 return encounter.getMapData()
@@ -410,6 +403,7 @@ async def rulesetSimulate(
                 setattr(encounter, "_Encounter__mapData", map_data)
 
         if not token or token.get("timing") != "lingering":
+            print("No lingering token found for pre-turn persistence")
             return
 
         map_data = _get_map_data(encounter)
@@ -424,6 +418,47 @@ async def rulesetSimulate(
             for existing in aoe_tokens
             if existing.get("resultID") != token.get("resultID")
         ]
+
+        aoe_tokens.append(token)
+
+        layers["aoeTokens"] = aoe_tokens
+        map_data["layers"] = layers
+        _set_map_data(encounter, map_data)
+@app.post("/encounter/{eid}/simulate/ruleset")
+async def rulesetSimulate(
+    eid: str,
+    entry: ActionRequest,
+    currentUser: UserInDB = Depends(getCurrentActiveUser)
+):
+    def _persist_lingering_aoe_token(encounter, token: dict) -> None:
+        def _get_map_data(encounter):
+            if hasattr(encounter, "getMapData"):
+                return encounter.getMapData()
+            return getattr(encounter, "_Encounter__mapData", None)
+        def _set_map_data(encounter, map_data):
+            if hasattr(encounter, "setMapData"):
+                encounter.setMapData(map_data)
+            else:
+                setattr(encounter, "_Encounter__mapData", map_data)
+
+        if not token or token.get("timing") != "lingering":
+            print("No token found")
+            return
+
+        map_data = _get_map_data(encounter)
+        print("mapData", map_data)
+        if map_data is None:
+            return
+
+        layers = map_data.setdefault("layers", {})
+        aoe_tokens = layers.setdefault("aoeTokens", [])
+
+        aoe_tokens = [
+            existing
+            for existing in aoe_tokens
+            if existing.get("resultID") != token.get("resultID")
+        ]
+        print("AOETokens", aoe_tokens)
         aoe_tokens.append(token)
 
         layers["aoeTokens"] = aoe_tokens
@@ -695,6 +730,8 @@ async def rulesetSimulate(
     except Exception as exc:
         logger.exception("ML post-action training hook failed: %s", exc)
 
+    print("Entering into persisting token logic with", token)
+
     _persist_lingering_aoe_token(encounter, token)
 
     main.logActionResult(encounter, entry)
@@ -749,21 +786,53 @@ async def manualSimulate(eid : str, affectedCreatures : AffectedCreaturesRequest
     return {"verification" : "true"}
 
 @app.post("/encounter/{eid}/simulate/preturn")
-async def preTurnSimulate(eid : str, entry : PreTurnRequest, currentUser : UserInDB = Depends(getCurrentActiveUser)):
+async def preTurnSimulate(
+    eid: str,
+    entry: PreTurnRequest,
+    currentUser: UserInDB = Depends(getCurrentActiveUser)
+):
+    def _normalize_token_anchor_for_map(anchor):
+        if isinstance(anchor, dict):
+            return {
+                "x": int(anchor.get("x", 0)),
+                "y": int(anchor.get("y", 0)),
+            }
+
+        if isinstance(anchor, list) and len(anchor) == 2:
+            return {
+                "x": int(anchor[0]),
+                "y": int(anchor[1]),
+            }
+
+        return {"x": 0, "y": 0}
+
     encounter = main.loadEncounter(await getEncounter(eid, currentUser))
     mapdata = encounter.getMapData()
     activeInitiative = main.setActiveInitiative(encounter)
+
+    token_model = entry.token
     entry = entry.model_dump(mode="json", by_alias=True)
 
+    token = token_model.model_dump(mode="json") if token_model else None
+    if token:
+        token["anchor"] = _normalize_token_anchor_for_map(token.get("anchor"))
+        token["timing"] = str(token.get("timing", "")).strip().lower()
+
     actorObj, action, targets, isSpell, selectedTargets = unpackEntry(entry, activeInitiative)
+
     main.executeAction(actorObj, action, selectedTargets, entry, activeInitiative, mapdata)
-    print(entry)
-    if entry["preTurnMeta"].lower() == "lingsave" and entry["outcome"]["rollResults"][0] == "y":
-        await main.saveEncounter(encounter)
-        return {"savedOut" : True}
-    else:
-        await main.saveEncounter(encounter)
-        return {"savedOut" : False}
+
+    _persist_lingering_aoe_token(encounter, token)
+
+    saved_out = (
+        entry["preTurnMeta"].lower() == "lingsave"
+        and entry["outcome"]["rollResults"]
+        and entry["outcome"]["rollResults"][0] == "y"
+    )
+
+    await main.saveEncounter(encounter)
+
+    return {"savedOut": saved_out}
 
 @app.post("/encounter/{eid}/creature/{cid}/simulate/movement")
 async def movementSimulate(eid : str, cid : str, newPos : List[List[int]], currentUser : UserInDB = Depends(getCurrentActiveUser)):
@@ -1090,6 +1159,7 @@ async def endOfEncounter(eid : str, currentUser : UserInDB = Depends(getCurrentA
         return {"isEnd" : True}
     initiative = main.setActiveInitiative(encounter)
     isEnd = main.endOfEncounter(initiative)
+    print("isEnd", isEnd)
     if isEnd and not encounter.isComplete():
         logger.info("End of encounter - setting complete...")
         encounter.setComplete(True)
