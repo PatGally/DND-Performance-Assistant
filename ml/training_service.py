@@ -73,8 +73,6 @@ async def load_all_labeled_records() -> List[Record]:
         _load_labeled_records_from_cursor(mon_cursor),
     )
 
-    total = len(weapon_rows) + len(spell_rows) + len(mon_rows)
-
     return list(weapon_rows) + list(spell_rows) + list(mon_rows)
 
 
