@@ -44,13 +44,18 @@ class AoeTokenPayload(BaseModel):
     @field_validator("anchor", mode="before")
     @classmethod
     def validate_anchor(cls, v: Any) -> List[int]:
+        if isinstance(v, dict):
+            v = [v.get("x"), v.get("y")]
+
         if (
-            not isinstance(v, list)
-            or len(v) != 2
-            or not all(isinstance(n, int) for n in v)
+                not isinstance(v, list)
+                or len(v) != 2
+                or not all(isinstance(n, int) for n in v)
         ):
             raise ValueError("anchor must be [int, int]")
+
         return v
+
 
     @field_validator("name", "token_image", "resultID", "cid", "timing", "shape", mode="before")
     @classmethod

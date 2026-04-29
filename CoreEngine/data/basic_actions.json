@@ -19,7 +19,12 @@
         "conditions": [
           "restrained"
         ],
-        "statusEffect": [],
+        "statusEffect": [
+          {
+            "name": "Concentration",
+            "effect": {}
+          }
+        ],
         "lingEffect": [],
         "extraEffect": {},
         "lingSave": {
@@ -91,37 +96,6 @@
           }
         ],
         "lingEffect": [],
-        "extraEffect": {},
-        "lingSave": {},
-        "scaling": "",
-        "actionCost": "action",
-        "specialNotes": [
-          "1Turn"
-        ]
-      }
-    ]
-  },
-  {
-    "spellname": "Hide",
-    "targeting": [
-      {
-        "self": true,
-        "number": 0,
-        "rolls": {
-          "rollType": "autoHit",
-          "saveType": "none",
-          "halfSave": false,
-          "damage": "",
-          "damageMod": ""
-        },
-        "damType": [
-          ""
-        ],
-        "conditions": [
-          "Invisible"
-        ],
-        "statusEffect": [],
-        "lingEffect": {},
         "extraEffect": {},
         "lingSave": {},
         "scaling": "",

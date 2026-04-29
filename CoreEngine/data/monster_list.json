@@ -18394,11 +18394,11 @@
                         "saveType": "CON",
                         "halfSave": true,
                         "saveDC": "15",
-                        "damage": "45",
+                        "damage": "10d8",
                         "damMod": "0"
                     },
                     "damType": [
-                        "(10d8)"
+                        "poison"
                     ],
                     "conditions": [
                         ""
