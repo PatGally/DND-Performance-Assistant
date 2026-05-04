@@ -270,14 +270,14 @@ async def actionRecommendation(eid: str, cid: str, currentUser: UserInDB = Depen
     players = [encounter.getPlayer(i) for i in range(encounter.playerSize())]
     playercids = [player.getCID().lower() for player in players]
 
-    if cid.lower() in playercids:
+    if cid in playercids:
         player = players[playercids.index(cid.lower())]
         rankings = main.playerTurn(player, initiative, encounter_id=eid)
         return rankings
     else:
         monsters = [encounter.getMonster(i) for i in range(encounter.monsterSize())]
         monstercids = [monster.getCID().lower() for monster in monsters]
-        if cid.lower() in monstercids:
+        if cid in monstercids:
             monster = monsters[monstercids.index(cid.lower())]
             rankings = main.monsterTurn(monster, initiative, encounter_id=eid)
             return rankings
@@ -1247,6 +1247,8 @@ async def postPlayerToPlayerList(player : Union[AnyPlayer, Player], currentUser:
         raise HTTPException(status_code=500, detail=f"Failed to save player: {err}")
     await addPlayerToUser(currentUser.username, playerJSON["stats"]["cid"])
     return dict(verification="true")
+
+
 
 
 #USER AUTH METHODS

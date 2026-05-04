@@ -768,8 +768,6 @@ async def saveEncounter(encounter):
     except PyMongoError as err:
         raise err
 def loadEncounter(encounterData):
-    # REFACTORING NOTES:
-    # Uses encounterData from parameter instead of pulling it here.
     if encounterData["completed"]:
         return None
     mapData = encounterData["mapdata"] if "mapdata" in encounterData else {}
@@ -841,10 +839,10 @@ def _as_int_feet(rng):
             m = re.search(r"-?\d+", s)
             return int(m.group()) if m else None
         return None
-def _chebyshev_tiles(p1, p2):
-    # diagonal counts as 1 tile
-    return max(abs(p1[0] - p2[0]), abs(p1[1] - p2[1]))
 def _min_creature_distance_tiles(tiles_a, tiles_b):
+    def _chebyshev_tiles(p1, p2):
+        # diagonal counts as 1 tile
+        return max(abs(p1[0] - p2[0]), abs(p1[1] - p2[1]))
     if not tiles_a or not tiles_b:
         return math.inf
     best = math.inf
@@ -3860,7 +3858,6 @@ def endConcentration(player, concentration, initiative, mapdata):
     for tidx, token in enumerate(mapdata["layers"]["aoeTokens"]):
         if token["resultID"] in concentration["effect"]["resultID"]:
             del mapdata["layers"]["aoeTokens"][tidx]
-
 def executeAction(actor, action, selectedTargets, actionResult, initiative, mapdata):
     def applyEffectToTarget(creature, succeeded, damage, action, actionResult):
         resultID = actionResult["resultID"]
@@ -4243,7 +4240,6 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, mapd
                 actionResult["turnCount"] = 0
                 actionResult["turnCap"] = int(note.lower().split("turn")[0])
                 break
-
 def endSpellEffect(effect, idx, creature):
     # Ends any long-lasting effect that a creature has from a given spell
     # - and ends concentration if nobody else is under that spell.
@@ -4309,6 +4305,7 @@ def endSpellEffect(effect, idx, creature):
 
 #ENCOUNTER RUNTIME METHODS
 def merge_sort_spells(spell_list):
+    #Sort by name and level
     if len(spell_list) <= 1:
         return spell_list
 
@@ -4527,13 +4524,11 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
             actionPercentages.insert(i, 0)
             print("Error with action", actionNames[i])
     return actions
-
 def processClassAbilityAnalytics(abilities, player, initiative):
     # TODO: Read through abilities list
     # abilities are the already translated class objects
     # Then process using player and initiative like other analytics.
     pass
-
 def _extract_prob_value(prob) -> float:
     if isinstance(prob, (int, float)):
         return float(prob)
@@ -4640,20 +4635,18 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
     def getBaseRankings():
         KEYS = ("prob", "rankEDam", "rankImpact")
 
-        SEG_RE = re.compile(
+        SEG_RE = re.compile( #Parses the probability
             r"^\s*(?P<a>\d*\.?\d+)\s*(?:-\s*(?P<b>\d*\.?\d+))?\s*(?P<tag>LS|LE|EE)?\s*$",
             re.IGNORECASE,
         )
 
         def _mid(a, b):
             return (a + b) / 2.0 if b is not None else a
-
         def _safe_float(value, default=0.0):
             try:
                 return float(value)
             except (TypeError, ValueError):
                 return default
-
         def parse_prob_segments(prob_str_or_num):
             if isinstance(prob_str_or_num, (int, float)):
                 return float(prob_str_or_num), {}
@@ -4695,7 +4688,6 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
                 parts[tag] = _mid(a, b)
 
             return initial, parts
-
         def prob_score_weighted(initial, parts, weights=None):
             if weights is None:
                 weights = {"INIT": 0.70, "LS": 0.10, "LE": 0.10, "EE": 0.10}
@@ -4713,14 +4705,12 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
                     score += used[tag] * parts[tag]
 
             return score / denom if denom else initial
-
         def prob_score_multiplicative(initial, parts):
             score = initial
             for tag in ("LS", "LE", "EE"):
                 if tag in parts:
                     score *= parts[tag]
             return score
-
         def extract_percentage_value(percentages):
             if not percentages:
                 return 0.0
