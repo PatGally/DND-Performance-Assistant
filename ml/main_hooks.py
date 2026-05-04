@@ -31,14 +31,6 @@ def _extract_prob_value(prob) -> float:
     return 0.0
 
 
-def _compute_base_weight(prob_value: float, expected_damage: float, impact: float) -> float:
-    return (
-        float(prob_value) * 1.0
-        + float(expected_damage or 0.0) * 1.0
-        + float(impact or 0.0) * 1.25
-    )
-
-
 def _sum_numeric(values: Any) -> float:
     total = 0.0
     for value in values or []:
@@ -170,14 +162,11 @@ def build_scored_training_record_inputs(
     aoe_token: Optional[Dict[str, Any]] = None,
     action_result: Optional[Dict[str, Any]] = None,
     turn_context: Optional[Dict[str, Any]] = None,
-    base_weight_override: Optional[float] = None,
+    base_weight: Optional[float] = None,
 ) -> Dict[str, Any]:
     prob_value = _extract_prob_value(prob)
 
-    if base_weight_override is None:
-        base_weight = _compute_base_weight(prob_value, expected_damage, impact)
-    else:
-        base_weight = float(base_weight_override)
+    base_weight = float(base_weight)
 
     normalized_targets = _normalize_targets(targets)
     target_snapshot = _build_target_snapshot(normalized_targets)

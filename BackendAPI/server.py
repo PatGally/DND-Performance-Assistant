@@ -699,7 +699,7 @@ async def rulesetSimulate(
             aoe_token=token,
             action_result=entry,
             turn_context=turn_context,
-            base_weight_override=frontend_base_weight,
+            base_weight=frontend_base_weight,
         )
 
         await persist_labeled_action_record(
