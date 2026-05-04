@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import Set, List, Dict, Any, Tuple, Optional
 from pymongo.errors import PyMongoError
 from scipy.stats import norm
-from ml.main_hooks import make_training_record, predict_action_weight, _compute_base_weight
+from ml.main_hooks import make_training_record, predict_action_weight
 from CoreEngine import Weapon, Spell, Monster, Player, Encounter, MonAction
 from CoreEngine.DNDClasses import (
     Barbarian,
@@ -4883,6 +4883,7 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
 
             for i, x in enumerate(enriched, start=1):
                 x["overallRank"] = i
+                x["base_weight"] = float((2.0 if x["pareto"] else 0.0) + x["topsis"])
 
             return enriched
 
@@ -4923,14 +4924,7 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
         row["eDam"] = float(row["eDam"])
         row["impact"] = float(row["impact"])
 
-
-        row["base_weight"] = float(
-            _compute_base_weight(
-                row["prob"],
-                row["eDam"],
-                row["impact"],
-            )
-        )
+        row["base_weight"] = float(row.get("base_weight", 0.0))
 
         row["ml_weight"] = None
         row["final_weight"] = row["base_weight"]
@@ -4965,29 +4959,6 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
 
     for i, action in enumerate(prepared, start=1):
         action["overallRank"] = i
-
-    for action in prepared:
-        if "target" in action and action["target"]:
-            if isinstance(action["target"], list):
-                new_targets = []
-                for t in action["target"]:
-                    if isinstance(t, str):
-                        new_targets.append(t)
-                    elif hasattr(t, "getName"):
-                        new_targets.append(t.getName())
-                    else:
-                        new_targets.append(t)
-                action["target"] = new_targets
-            elif isinstance(action["target"], dict) and "targetsHit" in action["target"]:
-                fixed = []
-                for t in action["target"]["targetsHit"]:
-                    if isinstance(t, str):
-                        fixed.append(t)
-                    elif hasattr(t, "getName"):
-                        fixed.append(t.getName())
-                    else:
-                        fixed.append(t)
-                action["target"]["targetsHit"] = fixed
 
     for action in prepared:
         action.pop("actions", None)
