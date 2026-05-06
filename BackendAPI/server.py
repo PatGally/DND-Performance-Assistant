@@ -270,14 +270,14 @@ async def actionRecommendation(eid: str, cid: str, currentUser: UserInDB = Depen
     players = [encounter.getPlayer(i) for i in range(encounter.playerSize())]
     playercids = [player.getCID().lower() for player in players]
 
-    if cid.lower() in playercids:
+    if cid in playercids:
         player = players[playercids.index(cid.lower())]
         rankings = main.playerTurn(player, initiative, encounter_id=eid)
         return rankings
     else:
         monsters = [encounter.getMonster(i) for i in range(encounter.monsterSize())]
         monstercids = [monster.getCID().lower() for monster in monsters]
-        if cid.lower() in monstercids:
+        if cid in monstercids:
             monster = monsters[monstercids.index(cid.lower())]
             rankings = main.monsterTurn(monster, initiative, encounter_id=eid)
             return rankings
@@ -323,7 +323,6 @@ async def endPreEffect(eid : str, cid : str, resultID : str, currentUser : UserI
     effect = {}
     for eff in statEffects:
         if eff["name"].lower() in ["lingsave", "lingeffect"]:
-            print("Against", eff["effect"]["resultID"])
             if isinstance(eff["effect"]["resultID"], list):
                 for i, id in enumerate(eff["effect"]["resultID"]):
                     if resultID == id:
@@ -403,7 +402,6 @@ def _persist_lingering_aoe_token(encounter, token: dict | None) -> None:
                 setattr(encounter, "_Encounter__mapData", map_data)
 
         if not token or token.get("timing") != "lingering":
-            print("No lingering token found for pre-turn persistence")
             return
 
         map_data = _get_map_data(encounter)
@@ -442,11 +440,9 @@ async def rulesetSimulate(
                 setattr(encounter, "_Encounter__mapData", map_data)
 
         if not token or token.get("timing") != "lingering":
-            print("No token found")
             return
 
         map_data = _get_map_data(encounter)
-        print("mapData", map_data)
         if map_data is None:
             return
 
@@ -458,7 +454,6 @@ async def rulesetSimulate(
             for existing in aoe_tokens
             if existing.get("resultID") != token.get("resultID")
         ]
-        print("AOETokens", aoe_tokens)
         aoe_tokens.append(token)
 
         layers["aoeTokens"] = aoe_tokens
@@ -591,17 +586,13 @@ async def rulesetSimulate(
     if isSpell:
         lvl = action.getLvl()
         if actorObj.getName().lower() != "lair action":
-            print("Is Monster Caster!")
             if isPlayer(actorObj) or actorObj.hasSpellSlots():
-                print("Spell Slots", actorObj.getSpellSlots())
                 if lvl > 0:
                     insufficientSpellSlot = True
                     for i in range(lvl, 9):
                         current_slots = int(actorObj.getSpellSlot(i) or 0)
-                        print("Lvl", lvl, "Current Slots", current_slots)
                         if current_slots > 0:
                             actorObj.setSpellSlots(i, current_slots - 1)
-                            print("new Lvl", lvl, "Current Slots", actorObj.getSpellSlot(i))
                             insufficientSpellSlot = False
                             break
                     if insufficientSpellSlot:
@@ -699,7 +690,7 @@ async def rulesetSimulate(
             aoe_token=token,
             action_result=entry,
             turn_context=turn_context,
-            base_weight_override=frontend_base_weight,
+            base_weight=frontend_base_weight,
         )
 
         await persist_labeled_action_record(
@@ -730,7 +721,6 @@ async def rulesetSimulate(
     except Exception as exc:
         logger.exception("ML post-action training hook failed: %s", exc)
 
-    print("Entering into persisting token logic with", token)
 
     _persist_lingering_aoe_token(encounter, token)
 
@@ -1159,7 +1149,6 @@ async def endOfEncounter(eid : str, currentUser : UserInDB = Depends(getCurrentA
         return {"isEnd" : True}
     initiative = main.setActiveInitiative(encounter)
     isEnd = main.endOfEncounter(initiative)
-    print("isEnd", isEnd)
     if isEnd and not encounter.isComplete():
         logger.info("End of encounter - setting complete...")
         encounter.setComplete(True)
@@ -1247,6 +1236,8 @@ async def postPlayerToPlayerList(player : Union[AnyPlayer, Player], currentUser:
         raise HTTPException(status_code=500, detail=f"Failed to save player: {err}")
     await addPlayerToUser(currentUser.username, playerJSON["stats"]["cid"])
     return dict(verification="true")
+
+
 
 
 #USER AUTH METHODS
