@@ -3976,7 +3976,6 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, mapd
 
         return 0
 
-    print("EXECUTE ENTRY", actionResult)
 
     outcomes = actionResult["outcome"]["rollResults"]
     damages = actionResult["outcome"]["diceResults"]
@@ -4359,11 +4358,9 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
     actionObjects = []
 
     for i in range(len(spellList)):
-        print(spellList[i].getName())
         if actionViabilityCheck(spellList[i], initEntry, initiative, isPlayerTurn):
             spellName = spellList[i].getName()
             if spellName.lower() in ["thunderous smite"]:
-                print("DEBUG")
             try:
                 spellProb = 0
                 spellEDam = -1
@@ -4509,10 +4506,8 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
                     else:
                         actionPercentages.append(round(spellEDam / hp, 2))
             except:
-                print("Error with action ", spellName)
                 continue
         else:
-            print(spellList[i].getName(), "not viable")
             continue
     actions = []
     for i in range(len(actionNames)):
@@ -4522,7 +4517,6 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
                 "actions" : actionObjects[i], "target" : actionTargets[i]})
         except IndexError:
             actionPercentages.insert(i, 0)
-            print("Error with action", actionNames[i])
     return actions
 def processClassAbilityAnalytics(abilities, player, initiative):
     # TODO: Read through abilities list
@@ -5191,7 +5185,6 @@ def monsterTurn(creature, initiative, encounter_id=None):
                  "actions": actionObjects[i], "target": actionTargets[i]})
         except IndexError:
             actionPercentages.insert(i, 0)
-            print("Error with action", actionNames[i])
     return rankActions(
         actions,
         actor=creature,
@@ -5309,7 +5302,6 @@ def playerTurn(player, initiative, encounter_id=None):
                  "actions": actionObjects[i], "target": actionTargets[i]})
         except IndexError:
             actionPercentages.insert(i, 0)
-            print("Error with action", actionNames[i])
     if player.getSpellLength() > 0:
         spellList = [player.getSpell(i) for i in range(player.getSpellLength())]
         spellList = merge_sort_spells(spellList)
@@ -5484,25 +5476,17 @@ def main():
         # initiative = setActiveInitiative(encounter)
         # mapdata = encounter.getMapData()
         # actorObj, action, targets, isSpell, selectedTargets = unpackEntry(actionResult, initiative)
-        # print(executeAction(actorObj, action, selectedTargets,
         #                     actionResult, initiative, mapdata))
 
-        # print(monsterTurn(creature, initiative))
-        # print(playerTurn(creature, initiative))
 
         # actorObj, action, targets, isSpell, selectedTargets = unpackEntry(actionRequest, initiative)
         #
         # if not action:
         #     return
 
-        # print(executeAction(actorObj, action,
-        #             selectedTargets, actionRequest,
-        #                     initiative, mapdata))
 
         # await saveEncounter(encounter)
 
-        # print(monsterTurn(creature, initiative)) #MONSTER
-        # print(playerTurn(creature, initiative)) #PLAYER
 
         #TODO: Try PA recommendations, check for correctness
         #TODO: Try rulesetSimulate alot, check for correctness.
