@@ -98,4 +98,4 @@ class Encounter:
     def addInitiative(self, creature):
         self.__initiative.append(creature)
     def setInitiative(self, initiative):
-        self.__initiative = initiative
+        self.__initiative = [creature for creature in initiative]

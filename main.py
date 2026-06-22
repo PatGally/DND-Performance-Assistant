@@ -35,6 +35,7 @@ WEAPONS_LIST_FILE = os.path.join(DATA_DIR, "weapons_list.json")
 BASIC_ACTION_LIST_FILE = os.path.join(DATA_DIR, "basic_actions.json")
 
 Coord = Tuple[int, int]
+DEFAULT_PLAYER_MOVEMENT_MAX = 30
 
 # PLAYER/MONSTER/SPELL/WEAPON CREATE/SAVE/LOAD METHODS
 def getPlayerStats(data):
@@ -139,12 +140,15 @@ def getPlayerStats(data):
 
     cid = stats["cid"]
     position = stats["position"]
+    movementMax = int(stats.get("movementMax", DEFAULT_PLAYER_MOVEMENT_MAX))
 
     spellSlots = stats["spellSlots"]
 
     playerdata = [playerName, playerStats, saveProfs, playerAC, playerHP, class_type, playerLvl, conImmunes, damImmunes,
                   damResists, damVulns, activeStatusEffects, activeConditions, cid, position, spellSlots]
-    return getClassStats(data, playerdata, class_type)
+    player = getClassStats(data, playerdata, class_type)
+    player.setMovementMax(movementMax)
+    return player
 def getSavedWeapons(player, data):
     searchdata = copy.deepcopy(data)
     for i, w in enumerate(searchdata):
@@ -370,6 +374,7 @@ async def savePlayer(player):
         "maxhp": str(player.getMaxHP()),
         "cid": str(player.getCID()),
         "position": player.getPosition(),
+        "movementMax": player.getMovementMax(),
         "characterClass": player.getClass(),
         "conImmunes": player.getConImmunes(),
         "activeStatusEffects": player.getActiveStatusEffects(),
@@ -672,6 +677,7 @@ async def saveEncounter(encounter):
             "maxhp": str(player.getMaxHP()),
             "cid": str(player.getCID()),
             "position": player.getPosition(),
+            "movementMax": player.getMovementMax(),
             "characterClass": player.getClass(),
             "conImmunes": player.getConImmunes(),
             "activeStatusEffects": player.getActiveStatusEffects(),
@@ -760,7 +766,7 @@ async def saveEncounter(encounter):
         "monsters": monster_list,
         "players": player_list,
         "results": result_list,
-        "initiative": encounter.getInitiative(),
+        "initiative": encounter.getInitiative()
     }
 
     try:
@@ -813,17 +819,17 @@ def loadEncounter(encounterData):
         cid = monsterJSON.get("cid", "")
         position = monsterJSON.get("position", [0, 0])
         size = monsterJSON.get("size", "medium")
-        movement = monsterJSON.get("movement", 0)
+        movementMax = monsterJSON.get("movementMax", DEFAULT_PLAYER_MOVEMENT_MAX)
         encounter.addMonster(Monster(name, cr, cType, stats, hp, maxHP,
                                      ac, saveProfs, lResists, damResists,
                                      damImmunes, damVulns, conImmunes, activeConditions,
                                      activeStatusEffects, lairAction, magicResist,
                                      enemy, actions, spellInfo, legActions,
-                                     cid, position, size, movement))
+                                     cid, position, size, movementMax))
     for resultJSON in encounterData["results"]:
         encounter.addResult(resultJSON)
 
-    encounter.setInitiative(encounterData["initiative"])
+    encounter.setInitiative(encounterData.get("initiative"))
     return encounter
 
 # GENERAL HELPER METHODS
@@ -943,16 +949,8 @@ def translateBasicAction(creature, action):
                      statusEffect, lingEffect, extraEffect, lingSaves,
                      "action", "", [])
 def defineBasicActions(
-    actionNames,
-    actionTypes,
-    actionProbs,
-    actionEDams,
-    actionImpacts,
-    actionTargets,
-    actionObjs,
-    initEntry,
-    initiative,
-    isPlayerTurn,
+    actionNames, actionTypes, actionProbs, actionEDams, actionImpacts, actionTargets,
+    actionObjs, initEntry, initiative, isPlayerTurn,
 ):
     # Load basic actions
     try:
@@ -1351,6 +1349,7 @@ def getMultiTargetWeights(player, action, initiative):
     weights = weights[0 : min(action.getNumTarget(), len(weights))]
     return weights
 def isValidTarget(action, creature, actorPos, isPlayerTurn=True):
+    validTarget = False
     if isPlayerTurn:
         if isinstance(action, Weapon) or ((isinstance(action, Spell) or isinstance(action, MonAction)) and action.getDamType() != "healing"):
             if (creature["turnType"] == "Monster"
@@ -1365,7 +1364,25 @@ def isValidTarget(action, creature, actorPos, isPlayerTurn=True):
                     or (creature["turnType"] == "Monster" and creature["Statblock"].isActiveStatusEffect("SwitchSides"))
                     and not creature["Statblock"].isActiveCondition("Dead")
                     and not creature["Statblock"].isActiveCondition("Out of Combat")):
-                validTarget = True
+                if (action.getSpecialNotes()
+                        and any([("only" in note.lower() or "immune" in note.lower()) for note in action.getSpecialNotes()])):
+                    for note in action.getSpecialNotes():
+                        if "only" in note.lower():
+                            if creature["Statblock"].getCreatureType().lower() == note.lower().split("only")[0]:
+                                validTarget = True
+                                break
+                            else:
+                                validTarget = False
+                                break
+                        elif "immune" in note.lower():
+                            if creature["Statblock"].getCreatureType().lower() == note.lower().split("immune")[0]:
+                                validTarget = False
+                                break
+                            else:
+                                validTarget = True
+                                break
+                else:
+                    validTarget = True
             else:
                 validTarget = False
         else:
@@ -1376,7 +1393,15 @@ def isValidTarget(action, creature, actorPos, isPlayerTurn=True):
                     and not creature["Statblock"].isActiveStatusEffect("SwitchSides")
                     and not creature["Statblock"].isActiveCondition("Dead")
                     and not creature["Statblock"].isActiveCondition("Out of Combat")):
-                validTarget = True
+                if (action.getSpecialNotes()
+                        and any([("humanoidimmune" in note.lower()) for note in
+                                 action.getSpecialNotes()])):
+                    for note in action.getSpecialNotes():
+                        if "humanoidimmune" in note.lower():
+                            validTarget = False
+                            break
+                else:
+                    validTarget = True
             else:
                 validTarget = False
         elif action.getDamType() == "healing":
@@ -2728,7 +2753,7 @@ def saveSpecialNotesCheck(action, creature):
     if specialNotes:
         creatureType = creature.getCreatureType() if isinstance(creature, Monster) else "humanoid"
         for note in specialNotes:
-            if "only" in note.lower() and creatureType not in specialNotes():
+            if "only" in note.lower() and creatureType not in specialNotes:
                 return None
             elif "immune" in note.lower() and creatureType in note:
                 immunities = copy.deepcopy(creature.getDamImmunities())
@@ -4579,8 +4604,6 @@ def _score_action_with_ml(
 
     ml_weight = predict_action_weight(record)
     return ml_weight, record
-
-
 def _extract_prob_value(prob) -> float:
     if isinstance(prob, (int, float)):
         return float(prob)
@@ -4955,7 +4978,6 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
         action.pop("ml_record", None)
 
     return prepared
-
 def actionViabilityCheck(action, activeInitiativeEntry, initiative, isPlayerTurn):
     def spellSlotValidity(spellSlots):
         spellLvl = action.getLvl() - 1
@@ -5009,6 +5031,26 @@ def actionViabilityCheck(action, activeInitiativeEntry, initiative, isPlayerTurn
             return True
         if action.getDamType() == "healing" or "healing" in action.getDamType():
             return True
+        if action.getSpecialNotes():
+            def invalidSpecialNote(note):
+                note = note.lower()
+                onlyType = "only" in note
+                cType = note.split("only")[0].lower() if onlyType else note.split("immune")[0].lower()
+                if onlyType and not any([c["Statblock"].getCreatureType().lower() == cType for c in initiative]):
+                    return True
+                else:
+                    for c in initiative:
+                        if isinstance(c["Statblock"], Monster) and c["Statblock"].getCreatureType().lower() != cType:
+                            return False
+                    return True
+            notes = action.getSpecialNotes()
+            if any([("only" in note.lower() or "immune" in note.lower()) for note in action.getSpecialNotes()]):
+                for note in notes:
+                    if "only" in note.lower() or "immune" in note.lower():
+                        if invalidSpecialNote(note):
+                            return False
+                        else:
+                            break
 
     actor_tiles = _normalize_occupied_tiles(activeInitiativeEntry["Statblock"].getPosition())
 
@@ -5385,8 +5427,8 @@ def handle_charges(creature, spells):
             for i, spellData in enumerate(creature.getSpellInfo()["spells"]):
                 if spellData["name"].lower() == spell["name"] and spellData["charges"] != "At Will":
                     creature.getSpellInfo()["spells"][i]["charges"] = spell["charges"]
-
 def unpackEntry(entry, activeInitiative):
+    #Used for rulesetSimulate in order to receive action data from various entries.
     actor = entry["actor"]
     actorObj = ""
     action = entry["action"]

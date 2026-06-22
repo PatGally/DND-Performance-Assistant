@@ -3,7 +3,7 @@ import math
 
 class Stats:
     def __init__(self, stats, saveProfs, damImmunes, damResists, damVulns, conImmunes,
-                 activeStatusEffects, activeConditions, cid, position):
+                 activeStatusEffects, activeConditions, cid, position, movementMax=30):
         self.__stats = stats
         self.__modifiers = self.calcMods()
         if saveProfs:
@@ -27,9 +27,16 @@ class Stats:
         self.__activeConditions = activeConditions
         self.__cid = cid
         self.__position = position
+        self.__movementMax = movementMax
 
     def getCID(self):
         return self.__cid
+
+    def setMovementMax(self, movementMax):
+        self.__movementMax = int(movementMax)
+
+    def getMovementMax(self):
+        return self.__movementMax
 
     def setPosition(self, newPos):
         self.__position = newPos

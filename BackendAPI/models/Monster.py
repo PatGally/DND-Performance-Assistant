@@ -101,8 +101,6 @@ class Monster(Stats):
     lair_action: bool = Field(default=False, alias="lairAction")
     enemy: bool = Field(default=False)
     size : str = Field(alias="size")
-    movement : int = Field(alias="movement")
-
 
     actions: List[MonAction] = Field(default_factory=list)
 
@@ -142,6 +140,9 @@ class Monster(Stats):
         # actions can be missing/null
         if d.get("actions") is None:
             d["actions"] = []
+
+        if "movementMax" not in d:
+            d["movementMax"] = 30
 
         return d
 
