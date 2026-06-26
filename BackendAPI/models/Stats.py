@@ -92,6 +92,7 @@ class Stats(BaseModel):
     max_hp: int = Field(default=0, alias="maxhp")
     position : List[List[int]] = Field(min_length=1, alias="position")
     cid: str = Field(default_factory=lambda: str(uuid4()), alias="cid")
+    movement_max: int = Field(default=30, alias="movementMax")
 
     @computed_field
     @property
@@ -161,7 +162,7 @@ class Stats(BaseModel):
             out.append(item)
         return out
 
-    @field_validator("hp", "max_hp", mode="before")
+    @field_validator("hp", "max_hp", "movement_max", mode="before")
     @classmethod
     def coerce_hp_fields(cls, v):
         return _coerce_int(v, default=0)

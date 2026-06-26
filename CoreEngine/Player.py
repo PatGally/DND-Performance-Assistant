@@ -7,10 +7,11 @@ from .Weapon import Weapon
 
 class Player(Stats):
     def __init__(self, name, stats, saveProfs, ac, hp, class_type, level, conImmunities,
-                 damImmunes, damResists, damVulns, activeStatusEffects, activeConditions, cid, position, spellSlots=None):
+                 damImmunes, damResists, damVulns, activeStatusEffects, activeConditions, cid, position, spellSlots=None,
+                 movementMax=30):
         super().__init__(stats, saveProfs, damImmunes,
                          damResists, damVulns, conImmunities,
-                         activeStatusEffects, activeConditions, cid, position)
+                         activeStatusEffects, activeConditions, cid, position, movementMax)
         self.__name = name
         self.__class_type = class_type.lower()
         self.__level = level

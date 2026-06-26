@@ -824,10 +824,7 @@ async def preTurnSimulate(
 
     return {"savedOut": saved_out}
 
-@app.post("/encounter/{eid}/creature/{cid}/simulate/movement")
-async def movementSimulate(eid : str, cid : str, newPos : List[List[int]], currentUser : UserInDB = Depends(getCurrentActiveUser)):
-    encounter = main.loadEncounter(await getEncounter(eid, currentUser))
-    creature = await getCreatureObj(encounter, cid)
+def sharedMovementErrorContext(encounter, creature, newPos, ruleset=False, newAnchorDistance=0):
     size = creature.getSize()
     bad = False
     message = ""
@@ -850,18 +847,29 @@ async def movementSimulate(eid : str, cid : str, newPos : List[List[int]], curre
     allPositions.extend([monster.getPosition() for monster in monsters])
     currentPos = creature.getPosition()
     allPositions.remove(currentPos)
+    max_X = encounter.getMapData()["grid"]["cellBounds"]["cols"]
+    max_Y = encounter.getMapData()["grid"]["cellBounds"]["rows"]
+
     for pos2D in allPositions:
         for pos in newPos:
-            if pos in pos2D and currentPos not in pos2D:
+            if max_X in pos or max_Y in pos:
                 bad = True
-                message = f"Position collision detected"
+                message = f"Out of Bounds!"
+            if ruleset:
+                if pos in pos2D and currentPos not in pos2D:
+                    bad = True
+                    message = f"Position collision detected"
 
-    #TODO in summer: Check if newPos is within movement range of currentPos, according to movementResource of creature.
+    if ruleset:
+        if (creature.getMovementMax() // 5) - newAnchorDistance < 0:
+            print(newAnchorDistance, creature.getMovementMax())
+            bad = True
+            message = f"Insufficient movement"
 
     if bad:
+        print("BAD MOVEMENT: ", message)
         raise HTTPException(status_code=500, detail=message)
-    creature.setPosition(newPos)
-
+def sharedTokenContext(encounter, creature, newPos):
     tokens = encounter.getMapData()["layers"]["aoeTokens"]
     token = {}
     for t in tokens:
@@ -910,6 +918,43 @@ async def movementSimulate(eid : str, cid : str, newPos : List[List[int]], curre
                         del lingEff["effect"]["action"][ridx]
                         break
 
+@app.post("/encounter/{eid}/creature/{cid}/simulate/manual-movement")
+async def movementSimulateMANUAL(eid : str, cid : str, newPos : List[List[int]], currentUser : UserInDB = Depends(getCurrentActiveUser)):
+    encounter = main.loadEncounter(await getEncounter(eid, currentUser))
+    creature = await getCreatureObj(encounter, cid)
+    initEntry = main.findInitiativeEntryByCID(creature, encounter.getInitiative())
+
+    try:
+        sharedMovementErrorContext(encounter, creature, newPos)
+    except HTTPException as err:
+        raise HTTPException(status_code=err.status_code, detail=err.detail)
+
+    creature.setPosition(newPos)
+    initEntry["movementResource"] = creature.getMovementMax()
+    initEntry["startingAnchor"] = newPos
+
+    sharedTokenContext(encounter, creature, newPos)
+
+    await main.saveEncounter(encounter)
+
+@app.post("/encounter/{eid}/creature/{cid}/simulate/movement")
+async def movementSimulate(eid : str, cid : str, newPos : List[List[int]], currentUser : UserInDB = Depends(getCurrentActiveUser)):
+    encounter = main.loadEncounter(await getEncounter(eid, currentUser))
+    creature = await getCreatureObj(encounter, cid)
+    initEntry = main.findInitiativeEntryByCID(creature, encounter.getInitiative())
+    newAnchorDistance = main.min_creature_distance_tiles(newPos, initEntry["startingAnchor"])
+
+    try:
+        sharedMovementErrorContext(encounter, creature, newPos,
+                                   True, newAnchorDistance)
+    except HTTPException as err:
+        raise HTTPException(status_code=err.status_code, detail=err.detail)
+
+    creature.setPosition(newPos)
+
+    initEntry["movementResource"] = creature.getMovementMax() - (newAnchorDistance * 5)
+
+    sharedTokenContext(encounter, creature, newPos)
 
     await main.saveEncounter(encounter)
 
@@ -987,23 +1032,20 @@ async def getNextTurn(eid: str, currentUser: UserInDB = Depends(getCurrentActive
 
         return pre_effects
     def get_creature_from_turn(turn_obj, encounter_obj):
-        turn_name = str(turn_obj.get("name", "")).lower()
+        turn_cid = str(turn_obj.get("cid", ""))
         turn_type = turn_obj.get("turnType", "")
 
         if turn_type == "lairAction":
             return "LAIR_ACTION"
 
+        if not turn_cid:
+            return None
+
         if turn_type == "Player":
-            for i in range(encounter_obj.playerSize()):
-                player = encounter_obj.getPlayer(i)
-                if player.getName().lower() == turn_name:
-                    return player
+            return encounter_obj.getPlayerByCID(turn_cid)
 
         elif turn_type == "Monster":
-            for i in range(encounter_obj.monsterSize()):
-                monster = encounter_obj.getMonster(i)
-                if monster.getName().lower() == turn_name:
-                    return monster
+            return encounter_obj.getMonsterByCID(turn_cid)
 
         return None
 
@@ -1055,16 +1097,20 @@ async def getNextTurn(eid: str, currentUser: UserInDB = Depends(getCurrentActive
             found_turn = True
             break
 
-        active_conditions = normalize_conditions(current_creature.getActiveConditions())
-        preE = get_pre_turn_effects(current_creature, encounter)
+        if not isinstance(current_creature, str):
+            initiative[next_index]["movementResource"] = current_creature.getMovementMax()
+            initiative[next_index]["startingAnchor"] = current_creature.getPosition()
 
-        if blocked_conditions & active_conditions:
-            if preE:
-                found_turn = True
-                break
+            active_conditions = normalize_conditions(current_creature.getActiveConditions())
+            preE = get_pre_turn_effects(current_creature, encounter)
 
-            current_index = next_index
-            continue
+            if blocked_conditions & active_conditions:
+                if preE:
+                    found_turn = True
+                    break
+
+                current_index = next_index
+                continue
 
         found_turn = True
         break
@@ -1095,19 +1141,9 @@ async def getSimulationInitiative(eid : str, currentUser: UserInDB = Depends(get
         for i, creature in enumerate(initiative):
             # Add creature statblock to their associated turn
             # SHALLOW COPY OF MONSTER/PLAYER OBJECTS - Changes to creature["Statblock"] affect associated object in encounter
-            if creature["turnType"].lower() == "player":
-                for i in range(encounter.playerSize()):
-                    if creature["name"].lower() == encounter.getPlayer(i).getName().lower():
-                        creature["Statblock"] = encounter.getPlayer(i)
-                        break
-            elif creature["turnType"].lower() == "monster":
-                for i in range(encounter.monsterSize()):
-                    if (
-                            creature["name"].lower()
-                            == encounter.getMonster(i).getName().lower()
-                    ):
-                        creature["Statblock"] = encounter.getMonster(i)
-                        break
+            creatureObj = main.getCreatureFromInitiativeEntry(encounter, creature)
+            if creatureObj:
+                creature["Statblock"] = creatureObj
         return initiative
     enc = main.loadEncounter(await getEncounter(eid, currentUser))
     init = setActiveInitiativeWLair(enc)

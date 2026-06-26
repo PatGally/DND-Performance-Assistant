@@ -35,6 +35,7 @@ WEAPONS_LIST_FILE = os.path.join(DATA_DIR, "weapons_list.json")
 BASIC_ACTION_LIST_FILE = os.path.join(DATA_DIR, "basic_actions.json")
 
 Coord = Tuple[int, int]
+DEFAULT_PLAYER_MOVEMENT_MAX = 30
 
 # PLAYER/MONSTER/SPELL/WEAPON CREATE/SAVE/LOAD METHODS
 def getPlayerStats(data):
@@ -139,12 +140,15 @@ def getPlayerStats(data):
 
     cid = stats["cid"]
     position = stats["position"]
+    movementMax = int(stats.get("movementMax", DEFAULT_PLAYER_MOVEMENT_MAX))
 
     spellSlots = stats["spellSlots"]
 
     playerdata = [playerName, playerStats, saveProfs, playerAC, playerHP, class_type, playerLvl, conImmunes, damImmunes,
                   damResists, damVulns, activeStatusEffects, activeConditions, cid, position, spellSlots]
-    return getClassStats(data, playerdata, class_type)
+    player = getClassStats(data, playerdata, class_type)
+    player.setMovementMax(movementMax)
+    return player
 def getSavedWeapons(player, data):
     searchdata = copy.deepcopy(data)
     for i, w in enumerate(searchdata):
@@ -370,6 +374,7 @@ async def savePlayer(player):
         "maxhp": str(player.getMaxHP()),
         "cid": str(player.getCID()),
         "position": player.getPosition(),
+        "movementMax": player.getMovementMax(),
         "characterClass": player.getClass(),
         "conImmunes": player.getConImmunes(),
         "activeStatusEffects": player.getActiveStatusEffects(),
@@ -672,6 +677,7 @@ async def saveEncounter(encounter):
             "maxhp": str(player.getMaxHP()),
             "cid": str(player.getCID()),
             "position": player.getPosition(),
+            "movementMax": player.getMovementMax(),
             "characterClass": player.getClass(),
             "conImmunes": player.getConImmunes(),
             "activeStatusEffects": player.getActiveStatusEffects(),
@@ -760,7 +766,7 @@ async def saveEncounter(encounter):
         "monsters": monster_list,
         "players": player_list,
         "results": result_list,
-        "initiative": encounter.getInitiative(),
+        "initiative": encounter.getInitiative()
     }
 
     try:
@@ -813,20 +819,39 @@ def loadEncounter(encounterData):
         cid = monsterJSON.get("cid", "")
         position = monsterJSON.get("position", [0, 0])
         size = monsterJSON.get("size", "medium")
-        movement = monsterJSON.get("movement", 0)
+        movementMax = monsterJSON.get("movementMax", DEFAULT_PLAYER_MOVEMENT_MAX)
         encounter.addMonster(Monster(name, cr, cType, stats, hp, maxHP,
                                      ac, saveProfs, lResists, damResists,
                                      damImmunes, damVulns, conImmunes, activeConditions,
                                      activeStatusEffects, lairAction, magicResist,
                                      enemy, actions, spellInfo, legActions,
-                                     cid, position, size, movement))
+                                     cid, position, size, movementMax))
     for resultJSON in encounterData["results"]:
         encounter.addResult(resultJSON)
 
-    encounter.setInitiative(encounterData["initiative"])
+    encounter.setInitiative(encounterData.get("initiative"))
     return encounter
 
 # GENERAL HELPER METHODS
+def getCreatureFromInitiativeEntry(encounter, entry):
+    cid = str(entry.get("cid", ""))
+    if not cid:
+        return None
+
+    turn_type = str(entry.get("turnType", "")).lower()
+    if turn_type == "player":
+        return encounter.getPlayerByCID(cid)
+    if turn_type == "monster":
+        return encounter.getMonsterByCID(cid)
+
+    creature = encounter.getPlayerByCID(cid)
+    return creature if creature else encounter.getMonsterByCID(cid)
+def findInitiativeEntryByCID(creature, initiative):
+    creature_cid = str(creature.getCID())
+    for entry in initiative:
+        if str(entry.get("cid", "")) == creature_cid:
+            return entry
+    raise ValueError(f"Creature {creature_cid} not found in initiative.")
 def _as_int_feet(rng):
         if rng is None:
             return None
@@ -839,7 +864,7 @@ def _as_int_feet(rng):
             m = re.search(r"-?\d+", s)
             return int(m.group()) if m else None
         return None
-def _min_creature_distance_tiles(tiles_a, tiles_b):
+def min_creature_distance_tiles(tiles_a, tiles_b):
     def _chebyshev_tiles(p1, p2):
         # diagonal counts as 1 tile
         return max(abs(p1[0] - p2[0]), abs(p1[1] - p2[1]))
@@ -943,16 +968,8 @@ def translateBasicAction(creature, action):
                      statusEffect, lingEffect, extraEffect, lingSaves,
                      "action", "", [])
 def defineBasicActions(
-    actionNames,
-    actionTypes,
-    actionProbs,
-    actionEDams,
-    actionImpacts,
-    actionTargets,
-    actionObjs,
-    initEntry,
-    initiative,
-    isPlayerTurn,
+    actionNames, actionTypes, actionProbs, actionEDams, actionImpacts, actionTargets,
+    actionObjs, initEntry, initiative, isPlayerTurn,
 ):
     # Load basic actions
     try:
@@ -1351,6 +1368,7 @@ def getMultiTargetWeights(player, action, initiative):
     weights = weights[0 : min(action.getNumTarget(), len(weights))]
     return weights
 def isValidTarget(action, creature, actorPos, isPlayerTurn=True):
+    validTarget = False
     if isPlayerTurn:
         if isinstance(action, Weapon) or ((isinstance(action, Spell) or isinstance(action, MonAction)) and action.getDamType() != "healing"):
             if (creature["turnType"] == "Monster"
@@ -1365,7 +1383,25 @@ def isValidTarget(action, creature, actorPos, isPlayerTurn=True):
                     or (creature["turnType"] == "Monster" and creature["Statblock"].isActiveStatusEffect("SwitchSides"))
                     and not creature["Statblock"].isActiveCondition("Dead")
                     and not creature["Statblock"].isActiveCondition("Out of Combat")):
-                validTarget = True
+                if (action.getSpecialNotes()
+                        and any([("only" in note.lower() or "immune" in note.lower()) for note in action.getSpecialNotes()])):
+                    for note in action.getSpecialNotes():
+                        if "only" in note.lower():
+                            if creature["Statblock"].getCreatureType().lower() == note.lower().split("only")[0]:
+                                validTarget = True
+                                break
+                            else:
+                                validTarget = False
+                                break
+                        elif "immune" in note.lower():
+                            if creature["Statblock"].getCreatureType().lower() == note.lower().split("immune")[0]:
+                                validTarget = False
+                                break
+                            else:
+                                validTarget = True
+                                break
+                else:
+                    validTarget = True
             else:
                 validTarget = False
         else:
@@ -1376,7 +1412,15 @@ def isValidTarget(action, creature, actorPos, isPlayerTurn=True):
                     and not creature["Statblock"].isActiveStatusEffect("SwitchSides")
                     and not creature["Statblock"].isActiveCondition("Dead")
                     and not creature["Statblock"].isActiveCondition("Out of Combat")):
-                validTarget = True
+                if (action.getSpecialNotes()
+                        and any([("humanoidimmune" in note.lower()) for note in
+                                 action.getSpecialNotes()])):
+                    for note in action.getSpecialNotes():
+                        if "humanoidimmune" in note.lower():
+                            validTarget = False
+                            break
+                else:
+                    validTarget = True
             else:
                 validTarget = False
         elif action.getDamType() == "healing":
@@ -1403,7 +1447,7 @@ def isValidTarget(action, creature, actorPos, isPlayerTurn=True):
     rangeTiles = math.ceil(actionRangeFeet / 5)
     others_tiles = [creature.getPosition()]
     for target_tiles in others_tiles:
-        min_d = _min_creature_distance_tiles(actor_tiles, target_tiles)
+        min_d = min_creature_distance_tiles(actor_tiles, target_tiles)
         if min_d <= rangeTiles:
             return True
     return False
@@ -2728,7 +2772,7 @@ def saveSpecialNotesCheck(action, creature):
     if specialNotes:
         creatureType = creature.getCreatureType() if isinstance(creature, Monster) else "humanoid"
         for note in specialNotes:
-            if "only" in note.lower() and creatureType not in specialNotes():
+            if "only" in note.lower() and creatureType not in specialNotes:
                 return None
             elif "immune" in note.lower() and creatureType in note:
                 immunities = copy.deepcopy(creature.getDamImmunities())
@@ -4360,153 +4404,161 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
     for i in range(len(spellList)):
         if actionViabilityCheck(spellList[i], initEntry, initiative, isPlayerTurn):
             spellName = spellList[i].getName()
-            if spellName.lower() in ["thunderous smite"]:
-                try:
-                    spellProb = 0
-                    spellEDam = -1
-                    if spellList[i].getSelfTarget():
-                        spellProb = 1.0
-                        spellEDam = 0
-                        probTargets = [creature.getName()]
-                        eTargets = [creature.getName()]
-                    else:
-                        if spellList[i].getRollType().lower() == "tohit":
-                            spellProb = calcTotalToHitProbability(creature, spellList[i], initiative)
-                        elif spellList[i].getRollType().lower() == "save":
-                            spellProb = calcTotalSaveProbability(creature, spellList[i], initiative)
-                        elif spellList[i].getRollType().lower() == "autohit":
-                            if spellList[i].getDiceNum() == 0 and not spellList[i].getLingSaves() \
-                                    and not spellList[i].getLingEffects() and not spellList[i].getExtraEffect() \
-                                    and not (spellList[i].getSpecialNotes() and "HPCap" in spellList[i].getSpecialNotes()):
-                                spellProb = 1.0
-                            else:
-                                if spellList[i].getStatusEffects() and any(
-                                        [se["name"] == "Summon" for se in spellList[i].getStatusEffects()]):
-                                    spellProb = 1.0
-                                    spellEDam = 0
-                                else:
-                                    spellProb = calcTotalAutoHitProbability(creature, spellList[i], initiative)
-                        elif spellList[i].getRollType().lower() == "onhit":
-                            spellProb = calcOnHitProbability(spellList[i],
-                                                             [creature.getWeapon(i) for i in range(creature.getWeaponLength())],
-                                                             creature, initiative)
-                        if isinstance(spellProb, dict):
-                            spellProb["probSuccess"] = 0 if spellProb["probSuccess"] < 0 else spellProb["probSuccess"]
-                            spellProb["probSuccess"] = 1 if spellProb["probSuccess"] > 1 else spellProb["probSuccess"]
-                            probToStr = f"{spellProb['probSuccess']}" if spellProb['probSuccess'] else f"0.0"
-                            probToStr += f" - {spellProb['probLingEffect']}LE" if spellProb['probLingEffect'] else ""
-                            probToStr += f" - {spellProb['probExtraEffect']}EE" if spellProb['probExtraEffect'] else ""
-                            probToStr += f" - {spellProb['probLingSaves']}LS" if spellProb['probLingSaves'] else ""
-                            probTargets = spellProb["target"] if spellProb["probSuccess"] != 0 else ""
+            try:
+                spellProb = 0
+                spellEDam = -1
+                if spellList[i].getSelfTarget():
+                    spellProb = 1.0
+                    spellEDam = 0
+                    probTargets = [creature.getName()]
+                    eTargets = [creature.getName()]
+                else:
+                    if spellList[i].getRollType().lower() == "tohit":
+                        spellProb = calcTotalToHitProbability(creature, spellList[i], initiative)
+                    elif spellList[i].getRollType().lower() == "save":
+                        spellProb = calcTotalSaveProbability(creature, spellList[i], initiative)
+                    elif spellList[i].getRollType().lower() == "autohit":
+                        if spellList[i].getDiceNum() == 0 and not spellList[i].getLingSaves() \
+                                and not spellList[i].getLingEffects() and not spellList[i].getExtraEffect() \
+                                and not (spellList[i].getSpecialNotes() and "HPCap" in spellList[i].getSpecialNotes()):
+                            spellProb = 1.0
                         else:
-                            spellProb = 0 if spellProb < 0 else spellProb
-                            spellProb = 1 if spellProb > 1 else spellProb
-                            probToStr = spellProb
-                            probTargets = {}
-                        spellProb = probToStr
-                        try:
-                            if spellEDam == -1:
-                                spellEDam, eTargets = calcTotalExpectedDamage(creature, spellList[i], initiative)
-                            else:
+                            if spellList[i].getStatusEffects() and any(
+                                    [se["name"] == "Summon" for se in spellList[i].getStatusEffects()]):
+                                spellProb = 1.0
                                 spellEDam = 0
-                                eTargets = {}
-                        except TypeError:
+                            else:
+                                spellProb = calcTotalAutoHitProbability(creature, spellList[i], initiative)
+                    elif spellList[i].getRollType().lower() == "onhit":
+                        spellProb = calcOnHitProbability(spellList[i],
+                                                         [creature.getWeapon(i) for i in
+                                                          range(creature.getWeaponLength())],
+                                                         creature, initiative)
+                    if isinstance(spellProb, dict):
+                        spellProb["probSuccess"] = 0 if spellProb["probSuccess"] < 0 else spellProb["probSuccess"]
+                        spellProb["probSuccess"] = 1 if spellProb["probSuccess"] > 1 else spellProb["probSuccess"]
+                        probToStr = f"{spellProb['probSuccess']}" if spellProb['probSuccess'] else f"0.0"
+                        probToStr += f" - {spellProb['probLingEffect']}LE" if spellProb['probLingEffect'] else ""
+                        probToStr += f" - {spellProb['probExtraEffect']}EE" if spellProb['probExtraEffect'] else ""
+                        probToStr += f" - {spellProb['probLingSaves']}LS" if spellProb['probLingSaves'] else ""
+                        probTargets = spellProb["target"] if spellProb["probSuccess"] != 0 else ""
+                    else:
+                        spellProb = 0 if spellProb < 0 else spellProb
+                        spellProb = 1 if spellProb > 1 else spellProb
+                        probToStr = spellProb
+                        probTargets = {}
+                    spellProb = probToStr
+                    try:
+                        if spellEDam == -1:
+                            spellEDam, eTargets = calcTotalExpectedDamage(creature, spellList[i], initiative)
+                        else:
                             spellEDam = 0
                             eTargets = {}
+                    except TypeError:
+                        spellEDam = 0
+                        eTargets = {}
 
-                    if not probTargets and not eTargets:
-                        continue
-                    probTargetsNorm = normalizeTargetSets(probTargets, initiative)
-                    eTargetsNorm = normalizeTargetSets(eTargets, initiative)
+                if not probTargets and not eTargets:
+                    continue
+                probTargetsNorm = normalizeTargetSets(probTargets, initiative)
+                eTargetsNorm = normalizeTargetSets(eTargets, initiative)
 
-                    if probTargetsNorm and eTargetsNorm and {target.getName() for target in probTargetsNorm} == {target.getName() for target in eTargetsNorm}:
-                        #Good case.
+                if probTargetsNorm and eTargetsNorm and {target.getName() for target in probTargetsNorm} == {
+                    target.getName() for target in eTargetsNorm}:
+                    # Good case.
+                    spellImpact = calcImpact(creature, spellList[i], spellProb,
+                                             spellEDam, probTargetsNorm, initiative)
+                    target = probTargets
+                else:
+                    # Bad case.
+                    if not probTargetsNorm and eTargetsNorm:
+                        spellImpact = calcImpact(creature, spellList[i], spellProb,
+                                                 spellEDam, eTargetsNorm, initiative)
+                        target = eTargets
+                    elif not eTargetsNorm and probTargetsNorm:
                         spellImpact = calcImpact(creature, spellList[i], spellProb,
                                                  spellEDam, probTargetsNorm, initiative)
                         target = probTargets
+                    elif not probTargetsNorm and not eTargetsNorm:
+                        spellImpact = 0
+                        target = None
                     else:
-                        #Bad case.
-                        if not probTargetsNorm and eTargetsNorm:
-                            spellImpact = calcImpact(creature, spellList[i], spellProb,
-                                                 spellEDam, eTargetsNorm, initiative)
-                            target = eTargets
-                        elif not eTargetsNorm and probTargetsNorm:
-                            spellImpact = calcImpact(creature, spellList[i], spellProb,
-                                                     spellEDam, probTargetsNorm, initiative)
-                            target = probTargets
-                        elif not probTargetsNorm and not eTargetsNorm:
-                            spellImpact = 0
-                            target = None
-                        else:
-                            spellImpact1 = calcImpact(creature, spellList[i], spellProb,
-                                                      spellEDam, probTargetsNorm, initiative)
-                            spellImpact2 = calcImpact(creature, spellList[i], spellProb,
-                                                     spellEDam, eTargetsNorm, initiative)
-                            spellImpact = max([spellImpact1, spellImpact2])
-                            targetIdx = [spellImpact1, spellImpact2].index(spellImpact)
-                            target = probTargets if targetIdx == 0 else eTargets
+                        spellImpact1 = calcImpact(creature, spellList[i], spellProb,
+                                                  spellEDam, probTargetsNorm, initiative)
+                        spellImpact2 = calcImpact(creature, spellList[i], spellProb,
+                                                  spellEDam, eTargetsNorm, initiative)
+                        spellImpact = max([spellImpact1, spellImpact2])
+                        targetIdx = [spellImpact1, spellImpact2].index(spellImpact)
+                        target = probTargets if targetIdx == 0 else eTargets
 
-                    if spellList[i].getDamType() == "healing" or "healing" in spellList[i].getDamType() and spellList[i].getMean() != 0:
-                        if isinstance(target, list):
+                if spellList[i].getDamType() == "healing" or "healing" in spellList[i].getDamType() and spellList[
+                    i].getMean() != 0:
+                    if isinstance(target, list):
+                        healMod = []
+                        for t in target:
+                            healMod.append(1 - (t.getHP() / t.getMaxHP()))
+                        healMod = (sum(healMod) / len(healMod)) if healMod else 0
+                    elif isinstance(target, dict):
+                        if "targetsHit" in target:
                             healMod = []
-                            for t in target:
+                            for t in target["targetsHit"]:
                                 healMod.append(1 - (t.getHP() / t.getMaxHP()))
                             healMod = (sum(healMod) / len(healMod)) if healMod else 0
-                        elif isinstance(target, dict):
-                            if "targetsHit" in target:
-                                healMod = []
-                                for t in target["targetsHit"]:
-                                    healMod.append(1 - (t.getHP() / t.getMaxHP()))
-                                healMod = (sum(healMod) / len(healMod)) if healMod else 0
-                            else:
-                                healMod = 0
                         else:
-                            healMod = 1 - (target.getHP() / target.getMaxHP())
-                        spellImpact *= healMod
-                        spellEDam *= healMod
+                            healMod = 0
+                    else:
+                        healMod = 1 - (target.getHP() / target.getMaxHP())
+                    spellImpact *= healMod
+                    spellEDam *= healMod
 
-                    actionNames.append(spellName)
-                    actionTypes.append(f"Lvl {spellList[i].getLvl()} spell")
-                    actionProbs.append(spellProb)
-                    actionEDams.append(spellEDam)
-                    actionImpacts.append(spellImpact)
-                    if isinstance(target, Player) or isinstance(target, Monster):
-                        target = [target]
-                    actionTargets.append(target)
-                    actionObjects.append(spellList[i])
-                    if isinstance(target, list):
+                actionNames.append(spellName)
+                actionTypes.append(f"Lvl {spellList[i].getLvl()} spell")
+                actionProbs.append(spellProb)
+                actionEDams.append(spellEDam)
+                actionImpacts.append(spellImpact)
+                if isinstance(target, Player) or isinstance(target, Monster):
+                    target = [target]
+                actionTargets.append(target)
+                actionObjects.append(spellList[i])
+                if isinstance(target, list):
+                    percentages = []
+                    for i, t in enumerate(target):
+                        hp = t.getHP()
+                        if isinstance(spellEDam, list):
+                            percentages.append(round(spellEDam[i] / hp, 2))
+                        else:
+                            percentages.append(round(spellEDam / hp, 2))
+                    actionPercentages.append(percentages)
+                elif isinstance(target, dict):
+                    if "targetsHit" in target:
                         percentages = []
-                        for i, t in enumerate(target):
+                        for i, t in enumerate(target["targetsHit"]):
                             hp = t.getHP()
                             if isinstance(spellEDam, list):
                                 percentages.append(round(spellEDam[i] / hp, 2))
                             else:
                                 percentages.append(round(spellEDam / hp, 2))
                         actionPercentages.append(percentages)
-                    elif isinstance(target, dict):
-                        if "targetsHit" in target:
-                            percentages = []
-                            for i, t in enumerate(target["targetsHit"]):
-                                hp = t.getHP()
-                                if isinstance(spellEDam, list):
-                                    percentages.append(round(spellEDam[i] / hp, 2))
-                                else:
-                                    percentages.append(round(spellEDam / hp, 2))
-                            actionPercentages.append(percentages)
-                        elif "Statblock" in target: #TODO: If it goes here, action is broken. fix it later.
-                            if isinstance(spellEDam, list):
-                                actionPercentages.append(round(spellEDam[i] / target["Statblock"].getHP(), 2))
-                            else:
-                                actionPercentages.append(round(spellEDam / target["Statblock"].getHP(), 2))
-                    else:
-                        hp = target.getHP()
+                    elif "Statblock" in target:  # TODO: If it goes here, action is broken. fix it later.
                         if isinstance(spellEDam, list):
-                            actionPercentages.append(round(spellEDam[i] / hp, 2))
+                            actionPercentages.append(round(spellEDam[i] / target["Statblock"].getHP(), 2))
                         else:
-                            actionPercentages.append(round(spellEDam / hp, 2))
-                except:
-                    continue
+                            actionPercentages.append(round(spellEDam / target["Statblock"].getHP(), 2))
+                else:
+                    hp = target.getHP()
+                    if isinstance(spellEDam, list):
+                        actionPercentages.append(round(spellEDam[i] / hp, 2))
+                    else:
+                        actionPercentages.append(round(spellEDam / hp, 2))
+            except:
+                continue
         else:
+            #TODO: Find if reason action is not valid is because of bad positoning.
+            # If so, find a movement that would make the position valid.
+            # If there is a position that is valid, store oldPos and make newPos the currentPos in the creatureObj
+            # Then, repeat the loop in the same iteration. This means this will now be a while loop.
+            #
+            # If there is not a position that would be valid even with movement, continue.
             continue
     actions = []
     for i in range(len(actionNames)):
@@ -4572,8 +4624,6 @@ def _score_action_with_ml(
 
     ml_weight = predict_action_weight(record)
     return ml_weight, record
-
-
 def _extract_prob_value(prob) -> float:
     if isinstance(prob, (int, float)):
         return float(prob)
@@ -4948,7 +4998,6 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
         action.pop("ml_record", None)
 
     return prepared
-
 def actionViabilityCheck(action, activeInitiativeEntry, initiative, isPlayerTurn):
     def spellSlotValidity(spellSlots):
         spellLvl = action.getLvl() - 1
@@ -5002,6 +5051,26 @@ def actionViabilityCheck(action, activeInitiativeEntry, initiative, isPlayerTurn
             return True
         if action.getDamType() == "healing" or "healing" in action.getDamType():
             return True
+        if action.getSpecialNotes():
+            def invalidSpecialNote(note):
+                note = note.lower()
+                onlyType = "only" in note
+                cType = note.split("only")[0].lower() if onlyType else note.split("immune")[0].lower()
+                if onlyType and not any([c["Statblock"].getCreatureType().lower() == cType for c in initiative]):
+                    return True
+                else:
+                    for c in initiative:
+                        if isinstance(c["Statblock"], Monster) and c["Statblock"].getCreatureType().lower() != cType:
+                            return False
+                    return True
+            notes = action.getSpecialNotes()
+            if any([("only" in note.lower() or "immune" in note.lower()) for note in action.getSpecialNotes()]):
+                for note in notes:
+                    if "only" in note.lower() or "immune" in note.lower():
+                        if invalidSpecialNote(note):
+                            return False
+                        else:
+                            break
 
     actor_tiles = _normalize_occupied_tiles(activeInitiativeEntry["Statblock"].getPosition())
 
@@ -5029,7 +5098,7 @@ def actionViabilityCheck(action, activeInitiativeEntry, initiative, isPlayerTurn
     rangeTiles = math.ceil(actionRangeFeet / 5)
 
     for target_tiles in others_tiles:
-        min_d = _min_creature_distance_tiles(actor_tiles, target_tiles)
+        min_d = min_creature_distance_tiles(actor_tiles, target_tiles)
         if min_d <= rangeTiles:
             return True
 
@@ -5048,7 +5117,7 @@ def monsterTurn(creature, initiative, encounter_id=None):
     actionObjects = []
     actions = []
 
-    initEntry = initiative[[i["name"] for i in initiative].index(creature.getName())]
+    initEntry = findInitiativeEntryByCID(creature, initiative)
 
     defineBasicActions(actionNames, actionTypes, actionProbs,
                        actionEDams, actionImpacts, actionTargets,
@@ -5066,7 +5135,7 @@ def monsterTurn(creature, initiative, encounter_id=None):
         actions.extend(spellData)
 
     monActions = [creature.getAction(i) for i in range(creature.getActionLength())]
-    mInitEntry = initiative[[i["name"].lower() for i in initiative].index(creature.getName().lower())]
+    mInitEntry = initEntry
 
     for monAction in monActions:
         if monAction.isBadObj():
@@ -5205,7 +5274,7 @@ def playerTurn(player, initiative, encounter_id=None):
     actionImpacts = []
     actionTargets = []
     actionObjects = []
-    pInitEntry = initiative[[i["name"].lower() for i in initiative].index(player.getName().lower())]
+    pInitEntry = findInitiativeEntryByCID(player, initiative)
 
     defineBasicActions(actionNames, actionTypes, actionProbs,
                        actionEDams, actionImpacts, actionTargets,
@@ -5319,22 +5388,12 @@ def setActiveInitiative(encounter):
     for ci, creature in enumerate(initiative):
         # Add creature statblock to their associated turn
         # SHALLOW COPY OF MONSTER/PLAYER OBJECTS - Changes to creature["Statblock"] affect associated object in encounter
-        if creature["turnType"].lower() == "player":
-            for i in range(encounter.playerSize()):
-                if creature["name"].lower() == encounter.getPlayer(i).getName().lower():
-                    creature["Statblock"] = encounter.getPlayer(i)
-                    break
-        elif creature["turnType"].lower() == "monster":
-            for i in range(encounter.monsterSize()):
-                if (
-                    creature["name"].lower()
-                    == encounter.getMonster(i).getName().lower()
-                ):
-                    creature["Statblock"] = encounter.getMonster(i)
-                    break
-        elif creature["turnType"].lower() == "lairaction":
+        if creature["turnType"].lower() == "lairaction":
             todeli = ci
             continue
+        creatureObj = getCreatureFromInitiativeEntry(encounter, creature)
+        if creatureObj:
+            creature["Statblock"] = creatureObj
     if todeli != -1:
         del initiative[todeli]
     return initiative
@@ -5376,8 +5435,8 @@ def handle_charges(creature, spells):
             for i, spellData in enumerate(creature.getSpellInfo()["spells"]):
                 if spellData["name"].lower() == spell["name"] and spellData["charges"] != "At Will":
                     creature.getSpellInfo()["spells"][i]["charges"] = spell["charges"]
-
 def unpackEntry(entry, activeInitiative):
+    #Used for rulesetSimulate in order to receive action data from various entries.
     actor = entry["actor"]
     actorObj = ""
     action = entry["action"]

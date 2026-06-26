@@ -4,10 +4,10 @@ from .Stats import Stats
 class Monster(Stats):
     def __init__(self, name, cr, cType, stats, hp, maxHP, ac, saveProfs, lResists, damResists, damImmunes, damVulns,
                  conImmunes, activeConditions, activeStatusEffects, lairAction, magicResist,
-                 enemy, actions, spellInfo, legActions, cid, position, size, movement):
+                 enemy, actions, spellInfo, legActions, cid="", position=None, size="medium", movementMax=30):
         super().__init__(stats, saveProfs, damImmunes,
                          damResists, damVulns, conImmunes,
-                         activeStatusEffects, activeConditions, cid, position)
+                         activeStatusEffects, activeConditions, cid, position, movementMax)
         self.__name = name
         self.__cr = cr
         self.calcProfBonus()
@@ -24,7 +24,6 @@ class Monster(Stats):
         self.__caster = True if spellInfo.get("spells", []) else False
         self.__legActions = legActions
         self.__size = size
-        self.__movement = movement
 
     def setName(self, name):
         self.__name = name
@@ -62,6 +61,7 @@ class Monster(Stats):
         self.__profBonus = pb
     def getProfBonus(self):
         return self.__profBonus
+
     def setSpellSlots(self,level, slotAmount):
         slotIndex = level -1
         spells = self.getSpellInfo()
@@ -71,7 +71,6 @@ class Monster(Stats):
         if spells[slotIndex][1] != 0:
             spells[slotIndex][0] = int(slotAmount)
             self.__spellInfo["spellSlots"] = spells
-
     def getSpellSlots(self):
         return self.__spellInfo.get("spellSlots", [])
     def getSpellSlot(self, lvl):
@@ -80,10 +79,8 @@ class Monster(Stats):
             return int(self.__spellInfo["spellSlots"][slotIdx][0])
         else:
             return 0
-
     def hasSpellSlots(self):
         return self.isCaster() and "spellSlots" in self.__spellInfo and self.__spellInfo["spellSlots"]
-
 
     def setCreatureType(self, creatureType):
         self.__creatureType = creatureType
@@ -241,6 +238,6 @@ class Monster(Stats):
             "actions" : actions,
             "legActions" : self.__legActions,
             "spellInfo" : spellInfo,
-            "movement" : self.__movement,
+            "movementMax": self.getMovementMax(),
             "size" : self.__size
         }

@@ -13,13 +13,15 @@ AnyPlayer = Union[
 ]
 
 class InitiativeEntry(BaseModel):
+    cid: str = ""
     name: str
     iValue: int
     turnType: str  # "Player" | "Monster"
     currentTurn: bool = False
     actionResource: int = 1
     bonusActionResource: int = 1
-    movementResource: int
+    movementResource: int = 0
+    startingAnchor: List[List[int]] = Field(min_length=1, alias="startingAnchor")
 
     model_config = ConfigDict(extra="ignore")
 
