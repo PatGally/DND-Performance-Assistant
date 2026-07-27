@@ -2842,7 +2842,6 @@ def calcSingleTargetBestMovement(player, action, successScores, targets, blocked
     def _get_starting_anchor():
         if hasattr(player, "getStartingAnchor"):
             return player.getStartingAnchor()
-        print("FAILOUT - GET POSITION", action.getName())
         return player.getPosition()
     def _get_target_position(target):
         statblock = target["Statblock"] if isinstance(target, dict) and "Statblock" in target else target

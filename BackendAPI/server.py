@@ -558,7 +558,8 @@ async def rulesetSimulate(
     entry = entry.model_dump(mode="json", by_alias=True)
 
     actorObj, action, targets, isSpell, selectedTargets = unpackEntry(entry, activeInitiative)
-    actor = actorObj.getName()
+    movementRecc = entry.get("movementRecc", [])
+    actor = actorObj.getCID()
 
     token = token_model.model_dump(mode="json") if token_model else None
     if token:
@@ -634,6 +635,13 @@ async def rulesetSimulate(
         raise HTTPException(status_code=500, detail="Invalid Action cost")
 
     resources_after = _resource_snapshot("after", actor_turn_entry)
+
+    if movementRecc:
+        try:
+            sharedMovementErrorContext(encounter, actorObj, movementRecc)
+            actorObj.setPosition(movementRecc)
+        except HTTPException as err:
+            raise HTTPException(status_code=err.status_code, detail=err.detail)
 
     main.executeAction(actorObj, action, selectedTargets, entry, activeInitiative, mapdata)
 
@@ -862,12 +870,10 @@ def sharedMovementErrorContext(encounter, creature, newPos, ruleset=False, newAn
 
     if ruleset:
         if (creature.getMovementMax() // 5) - newAnchorDistance < 0:
-            print(newAnchorDistance, creature.getMovementMax())
             bad = True
             message = f"Insufficient movement"
 
     if bad:
-        print("BAD MOVEMENT: ", message)
         raise HTTPException(status_code=500, detail=message)
 def sharedTokenContext(encounter, creature, newPos):
     tokens = encounter.getMapData()["layers"]["aoeTokens"]

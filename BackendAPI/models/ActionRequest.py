@@ -84,6 +84,7 @@ class ActionRequest(BaseModel):
     candidateCount : int
 
     targets: List[str] = Field(default_factory=list)
+    movementRecc: Optional[List[List[int]]] = Field(default_factory=list, alias="movementRecc")
 
     conditions: List[str] = Field(default_factory=list)
     statusEffects: List[Dict[str, Any]] = Field(default_factory=list)
