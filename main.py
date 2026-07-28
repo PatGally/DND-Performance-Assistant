@@ -1377,7 +1377,7 @@ def getMultiTargetWeights(player, action, initiative):
     else:
         isPlayerTurn = False
     for creature in initiative:
-        if isValidTarget(action, creature, player.getPosition(),isPlayerTurn):
+        if isValidTarget(action, creature, player,isPlayerTurn):
             eDam = calcIndividualExpectedDamage(player, action, creature)
             hp = creature["Statblock"].getHP()
             if action.getRollType().lower() == "tohit":
@@ -1423,7 +1423,7 @@ def getMultiTargetWeights(player, action, initiative):
     weights = [weight["Creature"] for weight in weights]
     weights = weights[0 : min(action.getNumTarget(), len(weights))]
     return weights
-def isValidTarget(action, creature, actorPos, isPlayerTurn=True):
+def isValidTarget(action, creature, actor, isPlayerTurn=True):
     validTarget = False
     if isPlayerTurn:
         if isinstance(action, Weapon) or ((isinstance(action, Spell) or isinstance(action, MonAction)) and action.getDamType() != "healing"):
@@ -1493,11 +1493,11 @@ def isValidTarget(action, creature, actorPos, isPlayerTurn=True):
         return False
 
     creature = creature["Statblock"] if "Statblock" in creature else creature
-    actor_tiles = _normalize_occupied_tiles(actorPos)
+    actor_tiles = _normalize_occupied_tiles(actor.getStartingAnchor())
     if not isinstance(action, Weapon):
-        actionRangeFeet = _as_int_feet(action.getActionRange()) + _as_int_feet(creature.getMovementMax())
+        actionRangeFeet = _as_int_feet(action.getActionRange()) + _as_int_feet(actor.getMovementMax())
     else:
-        actionRangeFeet = 5 + _as_int_feet(creature.getMovementMax())
+        actionRangeFeet = 5 + _as_int_feet(actor.getMovementMax())
     if actionRangeFeet is None:
         return False
     rangeTiles = math.ceil(actionRangeFeet // 5)
@@ -2345,7 +2345,7 @@ def calcIndividualExpectedDamage(player, action, creature):
         isPlayerTurn = True
     else:
         isPlayerTurn = False
-    if isValidTarget(action, creature, player.getPosition(), isPlayerTurn):
+    if isValidTarget(action, creature, player, isPlayerTurn):
         creatureStats = creature["Statblock"]
         probNormalHit = -1
         critChance = -1
@@ -2460,7 +2460,7 @@ def calcTotalExpectedDamage(player, action, initiative):
 
     percentages = []
     for creature in initiative:
-        if isValidTarget(action, creature, player.getPosition(), isPlayerTurn):
+        if isValidTarget(action, creature, player, isPlayerTurn):
             if not isinstance(action, Weapon):
                 percentages.append(creature["Statblock"].getHP() / creature["Statblock"].getMaxHP())
             if not isinstance(action, Weapon) and action.getMean() == 0 and action.getNumTarget() == 1:
@@ -2479,7 +2479,7 @@ def calcTotalExpectedDamage(player, action, initiative):
                         for i, target in enumerate(targets):
                             #EDam targets use expected damage instead of probSuccess
                             #Potentially leads to different AOE subsets, which is resolved through impact rating checks.
-                            if isValidTarget(action, target, player.getPosition(), isPlayerTurn):
+                            if isValidTarget(action, target, player, isPlayerTurn):
                                 targets[i] = {
                                     "cid": target["Statblock"].getCID(),
                                     "probSuccess": calcIndividualExpectedDamage(player, action, target),
@@ -2731,7 +2731,7 @@ def calcIndividualToHitProbability(player, action, creature):
         isPlayerTurn = True
     else:
         isPlayerTurn = False
-    if isValidTarget(action, creature, player.getPosition(), isPlayerTurn):
+    if isValidTarget(action, creature, player, isPlayerTurn):
         if isinstance(action, Weapon):
             modifier = player.getMod(action.getStatType())
         elif isinstance(action, MonAction):
@@ -2839,10 +2839,6 @@ def calcMultiTargetBestMovement(player, action, successScores, targets, blockedC
     movementRecc = [] if bestState == currentState else _state_to_list(bestState)
     return selectedTargets, movementRecc
 def calcSingleTargetBestMovement(player, action, successScores, targets, blockedCells):
-    def _get_starting_anchor():
-        if hasattr(player, "getStartingAnchor"):
-            return player.getStartingAnchor()
-        return player.getPosition()
     def _get_target_position(target):
         statblock = target["Statblock"] if isinstance(target, dict) and "Statblock" in target else target
         return statblock.getPosition()
@@ -2860,18 +2856,13 @@ def calcSingleTargetBestMovement(player, action, successScores, targets, blocked
     targetSuccess = targets[successScores.index(scoreSuccess)]
     targetSuccessPos = _get_target_position(targetSuccess)
     actionRange = 5 if isinstance(action, Weapon) else _as_int_feet(action.getActionRange())
-    if actionRange is None:
-        return targetSuccess, []
 
     movementTiles = player.getMovementMax() // 5
-    rangeTiles = math.ceil(actionRange / 5)
-    startState = _state(_get_starting_anchor())
-    if not startState:
-        return targetSuccess, []
+    rangeTiles = math.ceil(actionRange // 5)
+    startState = _state(player.getStartingAnchor())
     currentState = _state(player.getPosition())
+
     if _in_range(startState, targetSuccessPos, rangeTiles):
-        return targetSuccess, []
-    if min_creature_distance_tiles(_state_to_list(startState), targetSuccessPos) > movementTiles + rangeTiles:
         return targetSuccess, []
 
     blocked = set()
@@ -2895,13 +2886,17 @@ def calcSingleTargetBestMovement(player, action, successScores, targets, blocked
             if nextState in visited or not _valid(nextState, blocked):
                 continue
             if _in_range(nextState, targetSuccessPos, rangeTiles):
+                print("Match found with range", rangeTiles)
                 if nextState == currentState:
+                    print(nextState, "is current state.")
                     return targetSuccess, []
+                print("Returning", nextState)
                 return targetSuccess, _state_to_list(nextState)
             visited.add(nextState)
             queue.append((nextState, distance + 1))
 
-    return targetSuccess, []
+    print("FAILURE")
+    return targetSuccess, None
 
 def calcTotalToHitProbability(player, action, initiative):
     # Only 1 or >1 targets for spells; also covers weapons.
@@ -2930,7 +2925,7 @@ def calcTotalToHitProbability(player, action, initiative):
 
     if isinstance(action, Weapon) or action.getNumTarget() == 1:
         for creature in initiative:
-            if isValidTarget(action, creature, player.getPosition(), isPlayerTurn):
+            if isValidTarget(action, creature, player, isPlayerTurn):
                 successProb = calcIndividualToHitProbability(player, action, creature)
                 successProbs.append(successProb)
                 targets.append(creature)
@@ -2969,7 +2964,7 @@ def calcTotalToHitProbability(player, action, initiative):
         successScores = []
         targets = []
         for creature in initiative:
-            if isValidTarget(action, creature, player.getPosition(), isPlayerTurn):
+            if isValidTarget(action, creature, player, isPlayerTurn):
                 successProb = calcIndividualToHitProbability(player, action, creature)
                 successScores.append(successProb)
                 targets.append(creature)
@@ -3213,7 +3208,7 @@ def calcTotalSaveProbability(player, action, initiative):
         successProbs = []
         targets = []
         for creature in initiative:
-            if isValidTarget(action, creature, player.getPosition(), isPlayerTurn):
+            if isValidTarget(action, creature, player, isPlayerTurn):
                 if isinstance(player, Player) or isinstance(action, Spell):
                     successProb = calcIndividualSaveProbability(
                         action, player.getDC(), creature["Statblock"]
@@ -3245,7 +3240,7 @@ def calcTotalSaveProbability(player, action, initiative):
         successScores = []
         targets = []
         for creature in initiative:
-            if isValidTarget(action, creature, player.getPosition(), isPlayerTurn):
+            if isValidTarget(action, creature, player, isPlayerTurn):
                 if isinstance(player, Player) or isinstance(action, Spell):
                     successProb = calcIndividualSaveProbability(action, player.getDC(), creature["Statblock"])
                 else:
@@ -3286,7 +3281,7 @@ def calcTotalSaveProbability(player, action, initiative):
         targets = [creature for creature in initiative]
         targetsCopy = [creature["Statblock"] for creature in targets]
         for i, target in enumerate(targets):
-            if isValidTarget(action, target, player.getPosition(), isPlayerTurn):
+            if isValidTarget(action, target, player, isPlayerTurn):
                 target = target["Statblock"]
                 targets[i] = {
                     "cid" : target.getCID(),
@@ -3381,7 +3376,7 @@ def calcOnHitProbability(action, weapons, player, initiative):
         probInitDams = []
         targets = []
         for creature in initiative:
-            if isValidTarget(action, creature, player.getPosition(),isPlayerTurn):
+            if isValidTarget(action, creature, player,isPlayerTurn):
                 probNormDam, probCritDam = calcDamProbs(creature["Statblock"], action, action.getDamMod(), "NORM")
                 probInitDams.append((probNormDam + probCritDam))
                 targets.append(creature)
@@ -3476,7 +3471,7 @@ def calcTotalAutoHitProbability(player, action, initiative):
         successProbs = []
         targets = []
         for creature in initiative:
-            if isValidTarget(action, creature, player.getPosition(), isPlayerTurn):
+            if isValidTarget(action, creature, player, isPlayerTurn):
                 if action.getSpecialNotes() and any("HPCap" in note for note in action.getSpecialNotes()):
                     hpCap = 0
                     specialNotes = action.getSpecialNotes()
@@ -3514,7 +3509,7 @@ def calcTotalAutoHitProbability(player, action, initiative):
         successScores = []
         targets = []
         for creature in initiative:
-            if isValidTarget(action, creature, player.getPosition(), isPlayerTurn):
+            if isValidTarget(action, creature, player, isPlayerTurn):
                 successProb = calcIndividualAutoHitProbability(action, creature["Statblock"])
                 successScores.append(successProb)
                 targets.append(creature)
@@ -3552,7 +3547,7 @@ def calcTotalAutoHitProbability(player, action, initiative):
         targets = [creature for creature in initiative]
         targetsCopy = [creature["Statblock"] for creature in targets]
         for i, target in enumerate(targets):
-            if isValidTarget(action, target, player.getPosition(), isPlayerTurn):
+            if isValidTarget(action, target, player, isPlayerTurn):
                 target = target["Statblock"]
                 targets[i] = {
                     "cid" : target.getCID(),
@@ -5455,7 +5450,7 @@ def actionViabilityCheck(action, activeInitiativeEntry, initiative, isPlayerTurn
     for entry in initiative:
         sb = entry.get("Statblock")
         if (sb is None or sb is activeInitiativeEntry["Statblock"]
-                or not isValidTarget(action, entry, activeInitiativeEntry["startingAnchor"], isPlayerTurn)):
+                or not isValidTarget(action, entry, activeInitiativeEntry["Statblock"], isPlayerTurn)):
             continue
         pos = sb.getPosition() if hasattr(sb, "getPosition") else sb.get("position")
         tiles = _normalize_occupied_tiles(pos)
@@ -5631,8 +5626,10 @@ def monsterTurn(creature, initiative, encounter_id=None):
                     else:
                         actionPercentages.append(round(actionEDam / hp, 2))
             except:
+                print("Error with", actionName)
                 continue
         else:
+            print(actionName, "not viable.")
             continue
 
     actions = []
