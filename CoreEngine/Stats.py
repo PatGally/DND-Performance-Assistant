@@ -28,12 +28,18 @@ class Stats:
         self.__cid = cid
         self.__position = position
         self.__movementMax = movementMax
+        self.__anchor = []
 
     def getCID(self):
         return self.__cid
 
     def setMovementMax(self, movementMax):
         self.__movementMax = int(movementMax)
+
+    def setStartingAnchor(self, anchor):
+        self.__anchor = anchor
+    def getStartingAnchor(self):
+        return self.__anchor
 
     def getMovementMax(self):
         return self.__movementMax

@@ -351,7 +351,7 @@ def unpackEntry(entry, activeInitiative):
     isSpell = False
 
     for creature in activeInitiative:
-        if creature["name"].lower() == actor.lower():
+        if creature["cid"] == actor:
             actorObj = creature["Statblock"]
         if creature["Statblock"].getCID() in targets:
             selectedTargets.append(creature["Statblock"])
@@ -558,7 +558,8 @@ async def rulesetSimulate(
     entry = entry.model_dump(mode="json", by_alias=True)
 
     actorObj, action, targets, isSpell, selectedTargets = unpackEntry(entry, activeInitiative)
-    actor = actorObj.getName()
+    movementRecc = entry.get("movementRecc", [])
+    actor = actorObj.getCID()
 
     token = token_model.model_dump(mode="json") if token_model else None
     if token:
@@ -572,7 +573,7 @@ async def rulesetSimulate(
 
     actor_turn_entry = None
     for creature in encInitiative:
-        if creature["name"].lower() == actor.lower():
+        if creature["cid"] == actor:
             actor_turn_entry = creature
             break
 
@@ -634,6 +635,13 @@ async def rulesetSimulate(
         raise HTTPException(status_code=500, detail="Invalid Action cost")
 
     resources_after = _resource_snapshot("after", actor_turn_entry)
+
+    if movementRecc:
+        try:
+            sharedMovementErrorContext(encounter, actorObj, movementRecc)
+            actorObj.setPosition(movementRecc)
+        except HTTPException as err:
+            raise HTTPException(status_code=err.status_code, detail=err.detail)
 
     main.executeAction(actorObj, action, selectedTargets, entry, activeInitiative, mapdata)
 
@@ -862,12 +870,10 @@ def sharedMovementErrorContext(encounter, creature, newPos, ruleset=False, newAn
 
     if ruleset:
         if (creature.getMovementMax() // 5) - newAnchorDistance < 0:
-            print(newAnchorDistance, creature.getMovementMax())
             bad = True
             message = f"Insufficient movement"
 
     if bad:
-        print("BAD MOVEMENT: ", message)
         raise HTTPException(status_code=500, detail=message)
 def sharedTokenContext(encounter, creature, newPos):
     tokens = encounter.getMapData()["layers"]["aoeTokens"]
@@ -942,7 +948,23 @@ async def movementSimulate(eid : str, cid : str, newPos : List[List[int]], curre
     encounter = main.loadEncounter(await getEncounter(eid, currentUser))
     creature = await getCreatureObj(encounter, cid)
     initEntry = main.findInitiativeEntryByCID(creature, encounter.getInitiative())
-    newAnchorDistance = main.min_creature_distance_tiles(newPos, initEntry["startingAnchor"])
+    players = [encounter.getPlayer(i) for i in range(encounter.playerSize())]
+    monsters = [encounter.getMonster(i) for i in range(encounter.monsterSize())]
+    #Currently considering players+monsters as collisions, since difficult terrain isnt implemented yet.
+    blockingPositions = [
+        other.getPosition()
+        for other in players + monsters
+        if other.getCID() != creature.getCID()
+    ]
+    cellBounds = encounter.getMapData()["grid"]["cellBounds"]
+    newAnchorDistance = main.shortest_movement_distance_tiles(
+        initEntry["startingAnchor"],
+        newPos,
+        blockingPositions,
+        creature.getMovementMax() // 5,
+        cellBounds["cols"],
+        cellBounds["rows"]
+    )
 
     try:
         sharedMovementErrorContext(encounter, creature, newPos,
@@ -1130,7 +1152,7 @@ async def getTurn(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUse
     initiative = encounter.get("initiative", [])
     for turn in initiative:
         if turn["currentTurn"]:
-            return turn["name"]
+            return turn["cid"]
     return {"error" : "no turns in initiative!"}
 @app.get("/encounter/{eid}/initiative")
 async def getSimulationInitiative(eid : str, currentUser: UserInDB = Depends(getCurrentActiveUser)):

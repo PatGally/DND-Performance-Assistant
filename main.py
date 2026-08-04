@@ -5,6 +5,7 @@ import json
 import math
 import os
 import re
+from collections import deque
 from datetime import datetime
 from typing import Set, List, Dict, Any, Tuple, Optional
 from pymongo.errors import PyMongoError
@@ -879,6 +880,52 @@ def min_creature_distance_tiles(tiles_a, tiles_b):
                 if best == 0:  # overlapping tile: collision
                     return 0
     return best
+def shortest_movement_distance_tiles(start_tiles, target_tiles, blocking_positions, max_tiles, rows=-1, cols=-1):
+    def _state(tiles):
+        normalized = _normalize_occupied_tiles(tiles)
+        return tuple(sorted((int(p[0]), int(p[1])) for p in normalized))
+    def _valid(state):
+        if rows != -1 and cols != -1:
+            return all(0 <= x < cols and 0 <= y < rows and (x, y) not in blocked for x, y in state)
+        else:
+            return all((x, y) not in blocked for x, y in state)
+
+    start = _state(start_tiles)
+    target = _state(target_tiles)
+    max_tiles = int(max_tiles)
+    blocked = set()
+    directions = [
+        (-1, -1), (0, -1), (1, -1),
+        (-1, 0),           (1, 0),
+        (-1, 1),  (0, 1),  (1, 1)
+    ]
+
+    for positions in blocking_positions or []:
+        blocked.update(tuple(tile) for tile in _normalize_occupied_tiles(positions))
+
+    if not start or not target or len(start) != len(target) or max_tiles < 0:
+        return math.inf
+    if not _valid(start) or not _valid(target):
+        return math.inf
+    if start == target:
+        return 0
+
+    queue = deque([(start, 0)])
+    visited = {start}
+    while queue:
+        state, distance = queue.popleft()
+        if distance >= max_tiles:
+            continue
+        for dx, dy in directions:
+            next_state = tuple(sorted((x + dx, y + dy) for x, y in state))
+            if next_state in visited or not _valid(next_state):
+                continue
+            if next_state == target:
+                return distance + 1
+            visited.add(next_state)
+            queue.append((next_state, distance + 1))
+
+    return math.inf
 def _normalize_occupied_tiles(pos):
     if pos is None:
         return []
@@ -892,20 +939,20 @@ def _normalize_occupied_tiles(pos):
 def normalizeTargetSets(targets, initiative):
     if isinstance(targets, dict) and "targetsHit" in targets:
         targets = targets["targetsHit"]
-    elif isinstance(targets, dict) and "name" in targets:
-        targets = [targets["name"]]
+    elif isinstance(targets, dict) and "cid" in targets:
+        targets = [targets["cid"]]
     elif isinstance(targets, Player) or isinstance(targets, Monster):
         targets = [targets]
     for i, target in enumerate(targets):
         if isinstance(target, str):
             for creature in initiative:
-                if creature["name"].lower() == target.lower():
+                if creature["cid"] == target:
                     targets[i] = copy.deepcopy(creature["Statblock"])
                     break
         elif isinstance(target, dict):
-            if "name" in target and "targetScore" in target:
+            if "cid" in target and "targetScore" in target:
                 for creature in initiative:
-                    if creature["name"].lower() == target["name"].lower():
+                    if creature["cid"] == target["cid"]:
                         targets[i] = copy.deepcopy(creature["Statblock"])
                         break
             else:
@@ -969,7 +1016,7 @@ def translateBasicAction(creature, action):
                      "action", "", [])
 def defineBasicActions(
     actionNames, actionTypes, actionProbs, actionEDams, actionImpacts, actionTargets,
-    actionObjs, initEntry, initiative, isPlayerTurn,
+    actionMovementReccs, actionObjs, initEntry, initiative, isPlayerTurn,
 ):
     # Load basic actions
     try:
@@ -999,11 +1046,12 @@ def defineBasicActions(
         grappleProb = calcTotalSaveProbability(creature, grapple, initiative)  # Calculate probability of save
         grappleProb["probSuccess"] = 0 if grappleProb["probSuccess"] < 0 else grappleProb["probSuccess"]
         grappleProb["probSuccess"] = 1 if grappleProb["probSuccess"] > 1 else grappleProb["probSuccess"]
+        grappleMovementRecc = grappleProb.get("movementRecc", [])
 
         probToStr = f"{grappleProb['probSuccess']}"
         probToStr += f" - {grappleProb['probLingEffect']}LE" if grappleProb["probLingEffect"] else ""
         probToStr += f" - {grappleProb['probExtraEffect']}EE" if grappleProb["probExtraEffect"] else ""
-        probToStr += f" - {grappleProb['probLingSaves']}LS" if grappleProb["probLingSaves"] else ""
+        probToStr += f" - {grappleProb['probLingSave']}LS" if grappleProb["probLingSave"] else ""
 
         probTargets = grappleProb["target"] if grappleProb["probSuccess"] != 0 else ""
         targets = normalizeTargetSets(probTargets, initiative)
@@ -1025,17 +1073,19 @@ def defineBasicActions(
         actionEDams.append(0)
         actionImpacts.append(grappleImpact)
         actionTargets.append(targets)
+        actionMovementReccs.append(grappleMovementRecc)
         actionObjs.append(grapple)
 
     if actionViabilityCheck(shove, initEntry, initiative, isPlayerTurn):
         shoveProb = calcTotalSaveProbability(creature, shove, initiative)
         shoveProb["probSuccess"] = 0 if shoveProb["probSuccess"] < 0 else shoveProb["probSuccess"]
         shoveProb["probSuccess"] = 1 if shoveProb["probSuccess"] > 1 else shoveProb["probSuccess"]
+        shoveMovementRecc = shoveProb.get("movementRecc", [])
 
         probToStr = f"{shoveProb['probSuccess']}"
         probToStr += f" - {shoveProb['probLingEffect']}LE" if shoveProb["probLingEffect"] else ""
         probToStr += f" - {shoveProb['probExtraEffect']}EE" if shoveProb["probExtraEffect"] else ""
-        probToStr += f" - {shoveProb['probLingSaves']}LS" if shoveProb["probLingSaves"] else ""
+        probToStr += f" - {shoveProb['probLingSave']}LS" if shoveProb["probLingSave"] else ""
 
         probTargets = shoveProb["target"] if shoveProb["probSuccess"] != 0 else ""
         targets = normalizeTargetSets(probTargets, initiative)
@@ -1057,6 +1107,7 @@ def defineBasicActions(
         actionEDams.append(0)
         actionImpacts.append(shoveImpact)
         actionTargets.append(targets)
+        actionMovementReccs.append(shoveMovementRecc)
         actionObjs.append(shove)
 
     if actionViabilityCheck(dodge, initEntry, initiative, isPlayerTurn):
@@ -1078,6 +1129,7 @@ def defineBasicActions(
         actionEDams.append(0)
         actionImpacts.append(dodgeImpact)
         actionTargets.append(dodgeTargets)
+        actionMovementReccs.append([])
         actionObjs.append(dodge)
 
 def calcDamProbs(creatureStats, action, modifier, threshold):
@@ -1282,6 +1334,8 @@ def translateLingEffect(action, lingEffect, spellMod):
     return lingSpell
 def calcLingeringEffectProbability(player, target, action, lingEffect, successProb):
     # 1. Repeat check
+    if isinstance(action, Weapon):
+        return 0
     if "repeat" in lingEffect and lingEffect["repeat"] == True:
         return successProb
     try:
@@ -1302,6 +1356,8 @@ def calcLingeringEffectProbability(player, target, action, lingEffect, successPr
     # No spells have onHit lingering effects
     return lingEffectProb
 def calcLingeringSavesProbability(player, target, spell):
+    if isinstance(spell, Weapon):
+        return 0
     target = target[0] if isinstance(target, list) else target
     if isinstance(target, dict):
         target = target["Statblock"]
@@ -1321,7 +1377,7 @@ def getMultiTargetWeights(player, action, initiative):
     else:
         isPlayerTurn = False
     for creature in initiative:
-        if isValidTarget(action, creature, player.getPosition(),isPlayerTurn):
+        if isValidTarget(action, creature, player,isPlayerTurn):
             eDam = calcIndividualExpectedDamage(player, action, creature)
             hp = creature["Statblock"].getHP()
             if action.getRollType().lower() == "tohit":
@@ -1367,7 +1423,7 @@ def getMultiTargetWeights(player, action, initiative):
     weights = [weight["Creature"] for weight in weights]
     weights = weights[0 : min(action.getNumTarget(), len(weights))]
     return weights
-def isValidTarget(action, creature, actorPos, isPlayerTurn=True):
+def isValidTarget(action, creature, actor, isPlayerTurn=True):
     validTarget = False
     if isPlayerTurn:
         if isinstance(action, Weapon) or ((isinstance(action, Spell) or isinstance(action, MonAction)) and action.getDamType() != "healing"):
@@ -1437,14 +1493,14 @@ def isValidTarget(action, creature, actorPos, isPlayerTurn=True):
         return False
 
     creature = creature["Statblock"] if "Statblock" in creature else creature
-    actor_tiles = _normalize_occupied_tiles(actorPos)
+    actor_tiles = _normalize_occupied_tiles(actor.getStartingAnchor())
     if not isinstance(action, Weapon):
-        actionRangeFeet = _as_int_feet(action.getActionRange())
+        actionRangeFeet = _as_int_feet(action.getActionRange()) + _as_int_feet(actor.getMovementMax())
     else:
-        actionRangeFeet = 5
+        actionRangeFeet = 5 + _as_int_feet(actor.getMovementMax())
     if actionRangeFeet is None:
         return False
-    rangeTiles = math.ceil(actionRangeFeet / 5)
+    rangeTiles = math.ceil(actionRangeFeet // 5)
     others_tiles = [creature.getPosition()]
     for target_tiles in others_tiles:
         min_d = min_creature_distance_tiles(actor_tiles, target_tiles)
@@ -1466,8 +1522,10 @@ def bestAoePositioning(
     allCreaturePositions: List[List[int]],
     allTargets: List[Dict[str, Any]],
     casterCells : List[List[int]],
+    currentCasterCells: List[List[int]],
+    movementMax: int,
     originMode : str = "placed"
-) -> Dict[str, Any]:
+):
     result = bestAoePositioningDebug(
         rangeFt=rangeFt,
         radiusFt=radiusFt,
@@ -1475,17 +1533,13 @@ def bestAoePositioning(
         allCreaturePositions=allCreaturePositions,
         allTargets=allTargets,
         casterCells=casterCells,
+        currentCasterCells=currentCasterCells,
+        movementMax=movementMax,
         originMode=originMode
     )
-    # result = {
-    #     "coveredCells": covered,
-    #     "anchor": anchor,
-    #     "orientation": orientationName,
-    #     "score": score,
-    #     "targetsHit": targetBreakdown,
-    # }
-    return {"targetsHit" : result["targetsHit"], "positioning" : [[x, y] for x, y in result["coveredCells"]]}
-    # return [[x, y] for x, y in result["coveredCells"]]
+    return {"targetsHit" : result["targetsHit"],
+            "positioning" : [[x, y] for x, y in result["coveredCells"]],
+            "movementRecc" : result["movementRecc"]}
 def getOrientedTemplateMasks(
         shapeKind: str,
         sizeCells: int,
@@ -1655,8 +1709,10 @@ def bestAoePositioningDebug(
         allCreaturePositions: List[List[int]],
         allTargets: List[Dict[str, Any]],
         casterCells: List[List[int]],
+        currentCasterCells: List[List[int]],
+        movementMax: int,
         originMode: str = "placed"
-) -> Dict[str, Any]:
+):
     def parseShape(shape: str) -> Tuple[str, Optional[int]]:
         s = shape.strip().lower()
 
@@ -1697,7 +1753,7 @@ def bestAoePositioningDebug(
             hits = len(covered & positions)
 
             if hits > 0:
-                name = target["name"]
+                cid = target["cid"]
                 probSuccess = target["probSuccess"]
                 badTarget = len(positions & coveredNonViableCells)
                 total = len(positions)
@@ -1709,7 +1765,7 @@ def bestAoePositioningDebug(
                     score += targetScore
 
                 targetBreakdown.append({
-                    "name": name,
+                    "cid": cid,
                     "probSuccess": probSuccess,
                     "tilesHit": hits,
                     "tilesTotal": total,
@@ -1732,9 +1788,57 @@ def bestAoePositioningDebug(
         # abs(x1 - x2) + abs(y1 - y2)
         return abs(a[0] - b[0]) + abs(a[1] - b[1])
     def anchorWithinPlacedRange(anchor: Coord, casterCellSet: Set[Coord], rangeCells: int) -> bool:
-        if rangeCells <= 0:
-            return True
         return any(distanceCells(anchor, c) <= rangeCells for c in casterCellSet)
+    def translateCasterCells(casterCellSet: Set[Coord], offset: Coord) -> Set[Coord]:
+        dx, dy = offset
+        return {(x + dx, y + dy) for x, y in casterCellSet}
+    def findCandidateCasterDestinations(
+            casterCellSet: Set[Coord],
+            movementCells: int,
+            occupiedCells: Set[Coord],
+    ) -> List[Tuple[int, Set[Coord]]]:
+        if not casterCellSet:
+            return []
+
+        blockedCells = occupiedCells - casterCellSet
+        directions = [
+            (-1, -1), (0, -1), (1, -1),
+            (-1, 0),           (1, 0),
+            (-1, 1),  (0, 1),  (1, 1),
+        ]
+        candidates = [(0, casterCellSet)]
+        queue = deque([((0, 0), 0)])
+        visitedOffsets = {(0, 0)}
+
+        while queue:
+            offset, distance = queue.popleft()
+            if distance >= movementCells:
+                continue
+
+            for dx, dy in directions:
+                nextOffset = (offset[0] + dx, offset[1] + dy)
+                if nextOffset in visitedOffsets:
+                    continue
+                visitedOffsets.add(nextOffset)
+
+                translatedCells = translateCasterCells(casterCellSet, nextOffset)
+                if translatedCells & blockedCells:
+                    continue
+
+                nextDistance = distance + 1
+                candidates.append((nextDistance, translatedCells))
+                queue.append((nextOffset, nextDistance))
+
+        return candidates
+    def findLeastMovementCasterDestination(
+            anchor: Coord,
+            casterDestinations: List[Tuple[int, Set[Coord]]],
+            normalRangeCells: int,
+    ) -> Optional[Set[Coord]]:
+        for _, destinationCells in casterDestinations:
+            if anchorWithinPlacedRange(anchor, destinationCells, normalRangeCells):
+                return destinationCells
+        return None
 
     def buildSelfOriginCone(
             casterCellSet: Set[Coord],
@@ -1937,6 +2041,7 @@ def bestAoePositioningDebug(
     # radiusFt now controls the actual AOE template size.
     sizeCells = max(1, math.ceil(int(radiusFt) / 5))
     rangeCells = max(0, math.ceil(int(rangeFt) / 5))
+    movementCells = max(0, int(movementMax) // 5)
     if originMode == "self":
         rangeCells = 0
     lineWidthCells = max(1, math.ceil(lineWidthFt / 5)) if lineWidthFt else None
@@ -1945,13 +2050,20 @@ def bestAoePositioningDebug(
     [unparsedCells.extend(pos) for pos in allCreaturePositions]
     allCells: Set[Coord] = {tuple(p) for p in unparsedCells}
     casterCellSet: Set[Coord] = normalizeCellSet(casterCells)
+    currentCasterCellSet: Set[Coord] = normalizeCellSet(currentCasterCells)
+    #NOTE: Full set of all legal caster positions to move into.
+    casterDestinations = findCandidateCasterDestinations(
+        casterCellSet=casterCellSet,
+        movementCells=movementCells,
+        occupiedCells=allCells - currentCasterCellSet,
+    )
 
     normalizedTargets = []
     viableCellsToTarget: Dict[Coord, Dict[str, Any]] = {}
 
     for target in allTargets:
         normalizedTarget = {
-            "name": target["name"],
+            "cid": target["cid"],
             "probSuccess": float(target["probSuccess"]) if target["probSuccess"] else 0.0,
             "positioning": {tuple(p) for p in target["positioning"]},
         }
@@ -1971,6 +2083,7 @@ def bestAoePositioningDebug(
             "orientation": None,
             "score": float("-inf"),
             "targetsHit": [],
+            "movementRecc": []
         }
 
     orientedMasks = getOrientedTemplateMasks(
@@ -1989,6 +2102,7 @@ def bestAoePositioningDebug(
             "orientation": None,
             "score": float("-inf"),
             "targetsHit": [],
+            "movementRecc": []
         }
 
     best = {
@@ -1997,6 +2111,7 @@ def bestAoePositioningDebug(
         "orientation": None,
         "score": float("-inf"),
         "targetsHit": [],
+        "movementRecc": []
     }
 
     # SELF-ORIGIN
@@ -2008,98 +2123,110 @@ def bestAoePositioningDebug(
                 "orientation": None,
                 "score": float("-inf"),
                 "targetsHit": [],
+                "movementRecc": []
             }
 
-        # circle / square can still use the simpler anchor-based logic for now
-        if shapeKind in {"circle", "square"}:
-            for orientationName, relMask in orientedMasks:
-                for anchor in casterCellSet:
-                    ax, ay = anchor
-                    covered = {(ax + dx, ay + dy) for dx, dy in relMask}
-                    covered -= casterCellSet
-
-                    score, targetBreakdown = scoreMaskPlacement(
-                        covered=covered,
-                        allTargets=normalizedTargets,
-                        viableCellSet=viableCells,
-                        nonViableCells=nonViableCells,
-                    )
-
-                    if score > best["score"]:
-                        best = {
-                            "coveredCells": covered,
-                            "anchor": anchor,
-                            "orientation": orientationName,
-                            "score": score,
-                            "targetsHit": targetBreakdown,
-                        }
-
-            best["coveredCells"] = sorted(best["coveredCells"])
-            return best
-
-        # cone / line need special 8-direction self-origin logic
-        #Shapes are rebuilt in buildSelfOrigin___ due to needing to account for front edge
-        for orientationName, direction in get8Directions():
-            if shapeKind == "line":
-                anchorCandidates = getDirectionalLineAnchors(casterCellSet, direction)
-
-                for anchorCell in anchorCandidates:
-                    covered = buildSelfOriginLine(
-                        casterCellSet=casterCellSet,
-                        anchorCell=anchorCell,
-                        orientationName=orientationName,
-                        direction=direction,
-                        lengthCells=sizeCells,
-                        widthCells=lineWidthCells or 1,
-                    )
-
-                    score, targetBreakdown = scoreMaskPlacement(
-                        covered=covered,
-                        allTargets=normalizedTargets,
-                        viableCellSet=viableCells,
-                        nonViableCells=nonViableCells,
-                    )
-
-                    if score > best["score"]:
-                        best = {
-                            "coveredCells": covered,
-                            "anchor": [anchorCell],
-                            "orientation": orientationName,
-                            "score": score,
-                            "targetsHit": targetBreakdown,
-                        }
-
+        for _, translatedCasterCells in casterDestinations:
+            # Origins that cannot possibly cover a viable target do not need full scoring.
+            maxTemplateReach = (sizeCells * 2) + (lineWidthCells or 1)
+            if viableCells and not any(
+                    min(distanceCells(casterCell, targetCell) for casterCell in translatedCasterCells)
+                    <= maxTemplateReach
+                    for targetCell in viableCells
+            ):
                 continue
 
-            elif shapeKind == "cone":
-                anchorCandidates = getDirectionalConeAnchors(casterCellSet, direction)
+            movementRecc = [] if translatedCasterCells == currentCasterCellSet else [
+                [x, y] for x, y in sorted(translatedCasterCells)
+            ]
 
-                for anchorCell in anchorCandidates:
-                    covered = buildSelfOriginCone(
-                        casterCellSet=casterCellSet,
-                        anchorCell=anchorCell,
-                        orientationName=orientationName,
-                        direction=direction,
-                        lengthCells=sizeCells,
-                    )
+            if shapeKind in {"circle", "square"}:
+                for orientationName, relMask in orientedMasks:
+                    for anchor in translatedCasterCells:
+                        ax, ay = anchor
+                        covered = {(ax + dx, ay + dy) for dx, dy in relMask}
+                        covered -= translatedCasterCells
 
-                    score, targetBreakdown = scoreMaskPlacement(
-                        covered=covered,
-                        allTargets=normalizedTargets,
-                        viableCellSet=viableCells,
-                        nonViableCells=nonViableCells,
-                    )
+                        score, targetBreakdown = scoreMaskPlacement(
+                            covered=covered,
+                            allTargets=normalizedTargets,
+                            viableCellSet=viableCells,
+                            nonViableCells=nonViableCells,
+                        )
 
-                    if score > best["score"]:
-                        best = {
-                            "coveredCells": covered,
-                            "anchor": [anchorCell],
-                            "orientation": orientationName,
-                            "score": score,
-                            "targetsHit": targetBreakdown,
-                        }
-
+                        if score > best["score"]:
+                            best = {
+                                "coveredCells": covered,
+                                "anchor": anchor,
+                                "orientation": orientationName,
+                                "score": score,
+                                "targetsHit": targetBreakdown,
+                                "movementRecc": movementRecc,
+                            }
                 continue
+
+            # cone / line need special 8-direction self-origin logic
+            for orientationName, direction in get8Directions():
+                if shapeKind == "line":
+                    anchorCandidates = getDirectionalLineAnchors(translatedCasterCells, direction)
+
+                    for anchorCell in anchorCandidates:
+                        covered = buildSelfOriginLine(
+                            casterCellSet=translatedCasterCells,
+                            anchorCell=anchorCell,
+                            orientationName=orientationName,
+                            direction=direction,
+                            lengthCells=sizeCells,
+                            widthCells=lineWidthCells or 1,
+                        )
+
+                        score, targetBreakdown = scoreMaskPlacement(
+                            covered=covered,
+                            allTargets=normalizedTargets,
+                            viableCellSet=viableCells,
+                            nonViableCells=nonViableCells,
+                        )
+
+                        if score > best["score"]:
+                            best = {
+                                "coveredCells": covered,
+                                "anchor": [anchorCell],
+                                "orientation": orientationName,
+                                "score": score,
+                                "targetsHit": targetBreakdown,
+                                "movementRecc": movementRecc,
+                            }
+
+                    continue
+
+                if shapeKind == "cone":
+                    anchorCandidates = getDirectionalConeAnchors(translatedCasterCells, direction)
+
+                    for anchorCell in anchorCandidates:
+                        covered = buildSelfOriginCone(
+                            casterCellSet=translatedCasterCells,
+                            anchorCell=anchorCell,
+                            orientationName=orientationName,
+                            direction=direction,
+                            lengthCells=sizeCells,
+                        )
+
+                        score, targetBreakdown = scoreMaskPlacement(
+                            covered=covered,
+                            allTargets=normalizedTargets,
+                            viableCellSet=viableCells,
+                            nonViableCells=nonViableCells,
+                        )
+
+                        if score > best["score"]:
+                            best = {
+                                "coveredCells": covered,
+                                "anchor": [anchorCell],
+                                "orientation": orientationName,
+                                "score": score,
+                                "targetsHit": targetBreakdown,
+                                "movementRecc": movementRecc,
+                            }
 
         best["coveredCells"] = sorted(best["coveredCells"])
         return best
@@ -2108,17 +2235,24 @@ def bestAoePositioningDebug(
     PLACEMENT_EXPANSION_RADIUS = 2
     CANDIDATE_CUTOFF = 10
 
+    effectiveRangeCells = rangeCells + movementCells
+
     for orientationName, relMask in orientedMasks:
         candidateAnchors = generateCandidateAnchors(
             relMask=relMask,
             focusCells=viableCells,
             casterCellSet=casterCellSet,
-            rangeCells=rangeCells,
+            rangeCells=effectiveRangeCells,
         )
 
         seedResults = []
 
         for anchor in sorted(candidateAnchors):
+            casterDestination = findLeastMovementCasterDestination(
+                anchor, casterDestinations, rangeCells
+            )
+            if casterDestination is None:
+                continue
             ax, ay = anchor
             covered = {(ax + dx, ay + dy) for dx, dy in relMask}
 
@@ -2144,6 +2278,9 @@ def bestAoePositioningDebug(
                     "orientation": orientationName,
                     "score": score,
                     "targetsHit": targetBreakdown,
+                    "movementRecc": [] if casterDestination == currentCasterCellSet else [
+                        [x, y] for x, y in sorted(casterDestination)
+                    ],
                 }
 
         if not seedResults:
@@ -2161,7 +2298,13 @@ def bestAoePositioningDebug(
         expandedAnchors -= candidateAnchors
 
         for anchor in sorted(expandedAnchors): #Extra check around anchors by radius, as placing an AOE inbetween candidates can sometimes be better
-            if casterCellSet and not anchorWithinPlacedRange(anchor, casterCellSet, rangeCells):
+            if casterCellSet and not anchorWithinPlacedRange(anchor, casterCellSet, effectiveRangeCells):
+                continue
+
+            casterDestination = findLeastMovementCasterDestination(
+                anchor, casterDestinations, rangeCells
+            )
+            if casterDestination is None:
                 continue
 
             ax, ay = anchor
@@ -2187,6 +2330,9 @@ def bestAoePositioningDebug(
                     "orientation": orientationName,
                     "score": score,
                     "targetsHit": targetBreakdown,
+                    "movementRecc": [] if casterDestination == currentCasterCellSet else [
+                        [x, y] for x, y in sorted(casterDestination)
+                    ],
                 }
 
     best["coveredCells"] = sorted(best["coveredCells"])
@@ -2199,7 +2345,7 @@ def calcIndividualExpectedDamage(player, action, creature):
         isPlayerTurn = True
     else:
         isPlayerTurn = False
-    if isValidTarget(action, creature, player.getPosition(), isPlayerTurn):
+    if isValidTarget(action, creature, player, isPlayerTurn):
         creatureStats = creature["Statblock"]
         probNormalHit = -1
         critChance = -1
@@ -2300,6 +2446,11 @@ def calcIndividualExpectedDamage(player, action, creature):
 def calcTotalExpectedDamage(player, action, initiative):
     eDamages = []
     viableTargets = []
+    blockedCells = [
+        creature["Statblock"].getPosition()
+        for creature in initiative
+        if creature["Statblock"] is not player
+    ]
     if not isinstance(action, Weapon) and action.getNumTarget() == 0:
         return 0, {}
     if isinstance(player, Player):
@@ -2309,7 +2460,7 @@ def calcTotalExpectedDamage(player, action, initiative):
 
     percentages = []
     for creature in initiative:
-        if isValidTarget(action, creature, player.getPosition(), isPlayerTurn):
+        if isValidTarget(action, creature, player, isPlayerTurn):
             if not isinstance(action, Weapon):
                 percentages.append(creature["Statblock"].getHP() / creature["Statblock"].getMaxHP())
             if not isinstance(action, Weapon) and action.getMean() == 0 and action.getNumTarget() == 1:
@@ -2320,35 +2471,24 @@ def calcTotalExpectedDamage(player, action, initiative):
                 viableTargets.append(creature["Statblock"])
             else:
                 if action.getRollType().lower() in ["save", "autohit", "tohit"]:
-                    if action.getNumTarget() == 1:
+                    if action.getNumTarget() >= 1:
                         eDamages.append(calcIndividualExpectedDamage(player, action, creature))
                         viableTargets.append(creature["Statblock"])
-                    elif action.getNumTarget() > 1:
-                        weights = getMultiTargetWeights(player, action, initiative)
-                        if weights:
-                            tempTargetStore = action.getNumTarget()
-                            action.setNumTarget(1)
-                            for weight in weights:
-                                eDamages.append(calcIndividualExpectedDamage(player, action, weight))
-                                viableTargets.append(weight)
-                            action.setNumTarget(tempTargetStore)
-                            return sum(eDamages) / len(eDamages), viableTargets
-                        return 0, {}
                     elif action.getNumTarget() in [-1, -2]:
                         targets = [creature for creature in initiative]
                         for i, target in enumerate(targets):
                             #EDam targets use expected damage instead of probSuccess
                             #Potentially leads to different AOE subsets, which is resolved through impact rating checks.
-                            if isValidTarget(action, target, player.getPosition(), isPlayerTurn):
+                            if isValidTarget(action, target, player, isPlayerTurn):
                                 targets[i] = {
-                                    "name": target["Statblock"].getName(),
+                                    "cid": target["Statblock"].getCID(),
                                     "probSuccess": calcIndividualExpectedDamage(player, action, target),
                                     "positioning": target["Statblock"].getPosition(),
                                     "viable" : True
                                 }
                             else:
                                 targets[i] = {
-                                    "name": target["Statblock"].getName(),
+                                    "cid": target["Statblock"].getCID(),
                                     "probSuccess": calcIndividualExpectedDamage(player, action, target),
                                     "positioning": target["Statblock"].getPosition(),
                                     "viable" : False
@@ -2357,12 +2497,16 @@ def calcTotalExpectedDamage(player, action, initiative):
                         actionRange = action.getActionRange()
                         radius = action.getActionRadius()
                         shape = action.getShape()
-                        casterCells = player.getPosition()
+                        casterCells = player.getStartingAnchor()
+                        currentCasterCells = player.getPosition()
+                        movementMax = player.getMovementMax()
                         aoeType = "placed" if action.getNumTarget() == -1 else "self"
 
                         eDam, token = avgOverAOETargets(targets, positions, actionRange,
-                                                        radius, shape, casterCells, aoeType)
-                        return round(eDam, 2), token
+                                                        radius, shape, casterCells,
+                                                        currentCasterCells, movementMax, aoeType)
+                        movementRecc = token["movementRecc"]
+                        return round(eDam, 2), token, movementRecc
                     else:
                         raise ValueError("Invalid numTarget!")
                 elif action.getRollType().lower() == "onhit":
@@ -2377,18 +2521,36 @@ def calcTotalExpectedDamage(player, action, initiative):
                             )
                         )
                     weaponDam = max(weaponDamages)
-                    # weaponMean = player.getWeapon(weaponDamages.index(weaponDam)).getMean()
                     eDamages.append(calcIndividualExpectedDamage(player, action, creature) + weaponDam)
                     viableTargets.append(creature)
                 else:
                     raise ValueError("Bad rollType!")
-    if len(viableTargets) != 0 and all(eDamages) != 0:
+    if len(viableTargets) != 0 and all([eDam != 0 for eDam in eDamages]):
         if not isinstance(action, Weapon) and (action.getDamType() == "healing" or "healing" in action.getDamType() or action.getMean() == 0):
-            return round(max(eDamages), 2) if eDamages else 0, viableTargets[percentages.index(min(percentages))]
+            if action.getNumTarget() == 1:
+                targetSuccess, movementRecc = calcSingleTargetBestMovement(
+                    player, action, percentages, viableTargets, blockedCells
+                )
+                return eDamages[viableTargets.index(targetSuccess)], targetSuccess, movementRecc
+            elif action.getNumTarget() > 1:
+                targetSuccess, movementRecc = calcMultiTargetBestMovement(
+                    player, action, percentages, viableTargets, blockedCells
+                )
+                return eDamages[viableTargets.index(targetSuccess)], targetSuccess, movementRecc
         else:
-            return round(max(eDamages), 2) if eDamages else 0, viableTargets[eDamages.index(max(eDamages))]
+            if isinstance(action, Weapon) or action.getNumTarget() == 1:
+                targetSuccess, movementRecc = calcSingleTargetBestMovement(
+                    player, action, eDamages, viableTargets, blockedCells
+                )
+                return eDamages[viableTargets.index(targetSuccess)], targetSuccess, movementRecc
+            elif action.getNumTarget() > 1:
+                targetSuccess, movementRecc = calcMultiTargetBestMovement(
+                    player, action, eDamages, viableTargets, blockedCells
+                )
+                return eDamages[viableTargets.index(targetSuccess)], targetSuccess, movementRecc
     else:
         return 0, {}
+    return 0, {}
 
 
 # PROB OF SUCCESS METHODS
@@ -2569,7 +2731,7 @@ def calcIndividualToHitProbability(player, action, creature):
         isPlayerTurn = True
     else:
         isPlayerTurn = False
-    if isValidTarget(action, creature, player.getPosition(), isPlayerTurn):
+    if isValidTarget(action, creature, player, isPlayerTurn):
         if isinstance(action, Weapon):
             modifier = player.getMod(action.getStatType())
         elif isinstance(action, MonAction):
@@ -2589,49 +2751,201 @@ def calcIndividualToHitProbability(player, action, creature):
     # NOTE: No specialNotes relevant to probability of success in all toHit spells
     successProb = probNormalHit * normDamProb + critChance * critDamProb
     return successProb
+def calcMultiTargetBestMovement(player, action, successScores, targets, blockedCells):
+    def _get_starting_anchor():
+        if hasattr(player, "getStartingAnchor"):
+            return player.getStartingAnchor()
+        return player.getPosition()
+    def _get_target_position(target):
+        statblock = target["Statblock"] if isinstance(target, dict) and "Statblock" in target else target
+        return statblock.getPosition()
+    def _state(tiles):
+        normalized = _normalize_occupied_tiles(tiles)
+        return tuple(sorted((int(p[0]), int(p[1])) for p in normalized))
+    def _state_to_list(state):
+        return [[x, y] for x, y in state]
+    def _valid(state, blocked):
+        return all((x, y) not in blocked for x, y in state)
+    def _targets_in_range(state, range_tiles):
+        actor_tiles = _state_to_list(state)
+        return [
+            index for index, position in enumerate(targetPositions)
+            if min_creature_distance_tiles(actor_tiles, position) <= range_tiles
+        ]
+    def _best_targets_for_state(state, range_tiles, num_targets):
+        reachable = _targets_in_range(state, range_tiles)
+        reachable.sort(key=lambda index: (-successScores[index], index))
+        selected = reachable[:num_targets]
+        return selected, sum(successScores[index] for index in selected)
+
+    if not successScores or not targets or len(successScores) != len(targets):
+        return [], []
+
+    numTargets = min(action.getNumTarget(), len(targets))
+    if numTargets <= 0:
+        return [], []
+
+    actionRange = 5 if isinstance(action, Weapon) else _as_int_feet(action.getActionRange())
+    if actionRange is None:
+        return [], []
+
+    movementTiles = player.getMovementMax() // 5
+    rangeTiles = math.ceil(actionRange / 5)
+    startState = _state(_get_starting_anchor())
+    if not startState:
+        return [], []
+    currentState = _state(player.getPosition())
+
+    targetPositions = [_get_target_position(target) for target in targets]
+    bestOverallIndices = sorted(
+        range(len(targets)), key=lambda index: (-successScores[index], index)
+    )[:numTargets]
+    startIndices, startScore = _best_targets_for_state(startState, rangeTiles, numTargets)
+    if set(bestOverallIndices).issubset(startIndices):
+        return [targets[index] for index in startIndices], []
+
+    blocked = set()
+    directions = [
+        (-1, -1), (0, -1), (1, -1),
+        (-1, 0),           (1, 0),
+        (-1, 1),  (0, 1),  (1, 1)
+    ]
+    for position in blockedCells:
+        blocked.update(tuple(tile) for tile in _normalize_occupied_tiles(position))
+
+    bestState = startState
+    bestIndices = startIndices
+    bestRank = (len(startIndices), startScore, 0)
+    queue = deque([(startState, 0)])
+    visited = {startState}
+    while queue:
+        state, distance = queue.popleft()
+        selected, score = _best_targets_for_state(state, rangeTiles, numTargets)
+        rank = (len(selected), score, -distance)
+        if rank > bestRank:
+            bestState = state
+            bestIndices = selected
+            bestRank = rank
+        if distance >= movementTiles:
+            continue
+        for dx, dy in directions:
+            nextState = tuple(sorted((x + dx, y + dy) for x, y in state))
+            if nextState in visited or not _valid(nextState, blocked):
+                continue
+            visited.add(nextState)
+            queue.append((nextState, distance + 1))
+
+    selectedTargets = [targets[index] for index in bestIndices]
+    movementRecc = [] if bestState == currentState else _state_to_list(bestState)
+    return selectedTargets, movementRecc
+def calcSingleTargetBestMovement(player, action, successScores, targets, blockedCells):
+    def _get_target_position(target):
+        statblock = target["Statblock"] if isinstance(target, dict) and "Statblock" in target else target
+        return statblock.getPosition()
+    def _state(tiles):
+        normalized = _normalize_occupied_tiles(tiles)
+        return tuple(sorted((int(p[0]), int(p[1])) for p in normalized))
+    def _state_to_list(state):
+        return [[x, y] for x, y in state]
+    def _valid(state, blocked):
+        return all((x, y) not in blocked for x, y in state)
+    def _in_range(state, target_positions, range_tiles):
+        return min_creature_distance_tiles(_state_to_list(state), target_positions) <= range_tiles
+
+    scoreSuccess = max(successScores)
+    targetSuccess = targets[successScores.index(scoreSuccess)]
+    targetSuccessPos = _get_target_position(targetSuccess)
+    actionRange = 5 if isinstance(action, Weapon) else _as_int_feet(action.getActionRange())
+
+    movementTiles = player.getMovementMax() // 5
+    rangeTiles = math.ceil(actionRange // 5)
+    startState = _state(player.getStartingAnchor())
+    currentState = _state(player.getPosition())
+
+    if _in_range(startState, targetSuccessPos, rangeTiles):
+        return targetSuccess, []
+
+    blocked = set()
+    directions = [
+        (-1, -1), (0, -1), (1, -1),
+        (-1, 0),           (1, 0),
+        (-1, 1),  (0, 1),  (1, 1)
+    ]
+
+    for position in blockedCells:
+        blocked.update(tuple(tile) for tile in _normalize_occupied_tiles(position))
+
+    queue = deque([(startState, 0)])
+    visited = {startState}
+    while queue:
+        state, distance = queue.popleft()
+        if distance >= movementTiles:
+            continue
+        for dx, dy in directions:
+            nextState = tuple(sorted((x + dx, y + dy) for x, y in state))
+            if nextState in visited or not _valid(nextState, blocked):
+                continue
+            if _in_range(nextState, targetSuccessPos, rangeTiles):
+                print("Match found with range", rangeTiles)
+                if nextState == currentState:
+                    print(nextState, "is current state.")
+                    return targetSuccess, []
+                print("Returning", nextState)
+                return targetSuccess, _state_to_list(nextState)
+            visited.add(nextState)
+            queue.append((nextState, distance + 1))
+
+    print("FAILURE")
+    return targetSuccess, None
+
 def calcTotalToHitProbability(player, action, initiative):
     # Only 1 or >1 targets for spells; also covers weapons.
     if isinstance(player, Player):
         isPlayerTurn = True
     else:
         isPlayerTurn = False
+
+    successProbs = []
+    targets = []
+    movementRecc = []
+    blockedCells = [
+        creature["Statblock"].getPosition()
+        for creature in initiative
+        if creature["Statblock"] is not player
+    ]
+
+    lingEffectProb = 0
+    checkLingEffects = True if isinstance(action, Spell) and action.getLingEffects() else False
+
+    extraEffectProb = 0
+    checkExtraEffects = True if isinstance(action, Spell) and action.getExtraEffect() else False
+
+    lingSavesProb = 0
+    checkLingSaves = True if isinstance(action, Spell) and action.getLingSaves() else False
+
     if isinstance(action, Weapon) or action.getNumTarget() == 1:
-        successProbs = []
-        targets = []
-
-        lingEffectProb = 0
-        checkLingEffects = True if isinstance(action, Spell) and action.getLingEffects() else False
-
-        extraEffectProb = 0
-        checkExtraEffects = (
-            True if isinstance(action, Spell) and action.getExtraEffect() else False
-        )
-
-        lingSavesProb = 0
-        checkLingSaves = (
-            True if isinstance(action, Spell) and action.getLingSaves() else False
-        )
-
         for creature in initiative:
-            if isValidTarget(action, creature, player.getPosition(), isPlayerTurn):
+            if isValidTarget(action, creature, player, isPlayerTurn):
                 successProb = calcIndividualToHitProbability(player, action, creature)
                 successProbs.append(successProb)
                 targets.append(creature)
         if len(successProbs) != 0:
-            probSuccess = max(successProbs)
-            targetSuccess = targets[successProbs.index(probSuccess)]
+            targetSuccess, movementRecc = calcSingleTargetBestMovement(player,
+                                                action,successProbs, targets, blockedCells)
+            probSuccess = successProbs[targets.index(targetSuccess)]
         else:
             probSuccess = 0
             targetSuccess = []
-        if checkLingEffects:
+        if checkLingEffects and targetSuccess:
             lingEffectProb = calcLingeringEffectProbability(player, targetSuccess,action, action.getLingEffects(),
                                                             probSuccess)
-        if checkExtraEffects:
+        if checkExtraEffects and targetSuccess:
             # In terms of probability of success, lingEffects and extraEffects are the same.
             extraEffectProb = calcLingeringEffectProbability(player, targetSuccess, action, action.getExtraEffect(),
                                                              probSuccess)
-        if checkLingSaves:
-            lingSavesProb = calcLingeringSavesProbability(player, targetSuccess,action)
+        if checkLingSaves and targetSuccess:
+            lingSavesProb = calcLingeringSavesProbability(player, targetSuccess,
+                                                          action)
         if len(successProbs) != 0:
             probSuccess = round(probSuccess, 2)
             lingEffectProb = round(lingEffectProb, 2)
@@ -2641,46 +2955,50 @@ def calcTotalToHitProbability(player, action, initiative):
                 "probSuccess": probSuccess,
                 "probLingEffect": lingEffectProb,
                 "probExtraEffect": extraEffectProb,
-                "probLingSaves": lingSavesProb,
-                "target" : [targetSuccess["name"]]
+                "probLingSave": lingSavesProb,
+                "target" : [targetSuccess["cid"]],
+                "movementRecc" : movementRecc
             }
         return 0
     elif action.getNumTarget() > 1:
-        weights = getMultiTargetWeights(player, action, initiative)
+        successScores = []
+        targets = []
+        for creature in initiative:
+            if isValidTarget(action, creature, player, isPlayerTurn):
+                successProb = calcIndividualToHitProbability(player, action, creature)
+                successScores.append(successProb)
+                targets.append(creature)
+        if len(successScores) != 0:
+            weights, movementRecc = calcMultiTargetBestMovement(
+                player, action, successScores, targets, blockedCells
+            )
+        else:
+            weights = []
         if weights:
             #Average across best n targets
             successProbs = 0
             numMonsters = 0
 
-            lingEffectProbs = 0
-            checkLingEffects = True if isinstance(action, Spell) and action.getLingEffects() else False
-
-            extraEffectProbs = 0
-            checkExtraEffects = True if isinstance(action, Spell) and action.getExtraEffect() else False
-
-            lingSavesProbs = 0
-            checkLingSaves = True if isinstance(action, Spell) and action.getLingSaves() else False
-
             for creature in weights:
-                if isValidTarget(action, creature, player.getPosition(),isPlayerTurn):
-                    successProb = calcIndividualToHitProbability(player, action, creature)
-                    successProbs += successProb
-                    if checkLingEffects:
-                        lingEffectProbs += calcLingeringEffectProbability(player, creature, action,
-                                                                        action.getLingEffects(),
-                                                                        successProb)
-                    if checkExtraEffects:
-                        extraEffectProbs += calcLingeringEffectProbability(player, creature, action,
-                                                                         action.getExtraEffect(),
-                                                                         successProb)
-                    if checkLingSaves:
-                        lingSavesProbs += calcLingeringSavesProbability(player, creature, action)
-                    numMonsters += 1
+                # Weights are selected targets, which are parallel to successProbs
+                successProb = successScores[targets.index(creature)]
+                successProbs += successProb
+                if checkLingEffects:
+                    lingEffectProb += calcLingeringEffectProbability(player, creature, action,
+                                                                     action.getLingEffects(),
+                                                                     successProb)
+                if checkExtraEffects:
+                    extraEffectProb += calcLingeringEffectProbability(player, creature, action,
+                                                                      action.getExtraEffect(),
+                                                                      successProb)
+                if checkLingSaves:
+                    lingSavesProb += calcLingeringSavesProbability(player, creature, action)
+                numMonsters += 1
             if numMonsters != 0:
                 probSuccess = successProbs / numMonsters
-                lingEffectProb = lingEffectProbs / numMonsters
-                extraEffectProb = extraEffectProbs / numMonsters
-                lingSavesProb = lingSavesProbs / numMonsters
+                lingEffectProb = lingEffectProb / numMonsters
+                extraEffectProb = extraEffectProb / numMonsters
+                lingSavesProb = lingSavesProb / numMonsters
             else:
                 probSuccess = 0
                 lingEffectProb = 0
@@ -2695,8 +3013,9 @@ def calcTotalToHitProbability(player, action, initiative):
                     "probSuccess": probSuccess,
                     "probLingEffect": lingEffectProb,
                     "probExtraEffect": extraEffectProb,
-                    "probLingSaves": lingSavesProb,
-                    "target": [weight["name"] for weight in weights]
+                    "probLingSave": lingSavesProb,
+                    "target": [weight["cid"] for weight in weights],
+                    "movementRecc": movementRecc
                 }
             return 0
         else:
@@ -2830,10 +3149,14 @@ def resetSaveSpecialNotesCheck(specImm, specRes, specVuln, creature):
         for vuln in creature.getDamVulnerabilities():
             if vuln not in specVuln:
                 creature.removeDamVulnerability(vuln)
-def avgOverAOETargets(creatures, allPositions, actionRange, radius, shape, casterCells, aoeType="placed"):
+def avgOverAOETargets(
+        creatures, allPositions, actionRange, radius, shape,
+        casterCells, currentCasterCells, movementMax, aoeType="placed"
+):
     #Cache is in the targets dict
     aoeToken = bestAoePositioning(actionRange, radius, shape,
-                                  allPositions, creatures, casterCells, aoeType)
+                                  allPositions, creatures, casterCells,
+                                  currentCasterCells, movementMax, aoeType)
     numTargets = len(creatures)
     if numTargets == 0:
         return 0
@@ -2871,6 +3194,12 @@ def calcTotalSaveProbability(player, action, initiative):
     checkExtraEffects = True if action.getExtraEffect() else False
     lingSavesProb = 0
     checkLingSaves = True if action.getLingSaves() else False
+    movementRecc = []
+    blockedCells = [
+        creature["Statblock"].getPosition()
+        for creature in initiative
+        if creature["Statblock"] is not player
+    ]
     if isinstance(player, Player):
         isPlayerTurn = True
     else:
@@ -2879,7 +3208,7 @@ def calcTotalSaveProbability(player, action, initiative):
         successProbs = []
         targets = []
         for creature in initiative:
-            if isValidTarget(action, creature, player.getPosition(), isPlayerTurn):
+            if isValidTarget(action, creature, player, isPlayerTurn):
                 if isinstance(player, Player) or isinstance(action, Spell):
                     successProb = calcIndividualSaveProbability(
                         action, player.getDC(), creature["Statblock"]
@@ -2889,65 +3218,73 @@ def calcTotalSaveProbability(player, action, initiative):
                 successProbs.append(successProb)
                 targets.append(creature)
         if len(targets) != 0:
-            probSuccess = max(successProbs)
-            targetSuccess = [targets[successProbs.index(probSuccess)]]
+            targetSuccess, movementRecc = calcSingleTargetBestMovement(
+                player, action, successProbs, targets, blockedCells
+            )
+            probSuccess = successProbs[targets.index(targetSuccess)]
         else:
             probSuccess = 0
             targetSuccess = []
-        if checkLingEffects:
+        if checkLingEffects and targetSuccess:
             lingEffectProb = calcLingeringEffectProbability(player, targetSuccess, action, action.getLingEffects(),
                                                             probSuccess)
-        if checkExtraEffects:
+        if checkExtraEffects and targetSuccess:
             # In terms of probability of success, lingEffects and extraEffects are the same.
-            extraEffectProb = calcLingeringEffectProbability(player, targetSuccess, action, action.getLingEffects(),
+            extraEffectProb = calcLingeringEffectProbability(player, targetSuccess, action, action.getExtraEffect(),
                                                             probSuccess)
-        if checkLingSaves:
+        if checkLingSaves and targetSuccess:
             lingSavesProb = calcLingeringSavesProbability(player, targetSuccess, action)
+        if targetSuccess:
+            targetSuccess = [targetSuccess["cid"]]
     elif action.getNumTarget() > 1:
-        weights = getMultiTargetWeights(player, action, initiative)
-        if weights:
-            successProbs = []
-            targets = []
-            for creature in weights:
-                if isValidTarget(action, creature, player.getPosition(), isPlayerTurn):
-                    if isinstance(player, Player) or isinstance(action, Spell):
-                        successProb = calcIndividualSaveProbability(action, player.getDC(), creature["Statblock"])
-                    else:
-                        successProb = calcIndividualSaveProbability(action, action.getDC(), creature["Statblock"])
-                    successProbs.append(successProb)
-                    targets.append(creature)
-
-                    if checkLingEffects:
-                        lingEffectProb += calcLingeringEffectProbability(player, creature, action,
-                                                                        action.getLingEffects(),
-                                                                        successProb)
-                    if checkExtraEffects:
-                        # In terms of probability of success, lingEffects and extraEffects are the same.
-                        extraEffectProb += calcLingeringEffectProbability(player, creature, action,
-                                                                         action.getLingEffects(),
-                                                                         successProb)
-                    if checkLingSaves:
-                        lingSavesProb += calcLingeringSavesProbability(player, creature, action)
-
-            if len(targets) != 0:
-                probSuccess = sum(successProbs) / len(successProbs)
-                lingEffectProb = lingEffectProb / len(targets)
-                extraEffectProb = extraEffectProb / len(targets)
-                lingSavesProb = lingSavesProb / len(targets)
-            else:
-                probSuccess = 0
-                #other probs already defined as 0
-            targetSuccess = targets
+        successScores = []
+        targets = []
+        for creature in initiative:
+            if isValidTarget(action, creature, player, isPlayerTurn):
+                if isinstance(player, Player) or isinstance(action, Spell):
+                    successProb = calcIndividualSaveProbability(action, player.getDC(), creature["Statblock"])
+                else:
+                    successProb = calcIndividualSaveProbability(action, action.getDC(), creature["Statblock"])
+                successScores.append(successProb)
+                targets.append(creature)
+        if successScores:
+            weights, movementRecc = calcMultiTargetBestMovement(
+                player, action, successScores, targets, blockedCells
+            )
         else:
             return 0
+        if not weights:
+            return 0
+
+        selectedSuccessProbs = []
+        for creature in weights:
+            successProb = successScores[targets.index(creature)]
+            selectedSuccessProbs.append(successProb)
+            if checkLingEffects:
+                lingEffectProb += calcLingeringEffectProbability(player, creature, action,
+                                                                 action.getLingEffects(),
+                                                                 successProb)
+            if checkExtraEffects:
+                extraEffectProb += calcLingeringEffectProbability(player, creature, action,
+                                                                  action.getExtraEffect(),
+                                                                  successProb)
+            if checkLingSaves:
+                lingSavesProb += calcLingeringSavesProbability(player, creature, action)
+
+        numTargets = len(weights)
+        probSuccess = sum(selectedSuccessProbs) / numTargets
+        lingEffectProb = lingEffectProb / numTargets
+        extraEffectProb = extraEffectProb / numTargets
+        lingSavesProb = lingSavesProb / numTargets
+        targetSuccess = [target["cid"] for target in weights]
     elif action.getNumTarget() in [-1, -2]:
         targets = [creature for creature in initiative]
         targetsCopy = [creature["Statblock"] for creature in targets]
         for i, target in enumerate(targets):
-            if isValidTarget(action, target, player.getPosition(), isPlayerTurn):
+            if isValidTarget(action, target, player, isPlayerTurn):
                 target = target["Statblock"]
                 targets[i] = {
-                    "name" : target.getName(),
+                    "cid" : target.getCID(),
                     "probSuccess" : calcIndividualSaveProbability(action, player.getDC(), target),
                     "positioning" : target.getPosition(),
                     "viable" : True
@@ -2955,7 +3292,7 @@ def calcTotalSaveProbability(player, action, initiative):
             else:
                 target = target["Statblock"]
                 targets[i] = {
-                    "name": target.getName(),
+                    "cid": target.getCID(),
                     "probSuccess": calcIndividualSaveProbability(action, player.getDC(), target),
                     "positioning": target.getPosition(),
                     "viable" : False
@@ -2964,20 +3301,23 @@ def calcTotalSaveProbability(player, action, initiative):
         actionRange = action.getActionRange()
         radius = action.getActionRadius()
         shape = action.getShape()
-        casterCells = player.getPosition()
+        casterCells = player.getStartingAnchor()
+        currentCasterCells = player.getPosition()
+        movementMax = player.getMovementMax()
         aoeType = "placed" if action.getNumTarget() == -1 else "self"
         probSuccess, token = avgOverAOETargets(targets, positions,
                                                actionRange, radius, shape,
-                                               casterCells, aoeType)
-
+                                               casterCells, currentCasterCells,
+                                               movementMax, aoeType)
         if not token:
             return 0
+        movementRecc = token["movementRecc"]
         finalTargets = []
         for creature in targetsCopy:
-            if creature.getName().lower() in [t["name"].lower() for t in token["targetsHit"]]:
+            if creature.getCID() in [t["cid"].lower() for t in token["targetsHit"]]:
                 finalTargets.append(creature)
                 if checkLingEffects or checkExtraEffects:
-                    successProbIdx = [t["name"].lower() for t in token["targetsHit"]].index(creature.getName().lower())
+                    successProbIdx = [t["cid"] for t in token["targetsHit"]].index(creature.getCID())
                     successProb = targets[successProbIdx]["probSuccess"]
                     if checkLingEffects:
                         lingEffectProb += calcLingeringEffectProbability(player, creature, action,
@@ -3008,8 +3348,9 @@ def calcTotalSaveProbability(player, action, initiative):
         "probSuccess": probSuccess,
         "probLingEffect": lingEffectProb,
         "probExtraEffect": extraEffectProb,
-        "probLingSaves": lingSavesProb,
-        "target" : targetSuccess
+        "probLingSave": lingSavesProb,
+        "target" : targetSuccess,
+        "movementRecc" : movementRecc
     }
 def calcOnHitProbability(action, weapons, player, initiative):
     # Only 1 target per spell.
@@ -3025,17 +3366,25 @@ def calcOnHitProbability(action, weapons, player, initiative):
         probWeaponSuccess = max(probWeaponSuccess)  # Using the weapon with the highest chance of success...
     else:
         return 0
+    movementRecc = []
+    blockedCells = [
+        creature["Statblock"].getPosition()
+        for creature in initiative
+        if creature["Statblock"] is not player
+    ]
     if action.getMean() != 0:
         probInitDams = []
         targets = []
         for creature in initiative:
-            if isValidTarget(action, creature, player.getPosition(),isPlayerTurn):
+            if isValidTarget(action, creature, player,isPlayerTurn):
                 probNormDam, probCritDam = calcDamProbs(creature["Statblock"], action, action.getDamMod(), "NORM")
                 probInitDams.append((probNormDam + probCritDam))
                 targets.append(creature)
         if probInitDams:
-            probInitDam = max(probInitDams)
-            targetSuccess = targets[probInitDams.index(probInitDam)]
+            targetSuccess, movementRecc = calcSingleTargetBestMovement(
+                player, action, probInitDams, targets, blockedCells
+            )
+            probInitDam = probInitDams[targets.index(targetSuccess)]
         else:
             return 0
     else:
@@ -3073,8 +3422,9 @@ def calcOnHitProbability(action, weapons, player, initiative):
         "probSuccess": round(probSuccess, 2),
         "probLingEffect": round(lingEffectProb, 2),
         "probExtraEffect": round(extraEffectProb, 2),
-        "probLingSaves": round(lingSavesProb, 2),
-        "target" : targetSuccess
+        "probLingSave": round(lingSavesProb, 2),
+        "target" : targetSuccess,
+        "movementRecc" : movementRecc
     }
 def calcIndividualAutoHitProbability(action, creature):
     try:
@@ -3110,16 +3460,22 @@ def calcTotalAutoHitProbability(player, action, initiative):
     checkExtraEffects = True if action.getExtraEffect() else False
     lingSavesProb = 0
     checkLingSaves = True if action.getLingSaves() else False
+    movementRecc = []
+    blockedCells = [
+        creature["Statblock"].getPosition()
+        for creature in initiative
+        if creature["Statblock"] is not player
+    ]
 
     if action.getNumTarget() == 1:
         successProbs = []
         targets = []
         for creature in initiative:
-            if isValidTarget(action, creature, player.getPosition(), isPlayerTurn):
-                if action.getSpecialNotes() and "HPCap" in action.getSpecialNotes():
+            if isValidTarget(action, creature, player, isPlayerTurn):
+                if action.getSpecialNotes() and any("HPCap" in note for note in action.getSpecialNotes()):
                     hpCap = 0
                     specialNotes = action.getSpecialNotes()
-                    for note in specialNotes():
+                    for note in specialNotes:
                         if "HPCap" in note:
                             hpCap = int(note.split("HPCap")[1])
                     if creature["Statblock"].getHP() < hpCap:
@@ -3127,68 +3483,74 @@ def calcTotalAutoHitProbability(player, action, initiative):
                     else:
                         successProbs.append(0)
                 else:
-                    successProb = calcIndividualAutoHitProbability(action, creature)
+                    successProb = calcIndividualAutoHitProbability(action, creature["Statblock"])
                     successProbs.append(successProb)
-                targets.append(creature["Statblock"])
+                targets.append(creature)
         if len(targets) != 0:
-            probSuccess = max(successProbs)
-            targetSuccess = [targets[successProbs.index(probSuccess)]]
+            targetSuccess, movementRecc = calcSingleTargetBestMovement(
+                player, action, successProbs, targets, blockedCells
+            )
+            probSuccess = successProbs[targets.index(targetSuccess)]
         else:
             probSuccess = 0
             targetSuccess = []
-        if checkLingEffects:
+        if checkLingEffects and targetSuccess:
             lingEffectProb = calcLingeringEffectProbability(player, targetSuccess, action, action.getLingEffects(),
                                                             probSuccess)
-        if checkExtraEffects:
+        if checkExtraEffects and targetSuccess:
             # In terms of probability of success, lingEffects and extraEffects are the same.
-            extraEffectProb = calcLingeringEffectProbability(player, targetSuccess, action, action.getLingEffects(),
+            extraEffectProb = calcLingeringEffectProbability(player, targetSuccess, action, action.getExtraEffect(),
                                                              probSuccess)
-        if checkLingSaves:
+        if checkLingSaves and targetSuccess:
             lingSavesProb = calcLingeringSavesProbability(player, targetSuccess, action)
+        if targetSuccess:
+            targetSuccess = [targetSuccess["cid"]]
     elif action.getNumTarget() > 1:
-        weights = getMultiTargetWeights(player, action, initiative)
-        if weights:
-            successProbs = []
-            targets = []
-            for creature in weights:
-                if isValidTarget(action, creature, player.getPosition(),isPlayerTurn):
-                    if isinstance(player, Player) or isinstance(action, Spell):
-                        successProb = calcIndividualAutoHitProbability(action, creature["Statblock"])
-                    else:
-                        successProb = calcIndividualAutoHitProbability(action, creature["Statblock"])
-                    successProbs.append(successProb)
-                    targets.append(creature)
-                    if checkLingEffects:
-                        lingEffectProb += calcLingeringEffectProbability(player, creature, action,
-                                                                         action.getLingEffects(),
-                                                                         successProb)
-                    if checkExtraEffects:
-                        # In terms of probability of success, lingEffects and extraEffects are the same.
-                        extraEffectProb += calcLingeringEffectProbability(player, creature, action,
-                                                                          action.getLingEffects(),
-                                                                          successProb)
-                    if checkLingSaves:
-                        lingSavesProb += calcLingeringSavesProbability(player, creature, action)
-
-            if len(targets) != 0:
-                probSuccess = sum(successProbs) / len(successProbs)
-                lingEffectProb = lingEffectProb / len(targets)
-                extraEffectProb = extraEffectProb / len(targets)
-                lingSavesProb = lingSavesProb / len(targets)
-            else:
-                probSuccess = 0
-                # other probs already defined as 0
-            targetSuccess = targets
+        successScores = []
+        targets = []
+        for creature in initiative:
+            if isValidTarget(action, creature, player, isPlayerTurn):
+                successProb = calcIndividualAutoHitProbability(action, creature["Statblock"])
+                successScores.append(successProb)
+                targets.append(creature)
+        if successScores:
+            weights, movementRecc = calcMultiTargetBestMovement(
+                player, action, successScores, targets, blockedCells
+            )
         else:
             return 0
+        if not weights:
+            return 0
+
+        selectedSuccessProbs = []
+        for creature in weights:
+            successProb = successScores[targets.index(creature)]
+            selectedSuccessProbs.append(successProb)
+            if checkLingEffects:
+                lingEffectProb += calcLingeringEffectProbability(player, creature, action,
+                                                                 action.getLingEffects(),
+                                                                 successProb)
+            if checkExtraEffects:
+                extraEffectProb += calcLingeringEffectProbability(player, creature, action,
+                                                                  action.getExtraEffect(),
+                                                                  successProb)
+            if checkLingSaves:
+                lingSavesProb += calcLingeringSavesProbability(player, creature, action)
+
+        numTargets = len(weights)
+        probSuccess = sum(selectedSuccessProbs) / numTargets
+        lingEffectProb = lingEffectProb / numTargets
+        extraEffectProb = extraEffectProb / numTargets
+        lingSavesProb = lingSavesProb / numTargets
+        targetSuccess = [target["cid"] for target in weights]
     elif action.getNumTarget() in [-1, -2]:
         targets = [creature for creature in initiative]
         targetsCopy = [creature["Statblock"] for creature in targets]
         for i, target in enumerate(targets):
-            if isValidTarget(action, target, player.getPosition(), isPlayerTurn):
+            if isValidTarget(action, target, player, isPlayerTurn):
                 target = target["Statblock"]
                 targets[i] = {
-                    "name" : target.getName(),
+                    "cid" : target.getCID(),
                     "probSuccess" : calcIndividualAutoHitProbability(action,target),
                     "positioning" : target.getPosition(),
                     "viable" : True
@@ -3196,7 +3558,7 @@ def calcTotalAutoHitProbability(player, action, initiative):
             else:
                 target = target["Statblock"]
                 targets[i] = {
-                    "name": target.getName(),
+                    "cid" : target.getCID(),
                     "probSuccess": calcIndividualAutoHitProbability(action,target),
                     "positioning": target.getPosition(),
                     "viable" : False
@@ -3205,14 +3567,17 @@ def calcTotalAutoHitProbability(player, action, initiative):
         actionRange = action.getActionRange()
         radius = action.getActionRadius()
         shape = action.getShape()
-        casterCells = player.getPosition()
+        casterCells = player.getStartingAnchor()
+        currentCasterCells = player.getPosition()
+        movementMax = player.getMovementMax()
         aoeType = "placed" if action.getNumTarget() == -1 else "self"
         probSuccess, token = avgOverAOETargets(targets, positions, actionRange,
-                                               radius, shape, casterCells, aoeType)
+                                               radius, shape, casterCells,
+                                               currentCasterCells, movementMax, aoeType)
         for creature in targetsCopy:
-            if creature.getName().lower() in [t["name"].lower() for t in token["targetsHit"]]:
+            if creature.getCID() in [t["cid"] for t in token["targetsHit"]]:
                 if checkLingEffects or checkExtraEffects:
-                    successProbIdx = [t["name"].lower() for t in token["targetsHit"]].index(creature.getName().lower())
+                    successProbIdx = [t["cid"] for t in token["targetsHit"]].index(creature.getCID())
                     successProb = targets[successProbIdx]["probSuccess"]
                     if checkLingEffects:
                         lingEffectProb += calcLingeringEffectProbability(player, creature, action,
@@ -3232,6 +3597,7 @@ def calcTotalAutoHitProbability(player, action, initiative):
         else:
             probSuccess = 0
         targetSuccess = token
+        movementRecc = token["movementRecc"]
     else:
         raise ValueError("Bad numTarget!")
 
@@ -3243,8 +3609,9 @@ def calcTotalAutoHitProbability(player, action, initiative):
         "probSuccess": probSuccess,
         "probLingEffect": lingEffectProb,
         "probExtraEffect": extraEffectProb,
-        "probLingSaves": lingSavesProb,
-        "target" : targetSuccess
+        "probLingSave": lingSavesProb,
+        "target" : targetSuccess,
+        "movementRecc" : movementRecc
     }
 
 # IMPACT METHODS
@@ -3831,7 +4198,7 @@ def endConcentration(player, concentration, initiative, mapdata):
     while cIdx < len(initiative):
         creature = initiative[cIdx]["Statblock"]
         summonedCreature = False
-        if creature.getName() in concTargets:
+        if creature.getCID() in concTargets:
             if creature.getActiveStatusEffects():
                 if any(
                     isinstance(statusEffect["effect"]["resultID"], list)
@@ -4089,7 +4456,7 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, mapd
             "effect": {
                 "resultID": actionResult["resultID"],
                 "concentrationTargets": [
-                    t["Statblock"].getName() if isinstance(t, dict) else t.getName()
+                    t["Statblock"].getCID() if isinstance(t, dict) else t.getCID()
                     for t in selectedTargets
                 ],
                 "action": action.toDict(),
@@ -4399,6 +4766,7 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
     actionPercentages = []
     actionImpacts = []
     actionTargets = []
+    actionMovementReccs = []
     actionObjects = []
 
     for i in range(len(spellList)):
@@ -4407,11 +4775,13 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
             try:
                 spellProb = 0
                 spellEDam = -1
+                pMovementRecc = []
+                eMovementRecc = []
                 if spellList[i].getSelfTarget():
                     spellProb = 1.0
                     spellEDam = 0
-                    probTargets = [creature.getName()]
-                    eTargets = [creature.getName()]
+                    probTargets = [creature.getCID()]
+                    eTargets = [creature.getCID()]
                 else:
                     if spellList[i].getRollType().lower() == "tohit":
                         spellProb = calcTotalToHitProbability(creature, spellList[i], initiative)
@@ -4440,8 +4810,9 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
                         probToStr = f"{spellProb['probSuccess']}" if spellProb['probSuccess'] else f"0.0"
                         probToStr += f" - {spellProb['probLingEffect']}LE" if spellProb['probLingEffect'] else ""
                         probToStr += f" - {spellProb['probExtraEffect']}EE" if spellProb['probExtraEffect'] else ""
-                        probToStr += f" - {spellProb['probLingSaves']}LS" if spellProb['probLingSaves'] else ""
+                        probToStr += f" - {spellProb['probLingSave']}LS" if spellProb['probLingSave'] else ""
                         probTargets = spellProb["target"] if spellProb["probSuccess"] != 0 else ""
+                        pMovementRecc = spellProb.get("movementRecc", [])
                     else:
                         spellProb = 0 if spellProb < 0 else spellProb
                         spellProb = 1 if spellProb > 1 else spellProb
@@ -4450,7 +4821,9 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
                     spellProb = probToStr
                     try:
                         if spellEDam == -1:
-                            spellEDam, eTargets = calcTotalExpectedDamage(creature, spellList[i], initiative)
+                            spellEDam, eTargets, eMovementRecc = calcTotalExpectedDamage(
+                                creature, spellList[i], initiative
+                            )
                         else:
                             spellEDam = 0
                             eTargets = {}
@@ -4463,25 +4836,29 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
                 probTargetsNorm = normalizeTargetSets(probTargets, initiative)
                 eTargetsNorm = normalizeTargetSets(eTargets, initiative)
 
-                if probTargetsNorm and eTargetsNorm and {target.getName() for target in probTargetsNorm} == {
-                    target.getName() for target in eTargetsNorm}:
+                if probTargetsNorm and eTargetsNorm and {target.getCID() for target in probTargetsNorm} == {
+                    target.getCID() for target in eTargetsNorm}:
                     # Good case.
                     spellImpact = calcImpact(creature, spellList[i], spellProb,
                                              spellEDam, probTargetsNorm, initiative)
                     target = probTargets
+                    movementRecc = pMovementRecc
                 else:
                     # Bad case.
                     if not probTargetsNorm and eTargetsNorm:
                         spellImpact = calcImpact(creature, spellList[i], spellProb,
                                                  spellEDam, eTargetsNorm, initiative)
                         target = eTargets
+                        movementRecc = eMovementRecc
                     elif not eTargetsNorm and probTargetsNorm:
                         spellImpact = calcImpact(creature, spellList[i], spellProb,
                                                  spellEDam, probTargetsNorm, initiative)
                         target = probTargets
+                        movementRecc = pMovementRecc
                     elif not probTargetsNorm and not eTargetsNorm:
                         spellImpact = 0
                         target = None
+                        movementRecc = []
                     else:
                         spellImpact1 = calcImpact(creature, spellList[i], spellProb,
                                                   spellEDam, probTargetsNorm, initiative)
@@ -4490,6 +4867,7 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
                         spellImpact = max([spellImpact1, spellImpact2])
                         targetIdx = [spellImpact1, spellImpact2].index(spellImpact)
                         target = probTargets if targetIdx == 0 else eTargets
+                        movementRecc = pMovementRecc if targetIdx == 0 else eMovementRecc
 
                 if spellList[i].getDamType() == "healing" or "healing" in spellList[i].getDamType() and spellList[
                     i].getMean() != 0:
@@ -4519,6 +4897,7 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
                 if isinstance(target, Player) or isinstance(target, Monster):
                     target = [target]
                 actionTargets.append(target)
+                actionMovementReccs.append(movementRecc)
                 actionObjects.append(spellList[i])
                 if isinstance(target, list):
                     percentages = []
@@ -4552,20 +4931,13 @@ def processSpellAnalytics(spellList, initEntry, initiative, isPlayerTurn):
                         actionPercentages.append(round(spellEDam / hp, 2))
             except:
                 continue
-        else:
-            #TODO: Find if reason action is not valid is because of bad positoning.
-            # If so, find a movement that would make the position valid.
-            # If there is a position that is valid, store oldPos and make newPos the currentPos in the creatureObj
-            # Then, repeat the loop in the same iteration. This means this will now be a while loop.
-            #
-            # If there is not a position that would be valid even with movement, continue.
-            continue
     actions = []
     for i in range(len(actionNames)):
         try:
             actions.append({"name": actionNames[i], "type" : actionTypes[i], "prob": actionProbs[i], "eDam": actionEDams[i],
                 "percentage" : actionPercentages[i], "impact": actionImpacts[i],
-                "actions" : actionObjects[i], "target" : actionTargets[i]})
+                "actions" : actionObjects[i], "target" : actionTargets[i],
+                "movementRecc" : actionMovementReccs[i]})
         except IndexError:
             actionPercentages.insert(i, 0)
     return actions
@@ -4934,15 +5306,15 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
             if "target" in action and action["target"]:
                 if "targetsHit" in action["target"]:
                     for i, t in enumerate(action["target"]["targetsHit"]):
-                        action["target"]["targetsHit"][i] = t.getName() if not isinstance(t, str) else t
+                        action["target"]["targetsHit"][i] = t.getCID() if not isinstance(t, str) else t
                 elif isinstance(action["target"], dict) and "Statblock" in action["target"]:
                     # TODO: If it is this case, action is broken (Ex: Smites). Fix later.
-                    action["target"] = [action["target"]["Statblock"].getName()]
+                    action["target"] = [action["target"]["Statblock"].getCID()]
                 elif isinstance(action["target"], str):
                     action["target"] = [action["target"]]
                 else:
                     for i, t in enumerate(action["target"]):
-                        action["target"][i] = t.getName() if not isinstance(t, str) else t
+                        action["target"][i] = t.getCID() if not isinstance(t, str) else t
         return overallRankings
 
     rankings = getBaseRankings()
@@ -5072,13 +5444,13 @@ def actionViabilityCheck(action, activeInitiativeEntry, initiative, isPlayerTurn
                         else:
                             break
 
-    actor_tiles = _normalize_occupied_tiles(activeInitiativeEntry["Statblock"].getPosition())
+    actor_tiles = _normalize_occupied_tiles(activeInitiativeEntry["startingAnchor"])
 
     others_tiles = []
     for entry in initiative:
         sb = entry.get("Statblock")
         if (sb is None or sb is activeInitiativeEntry["Statblock"]
-                or not isValidTarget(action, entry, activeInitiativeEntry["Statblock"].getPosition(), isPlayerTurn)):
+                or not isValidTarget(action, entry, activeInitiativeEntry["Statblock"], isPlayerTurn)):
             continue
         pos = sb.getPosition() if hasattr(sb, "getPosition") else sb.get("position")
         tiles = _normalize_occupied_tiles(pos)
@@ -5089,13 +5461,13 @@ def actionViabilityCheck(action, activeInitiativeEntry, initiative, isPlayerTurn
         return False
 
     if not isinstance(action, Weapon):
-        actionRangeFeet = _as_int_feet(action.getActionRange())
+        actionRangeFeet = _as_int_feet(action.getActionRange()) + _as_int_feet(creature.getMovementMax())
     else:
-        actionRangeFeet = 5
+        actionRangeFeet = 5 + creature.getMovementMax()
     if actionRangeFeet is None:
         return False
 
-    rangeTiles = math.ceil(actionRangeFeet / 5)
+    rangeTiles = math.ceil(actionRangeFeet // 5)
 
     for target_tiles in others_tiles:
         min_d = min_creature_distance_tiles(actor_tiles, target_tiles)
@@ -5114,6 +5486,7 @@ def monsterTurn(creature, initiative, encounter_id=None):
     actionPercentages = []
     actionImpacts = []
     actionTargets = []
+    actionMovementReccs = []
     actionObjects = []
     actions = []
 
@@ -5121,6 +5494,7 @@ def monsterTurn(creature, initiative, encounter_id=None):
 
     defineBasicActions(actionNames, actionTypes, actionProbs,
                        actionEDams, actionImpacts, actionTargets,
+                       actionMovementReccs,
                        actionObjects, initEntry, initiative, False)
     actionPercentages.extend([0, 0, 0])
     if creature.isCaster():
@@ -5147,15 +5521,18 @@ def monsterTurn(creature, initiative, encounter_id=None):
             try:
                 actionProb = 0
                 actionEDam = -1
+                pMovementRecc = []
+                eMovementRecc = []
 
                 if monAction.getSelfTarget():
                     actionProb = 1.0
                     actionEDam = 0
-                    probTargets = [creature.getName()]
+                    probTargets = [creature.getCID()]
                     probTargetsNorm = normalizeTargetSets(probTargets, initiative)
                     actionImpact = calcImpact(creature, monAction, actionProb,
                                               actionEDam, probTargetsNorm, initiative)
                     target = probTargets
+                    movementRecc = []
                 else:
                     if monAction.getRollType().lower() == "tohit":
                         actionProb = calcTotalToHitProbability(creature, monAction, initiative)
@@ -5167,17 +5544,20 @@ def monsterTurn(creature, initiative, encounter_id=None):
                         probToStr = f"{actionProb['probSuccess']}" if actionProb['probSuccess'] else f"0.0"
                         probToStr += f" - {actionProb['probLingEffect']}LE" if actionProb['probLingEffect'] else ""
                         probToStr += f" - {actionProb['probExtraEffect']}EE" if actionProb['probExtraEffect'] else ""
-                        probToStr += f" - {actionProb['probLingSaves']}LS" if actionProb['probLingSaves'] else ""
+                        probToStr += f" - {actionProb['probLingSave']}LS" if actionProb['probLingSave'] else ""
                         probTargets = actionProb["target"] if actionProb["probSuccess"] != 0 else ""
+                        pMovementRecc = actionProb.get("movementRecc", [])
                     else:
                         actionProb = 0 if actionProb < 0 else actionProb
                         actionProb = 1 if actionProb > 1 else actionProb
                         probTargets = ""
                         probToStr = actionProb
+                        pMovementRecc = []
 
                     actionProb = probToStr
-                    actionEDam, eTargets = calcTotalExpectedDamage(creature,
-                                                                  monAction, initiative) if actionEDam == -1 else actionEDam
+                    actionEDam, eTargets, eMovementRecc = calcTotalExpectedDamage(
+                        creature, monAction, initiative
+                    )
 
                     if not probTargets and not eTargets:
                         continue
@@ -5185,27 +5565,32 @@ def monsterTurn(creature, initiative, encounter_id=None):
                     probTargetsNorm = normalizeTargetSets(probTargets, initiative)
                     eTargetsNorm = normalizeTargetSets(eTargets, initiative)
 
-                    if {target.getName() for target in probTargetsNorm} == {target.getName() for target in eTargetsNorm}:
+                    if {target.getCID() for target in probTargetsNorm} == {target.getCID() for target in eTargetsNorm}:
                         actionImpact = calcImpact(creature, monAction, actionProb, actionEDam, probTargetsNorm, initiative)
                         target = probTargets
+                        movementRecc = pMovementRecc
                     else:
                         if not probTargetsNorm and not eTargetsNorm:
                             actionImpact = 0
                             target = {}
+                            movementRecc = []
                         elif not probTargetsNorm:
                             actionImpact = calcImpact(creature, monAction, actionProb,
                                                   actionEDam, eTargetsNorm, initiative)
                             target = eTargets
+                            movementRecc = eMovementRecc
                         elif not eTargetsNorm:
                             actionImpact = calcImpact(creature, monAction, actionProb,
                                                   actionEDam, probTargetsNorm, initiative)
                             target = probTargets
+                            movementRecc = pMovementRecc
                         else:
                             actionImpact1 = calcImpact(creature, monAction, actionProb, actionEDam, probTargetsNorm, initiative)
                             actionImpact2 = calcImpact(creature, monAction, actionProb, actionEDam, eTargetsNorm, initiative)
                             actionImpact = max([actionImpact1, actionImpact2])
                             targetIdx = [actionImpact1, actionImpact2].index(actionImpact)
                             target = probTargets if targetIdx == 0 else eTargets
+                            movementRecc = pMovementRecc if targetIdx == 0 else eMovementRecc
 
                 actionNames.append(actionName)
                 actionTypes.append("monAction")
@@ -5213,6 +5598,7 @@ def monsterTurn(creature, initiative, encounter_id=None):
                 actionEDams.append(actionEDam)
                 actionImpacts.append(actionImpact)
                 actionTargets.append(target)
+                actionMovementReccs.append(movementRecc)
                 actionObjects.append(monAction)
                 if isinstance(target, list):
                     percentages = []
@@ -5240,8 +5626,10 @@ def monsterTurn(creature, initiative, encounter_id=None):
                     else:
                         actionPercentages.append(round(actionEDam / hp, 2))
             except:
+                print("Error with", actionName)
                 continue
         else:
+            print(actionName, "not viable.")
             continue
 
     actions = []
@@ -5250,7 +5638,8 @@ def monsterTurn(creature, initiative, encounter_id=None):
             actions.append(
                 {"name": actionNames[i], "type": actionTypes[i], "prob": actionProbs[i], "eDam": actionEDams[i],
                  "percentage": actionPercentages[i], "impact": actionImpacts[i],
-                 "actions": actionObjects[i], "target": actionTargets[i]})
+                 "actions": actionObjects[i], "target": actionTargets[i],
+                 "movementRecc": actionMovementReccs[i]})
         except IndexError:
             actionPercentages.insert(i, 0)
     return rankActions(
@@ -5273,21 +5662,24 @@ def playerTurn(player, initiative, encounter_id=None):
     actionPercentages = []
     actionImpacts = []
     actionTargets = []
+    actionMovementReccs = []
     actionObjects = []
     pInitEntry = findInitiativeEntryByCID(player, initiative)
 
     defineBasicActions(actionNames, actionTypes, actionProbs,
                        actionEDams, actionImpacts, actionTargets,
+                       actionMovementReccs,
                        actionObjects, pInitEntry,initiative, True)
     actionPercentages.extend([0, 0, 0])
     if player.getWeaponLength() > 0:
         for i in range(player.getWeaponLength()):
             weapon = player.getWeapon(i)
-
             if actionViabilityCheck(weapon, pInitEntry, initiative, True):
                 weaponProb = calcTotalToHitProbability(player, weapon, initiative)
+                pMovementRecc = []
                 if isinstance(weaponProb, dict):
                     probTargets = weaponProb["target"]
+                    pMovementRecc = weaponProb.get("movementRecc", [])
                     weaponProb = weaponProb["probSuccess"]
                 else:
                     try:
@@ -5297,31 +5689,36 @@ def playerTurn(player, initiative, encounter_id=None):
                         weaponProb = 0
                         probTargets = {}
 
-                weaponEDam, eTargets = calcTotalExpectedDamage(player, weapon, initiative)
+                weaponEDam, eTargets, eMovementRecc = calcTotalExpectedDamage(player, weapon, initiative)
                 probTargetsNorm = normalizeTargetSets(probTargets, initiative)
                 eTargetsNorm = normalizeTargetSets(eTargets, initiative)
 
                 if probTargetsNorm == eTargetsNorm:
                     weaponImpact = calcImpact(player, weapon, weaponProb, weaponEDam, probTargetsNorm, initiative)
                     target = probTargets
+                    movementRecc = pMovementRecc
                 else:
                     if not probTargetsNorm and not eTargetsNorm:
                         weaponImpact = 0
                         target = {}
+                        movementRecc = []
                     elif not probTargetsNorm:
                         weaponImpact = calcImpact(player, weapon, weaponProb, weaponEDam, eTargetsNorm, initiative)
                         target = eTargets
+                        movementRecc = eMovementRecc
                     elif not eTargetsNorm:
                         weaponImpact = calcImpact(player, weapon, weaponProb, weaponEDam, probTargetsNorm, initiative)
                         target = probTargets
+                        movementRecc = pMovementRecc
                     else:
                         weaponImpact1 = calcImpact(player, weapon, weaponProb, weaponEDam, probTargetsNorm, initiative)
                         weaponImpact2 = calcImpact(player, weapon, weaponProb, weaponEDam, eTargetsNorm, initiative)
                         weaponImpact = max([weaponImpact1, weaponImpact2])
                         targetIdx = [weaponImpact1, weaponImpact2].index(weaponImpact)
                         target = probTargets if targetIdx == 0 else eTargets
+                        movementRecc = pMovementRecc if targetIdx == 0 else eMovementRecc
 
-                if player.getClass().lower() in ["barbarian", "paladin", "ranger"]:
+                if player.getClass().lower() in ["barbarian", "paladin", "ranger"] and player.getLevel() >= 5:
                     weaponEDam += weaponEDam
                     weaponImpact += weaponImpact
                 elif player.getClass().lower() in ["fighter"]:
@@ -5334,6 +5731,7 @@ def playerTurn(player, initiative, encounter_id=None):
                 actionEDams.append(weaponEDam)
                 actionImpacts.append(weaponImpact)
                 actionTargets.append(target)
+                actionMovementReccs.append(movementRecc)
                 actionObjects.append(weapon)
                 if isinstance(target, list):
                     percentages = []
@@ -5367,7 +5765,8 @@ def playerTurn(player, initiative, encounter_id=None):
             actions.append(
                 {"name": actionNames[i], "type": actionTypes[i], "prob": actionProbs[i], "eDam": actionEDams[i],
                  "percentage": actionPercentages[i], "impact": actionImpacts[i],
-                 "actions": actionObjects[i], "target": actionTargets[i]})
+                 "actions": actionObjects[i], "target": actionTargets[i],
+                 "movementRecc": actionMovementReccs[i]})
         except IndexError:
             actionPercentages.insert(i, 0)
     if player.getSpellLength() > 0:
@@ -5393,6 +5792,7 @@ def setActiveInitiative(encounter):
             continue
         creatureObj = getCreatureFromInitiativeEntry(encounter, creature)
         if creatureObj:
+            creatureObj.setStartingAnchor(creature["startingAnchor"])
             creature["Statblock"] = creatureObj
     if todeli != -1:
         del initiative[todeli]
@@ -5445,7 +5845,7 @@ def unpackEntry(entry, activeInitiative):
     isSpell = False
 
     for creature in activeInitiative:
-        if creature["name"].lower() == actor.lower():
+        if creature["cid"] == actor:
             actorObj = creature["Statblock"]
             spell = creature["Statblock"].getSpellByName(action)
             if spell:
@@ -5485,15 +5885,8 @@ def unpackEntry(entry, activeInitiative):
 def main():
     async def terminal_test():
         await init_indexes()
-        testEID = "85dbb1a3-8cde-4f89-b515-0b685ac0e251" #TestDemo4
-        # testEID = "db3a0206-ea09-4b88-8323-b11058c76d86" #EntangleTest
-        # testEID = "b05c67fc-dd84-48c0-bfa2-b08ef6adb1bb" #SmiteTest
-        # testCID = "c6f1bafd-6c9c-4e85-9a9b-59c38e67340e" #Lich
-        # testCID = "56f5f763-4e6b-4e5f-8cc5-5046dbc0e2a9" #RangerTest
-        testCID = "e73809c1-e350-45ef-9eb5-8f1c5e50e9f7" #DruidTest of TestDemo4
-        # testCID = "65d18678-f268-4800-a463-0e5fb4f7ee0b" #Acolyte
-        # testCID = "770f304e-b3ce-436f-99fa-9ea4eabeb926" #Disante
-        # testCID = "9a98e65d-6e45-4a4b-b132-8b74eab8a8e5" #Pally
+        testEID = "e9055b57-1d5a-433c-bce6-87436ecd9627"
+        testCID = "6996762f-e893-4b49-9a5a-c2248c7ef1c4"
 
         encounter = await get_encounter_by_eid(testEID)
         encounter = loadEncounter(encounter)
@@ -5526,12 +5919,15 @@ def main():
         #     "token": None,
         #     "useML": True
         # }
-        # creature = encounter.getMonsterByCID(testCID)
-        creature = encounter.getPlayerByCID(testCID)
-        creature.setSpellSlots(6, 0)
-        creature.setSpellSlots(5, 0)
-        await saveEncounter()
-        # initiative = setActiveInitiative(encounter)
+
+        creature = encounter.getMonsterByCID(testCID)
+
+        # creature = encounter.getPlayerByCID(testCID)
+        # creature.setSpellSlots(6, 0)
+        # creature.setSpellSlots(5, 0)
+        # await saveEncounter()
+        initiative = setActiveInitiative(encounter)
+        monsterTurn(creature, initiative, testEID)
         # mapdata = encounter.getMapData()
         # actorObj, action, targets, isSpell, selectedTargets = unpackEntry(actionResult, initiative)
         #                     actionResult, initiative, mapdata))
@@ -5544,10 +5940,6 @@ def main():
 
 
         # await saveEncounter(encounter)
-
-
-        #TODO: Try PA recommendations, check for correctness
-        #TODO: Try rulesetSimulate alot, check for correctness.
 
     asyncio.run(terminal_test())
 
