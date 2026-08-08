@@ -38,6 +38,353 @@ BASIC_ACTION_LIST_FILE = os.path.join(DATA_DIR, "basic_actions.json")
 Coord = Tuple[int, int]
 DEFAULT_PLAYER_MOVEMENT_MAX = 30
 
+# Monster multiattack is stored with the encounter because the current CoreEngine
+# Monster model does not consistently expose it across versions.
+def normalizeMonsterMultiattack(payload) -> Dict[str, Any]:
+    """Normalize the persisted monster multiattack payload.
+
+    ``split`` is the authoritative sequence. ``total`` is normalized to the
+    number of attacks represented by the split so stale stat-block data cannot
+    create or remove attacks during execution.
+    """
+    if not isinstance(payload, dict):
+        return {}
+
+    raw_split = payload.get("split", [])
+    if not isinstance(raw_split, list):
+        return {}
+
+    split = []
+    for raw_item in raw_split:
+        if not isinstance(raw_item, dict):
+            continue
+
+        name = str(raw_item.get("name", "")).strip()
+        try:
+            number = int(raw_item.get("number", 0))
+        except (TypeError, ValueError):
+            continue
+
+        if not name or number <= 0:
+            continue
+
+        split.append({"name": name, "number": number})
+
+    if not split:
+        return {}
+
+    total = sum(item["number"] for item in split)
+    return {
+        "name": str(payload.get("name", "Multiattack")).strip() or "Multiattack",
+        "total": total,
+        "split": split,
+    }
+
+
+def setMonsterMultiattack(monster, payload) -> Dict[str, Any]:
+    """Attach normalized multiattack data without requiring a CoreEngine change."""
+    multiattack = normalizeMonsterMultiattack(payload)
+
+    for setter_name in ("setMultiattack", "setMultiAttack"):
+        setter = getattr(monster, setter_name, None)
+        if callable(setter):
+            try:
+                setter(copy.deepcopy(multiattack))
+                break
+            except (AttributeError, TypeError, ValueError):
+                continue
+
+    # Always retain an engine-independent copy. Some CoreEngine releases expose
+    # a setter without a matching getter/toDict field, which otherwise makes the
+    # definition disappear as soon as an encounter is reconstructed or saved.
+    setattr(monster, "_dndpa_multiattack", copy.deepcopy(multiattack))
+    return multiattack
+
+
+def getMonsterMultiattack(monster) -> Dict[str, Any]:
+    """Read multiattack data from either CoreEngine or the compatibility field."""
+    # The compatibility copy is populated directly from the persisted encounter
+    # and is therefore the authority when an engine field is stale or absent.
+    normalized = normalizeMonsterMultiattack(
+        getattr(monster, "_dndpa_multiattack", None)
+    )
+    if normalized:
+        return normalized
+
+    for getter_name in ("getMultiattack", "getMultiAttack"):
+        getter = getattr(monster, getter_name, None)
+        if callable(getter):
+            try:
+                value = getter()
+            except TypeError:
+                continue
+            normalized = normalizeMonsterMultiattack(value)
+            if normalized:
+                return normalized
+
+    for attribute_name in (
+        "multiattack",
+        "multiAttack",
+        "_Monster__multiattack",
+        "_Monster__multiAttack",
+    ):
+        normalized = normalizeMonsterMultiattack(getattr(monster, attribute_name, None))
+        if normalized:
+            return normalized
+
+    return {}
+
+
+def getMonsterActionByName(monster, action_name):
+    """Return a concrete MonAction using a case-insensitive action name."""
+    if not action_name:
+        return None
+
+    getter = getattr(monster, "getActionByName", None)
+    if callable(getter):
+        try:
+            action = getter(action_name)
+        except (KeyError, TypeError, ValueError):
+            action = None
+
+        # A case-sensitive CoreEngine lookup may return a truthy bad-object
+        # sentinel for a persisted split such as "bite" when the real action is
+        # named "Bite". Do not let that sentinel bypass the fallback below.
+        if action:
+            is_bad = getattr(action, "isBadObj", None)
+            if not callable(is_bad) or not is_bad():
+                return action
+
+    wanted = str(action_name).strip().lower()
+    for index in range(monster.getActionLength()):
+        action = monster.getAction(index)
+        if action.getName().strip().lower() == wanted:
+            return action
+
+    return None
+
+
+def expandMonsterMultiattack(multiattack) -> List[str]:
+    """Expand a split payload into the exact ordered child-action sequence."""
+    normalized = normalizeMonsterMultiattack(multiattack)
+    sequence = []
+    for item in normalized.get("split", []):
+        sequence.extend([item["name"]] * item["number"])
+    return sequence
+
+
+def buildMonsterMultiattackActionPayload(monster) -> Optional[Dict[str, Any]]:
+    """Build the synthetic action returned by the creature-actions endpoint."""
+    multiattack = getMonsterMultiattack(monster)
+    if not multiattack:
+        return None
+
+    sequence = []
+    for index, action_name in enumerate(expandMonsterMultiattack(multiattack)):
+        child_action = getMonsterActionByName(monster, action_name)
+        if child_action is None or child_action.isBadObj():
+            return None
+        sequence.append({
+            "index": index,
+            "name": child_action.getName(),
+            "action": child_action.toDict(),
+        })
+
+    sequence_description = ", ".join(
+        f'{item["number"]} x {item["name"]}'
+        for item in multiattack["split"]
+    )
+
+    return {
+        "name": multiattack["name"],
+        "desc": f"Use one action to perform: {sequence_description}.",
+        "number": "0",
+        "actionRange": "0",
+        "shape": "",
+        "rolls": {
+            "rollType": "multiattack",
+            "saveType": "",
+            "halfSave": False,
+            "saveDC": 0,
+            "damage": "none",
+            "attackBonus": "0",
+            "damageMod": "0",
+        },
+        "extraDamage": [],
+        "damType": [],
+        "conditions": [],
+        "statusEffect": [],
+        "lingEffect": {},
+        "extraEffect": {},
+        "lingSave": {},
+        "recharge": "",
+        "actionCost": "Action",
+        "specialNotes": ["Multiattack"],
+        "multiattack": {
+            **copy.deepcopy(multiattack),
+            "sequence": sequence,
+        },
+    }
+
+
+def _multiattackProbability(value) -> float:
+    if isinstance(value, (int, float)):
+        return max(0.0, min(1.0, float(value)))
+    match = re.match(r"\s*(-?\d*\.?\d+)", str(value))
+    if not match:
+        return 0.0
+    return max(0.0, min(1.0, float(match.group(1))))
+
+
+def _multiattackNumericTotal(value) -> float:
+    if isinstance(value, (list, tuple)):
+        return sum(_multiattackNumericTotal(item) for item in value)
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _multiattackTargetNames(target) -> List[str]:
+    names = []
+
+    if target is None:
+        return names
+    if isinstance(target, str):
+        return [target]
+    if isinstance(target, (list, tuple)):
+        for item in target:
+            names.extend(_multiattackTargetNames(item))
+        return names
+    if isinstance(target, dict):
+        if "targetsHit" in target:
+            return _multiattackTargetNames(target.get("targetsHit"))
+        if "Statblock" in target:
+            return _multiattackTargetNames(target.get("Statblock"))
+        if "name" in target:
+            return [str(target["name"])]
+        return names
+    if hasattr(target, "getName"):
+        return [str(target.getName())]
+
+    return names
+
+
+def _multiattackTargetObjects(target) -> List[Any]:
+    objects = []
+    if target is None or isinstance(target, str):
+        return objects
+    if isinstance(target, (list, tuple)):
+        for item in target:
+            objects.extend(_multiattackTargetObjects(item))
+        return objects
+    if isinstance(target, dict):
+        if "targetsHit" in target:
+            return _multiattackTargetObjects(target.get("targetsHit"))
+        if "Statblock" in target:
+            statblock = target.get("Statblock")
+            return [statblock] if statblock is not None else []
+        return objects
+    if hasattr(target, "getName"):
+        return [target]
+    return objects
+
+
+def buildMonsterMultiattackRecommendation(
+    monster,
+    analyzed_actions: List[Dict[str, Any]],
+    initiative_entry: Optional[Dict[str, Any]] = None,
+) -> Optional[Dict[str, Any]]:
+    """Combine child-action analytics into one rankable multiattack option.
+
+    Expected damage and impact are additive. Probability is the mean child
+    success probability; expected damage already captures the number of attacks,
+    so multiplying every probability would incorrectly suppress multiattack.
+    """
+    multiattack = getMonsterMultiattack(monster)
+    if not multiattack:
+        return None
+    if initiative_entry is not None and not initiative_entry.get("actionResource", 0):
+        return None
+
+    analyzed_by_name = {
+        str(action.get("name", "")).strip().lower(): action
+        for action in analyzed_actions
+        if isinstance(action, dict)
+    }
+
+    sequence = []
+    probabilities = []
+    expected_damage = 0.0
+    impact = 0.0
+    aggregate_target_objects = []
+    aggregate_target_names = []
+
+    for index, configured_name in enumerate(expandMonsterMultiattack(multiattack)):
+        child = analyzed_by_name.get(configured_name.strip().lower())
+        child_action = getMonsterActionByName(monster, configured_name)
+        if child is None or child_action is None:
+            # A multiattack is only viable when every required child is viable.
+            return None
+
+        child_probability = _multiattackProbability(child.get("prob", 0.0))
+        child_damage = _multiattackNumericTotal(child.get("eDam", 0.0))
+        child_impact = _multiattackNumericTotal(child.get("impact", 0.0))
+        child_target_names = _multiattackTargetNames(child.get("target"))
+
+        probabilities.append(child_probability)
+        expected_damage += child_damage
+        impact += child_impact
+        aggregate_target_objects.extend(_multiattackTargetObjects(child.get("target")))
+        aggregate_target_names.extend(child_target_names)
+
+        sequence.append({
+            "index": index,
+            "name": child_action.getName(),
+            "action": child_action.toDict(),
+            "target": child_target_names,
+            "prob": child_probability,
+            "eDam": child_damage,
+            "impact": child_impact,
+        })
+
+    unique_objects = []
+    seen_object_names = set()
+    for target in aggregate_target_objects:
+        target_name = str(target.getName()).lower()
+        if target_name in seen_object_names:
+            continue
+        seen_object_names.add(target_name)
+        unique_objects.append(target)
+
+    unique_target_names = []
+    seen_names = set()
+    for name in aggregate_target_names:
+        normalized_name = str(name).strip().lower()
+        if not normalized_name or normalized_name in seen_names:
+            continue
+        seen_names.add(normalized_name)
+        unique_target_names.append(str(name))
+
+    aggregate_target = unique_objects if unique_objects else unique_target_names
+    probability = sum(probabilities) / len(probabilities) if probabilities else 0.0
+
+    return {
+        "name": multiattack["name"],
+        "type": "Multiattack",
+        "prob": probability,
+        "eDam": expected_damage,
+        "percentage": [],
+        "percentages": [],
+        "impact": impact,
+        "actions": None,
+        "target": aggregate_target,
+        "multiattack": {
+            **copy.deepcopy(multiattack),
+            "sequence": sequence,
+        },
+    }
+
 # PLAYER/MONSTER/SPELL/WEAPON CREATE/SAVE/LOAD METHODS
 def getPlayerStats(data):
     def getClassStats(data, playerdata, characterClass):
@@ -665,7 +1012,12 @@ async def saveEncounter(encounter):
 
     monster_list = []
     for i in range(encounter.monsterSize()):
-        monster_list.append(encounter.getMonster(i).toDict())
+        monster = encounter.getMonster(i)
+        monster_dict = monster.toDict()
+        multiattack = getMonsterMultiattack(monster)
+        if multiattack:
+            monster_dict["multiattack"] = copy.deepcopy(multiattack)
+        monster_list.append(monster_dict)
 
     player_list = []
     for i in range(encounter.playerSize()):
@@ -724,8 +1076,8 @@ async def saveEncounter(encounter):
                 },
                 "grid": {
                     "cellBounds": {
-                        "cols": int(mapData.get("grid", {}).get("cellBounds", {}).get("cols", 0)),
-                        "rows": int(mapData.get("grid", {}).get("cellBounds", {}).get("rows", 0))
+                        "cols": int((mapData.get("grid", {}).get("cellBounds", {}).get("cols", mapData.get("grid", {}).get("cellBounds", {}).get("col", 0))) or 0),
+                        "rows": int((mapData.get("grid", {}).get("cellBounds", {}).get("rows", mapData.get("grid", {}).get("cellBounds", {}).get("row", 0))) or 0)
                     },
                     "cellSizePx": int(mapData.get("grid", {}).get("cellSizePx", 0))
                 },
@@ -821,12 +1173,19 @@ def loadEncounter(encounterData):
         position = monsterJSON.get("position", [0, 0])
         size = monsterJSON.get("size", "medium")
         movementMax = monsterJSON.get("movementMax", DEFAULT_PLAYER_MOVEMENT_MAX)
-        encounter.addMonster(Monster(name, cr, cType, stats, hp, maxHP,
-                                     ac, saveProfs, lResists, damResists,
-                                     damImmunes, damVulns, conImmunes, activeConditions,
-                                     activeStatusEffects, lairAction, magicResist,
-                                     enemy, actions, spellInfo, legActions,
-                                     cid, position, size, movementMax))
+        monsterObj = Monster(name, cr, cType, stats, hp, maxHP,
+                             ac, saveProfs, lResists, damResists,
+                             damImmunes, damVulns, conImmunes, activeConditions,
+                             activeStatusEffects, lairAction, magicResist,
+                             enemy, actions, spellInfo, legActions,
+                             cid, position, size, movementMax)
+
+        # Multiattack is persisted beside the monster stat block because not
+        # every CoreEngine Monster version serializes it. Reattach it whenever
+        # an encounter is reconstructed so the actions and recommendation
+        # endpoints can build their synthetic Multiattack entries.
+        setMonsterMultiattack(monsterObj, monsterJSON.get("multiattack", {}))
+        encounter.addMonster(monsterObj)
     for resultJSON in encounterData["results"]:
         encounter.addResult(resultJSON)
 
@@ -1323,8 +1682,10 @@ def translateLingEffect(action, lingEffect, spellMod):
     lingDamType = lingEffect["damType"]
     if isinstance(lingDamType, list) and len(lingDamType) == 1:
         lingDamType = lingDamType[0]
+    action_level = action.getLvl() if hasattr(action, "getLvl") else 0
+
     lingSpell = Spell(
-        action.getName(), action.getLvl(), action.getSelfTarget(), numTarget,
+        action.getName(), action_level, action.getSelfTarget(), numTarget,
         action.getActionRange(), lingEffect["rolls"]["rollType"], lingEffect["rolls"]["saveType"],
         lingEffect["rolls"]["halfSave"],
         damMod, lingDieNum, lingDieType, lingDamType,
@@ -1508,7 +1869,183 @@ def isValidTarget(action, creature, actor, isPlayerTurn=True):
             return True
     return False
 def ensureList(x):
+    if x is None:
+        return []
     return x if isinstance(x, list) else [x]
+
+
+_DURATION_WORD_VALUES = {
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
+}
+
+_DURATION_AMOUNT = r"(?P<amount>\d+|one|two|three|four|five|six|seven|eight|nine|ten)"
+_DURATION_PATTERNS = (
+    # Existing data often uses compact values such as "1Turn" or "2Turns".
+    (re.compile(rf"(?<!\w){_DURATION_AMOUNT}\s*turns?\b", re.IGNORECASE), 1),
+    (re.compile(rf"(?<!\w){_DURATION_AMOUNT}\s*rounds?\b", re.IGNORECASE), 1),
+    # One D&D combat round is six seconds, so one minute is ten rounds.
+    (re.compile(rf"(?<!\w){_DURATION_AMOUNT}\s*minutes?\b", re.IGNORECASE), 10),
+)
+
+
+def _durationAmount(match) -> int:
+    raw_amount = str(match.group("amount")).strip().lower()
+    if raw_amount.isdigit():
+        return int(raw_amount)
+    return _DURATION_WORD_VALUES.get(raw_amount, 0)
+
+
+def _durationTextsFromPayload(payload) -> List[str]:
+    """Read duration text from structured lingering/extra-effect payloads."""
+    if payload in (None, "", {}, []):
+        return []
+
+    if isinstance(payload, str):
+        return [payload]
+
+    if isinstance(payload, (list, tuple)):
+        texts = []
+        for item in payload:
+            texts.extend(_durationTextsFromPayload(item))
+        return texts
+
+    if not isinstance(payload, dict):
+        return []
+
+    texts = []
+    special_notes = payload.get("specialNotes", payload.get("special_notes"))
+    texts.extend(_durationTextsFromPayload(special_notes))
+
+    for key in ("duration", "desc", "description"):
+        value = payload.get(key)
+        if value not in (None, ""):
+            texts.append(str(value))
+
+    for key in ("turnCount", "turnCap"):
+        value = payload.get(key)
+        try:
+            numeric_value = int(value)
+        except (TypeError, ValueError):
+            continue
+        if numeric_value > 0:
+            texts.append(f"{numeric_value}Turn")
+
+    return texts
+
+
+def _getActionDurationTexts(action) -> List[str]:
+    """Return duration-bearing action text in priority order.
+
+    Structured special notes are checked first. Monster actions such as
+    Frightful Presence frequently keep their duration only in ``desc``, so the
+    action description is also inspected.
+    """
+    if action is None:
+        return []
+
+    texts = []
+
+    special_notes_getter = getattr(action, "getSpecialNotes", None)
+    if callable(special_notes_getter):
+        try:
+            special_notes = special_notes_getter() or []
+        except Exception:
+            special_notes = []
+
+        if isinstance(special_notes, str):
+            special_notes = [special_notes]
+
+        if isinstance(special_notes, (list, tuple)):
+            texts.extend(str(note) for note in special_notes if note not in (None, ""))
+
+    for getter_name in ("getDesc", "getDescription"):
+        getter = getattr(action, getter_name, None)
+        if not callable(getter):
+            continue
+        try:
+            description = getter()
+        except Exception:
+            continue
+        if description not in (None, ""):
+            texts.append(str(description))
+
+    to_dict = getattr(action, "toDict", None)
+    if callable(to_dict):
+        try:
+            action_dict = to_dict()
+        except Exception:
+            action_dict = None
+
+        if isinstance(action_dict, dict):
+            for key in ("desc", "description"):
+                description = action_dict.get(key)
+                if description not in (None, ""):
+                    texts.append(str(description))
+
+            for key in (
+                "lingEffect",
+                "lingSave",
+                "extraEffect",
+                "lingEffects",
+                "lingSaves",
+            ):
+                texts.extend(_durationTextsFromPayload(action_dict.get(key)))
+
+    for getter_name in ("getLingEffects", "getLingSaves", "getExtraEffect"):
+        getter = getattr(action, getter_name, None)
+        if not callable(getter):
+            continue
+        try:
+            payload = getter()
+        except Exception:
+            continue
+        texts.extend(_durationTextsFromPayload(payload))
+
+    # Preserve priority while avoiding repeated parsing of the same text.
+    unique_texts = []
+    seen = set()
+    for text in texts:
+        normalized = text.strip()
+        if not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        unique_texts.append(normalized)
+
+    return unique_texts
+
+
+def getTurnCapFromSpecialNotes(action) -> Optional[int]:
+    """Convert an action duration to affected-creature turns.
+
+    Supported forms include ``1Turn``, ``2 rounds``, and ``1 minute``. Since
+    D&D combat rounds last six seconds, each minute is converted to 10 rounds.
+    """
+    for text in _getActionDurationTexts(action):
+        matches = []
+
+        for pattern, multiplier in _DURATION_PATTERNS:
+            for match in pattern.finditer(text):
+                amount = _durationAmount(match)
+                if amount > 0:
+                    matches.append((match.start(), amount * multiplier))
+
+        if matches:
+            # Use the first duration mentioned in this prioritized text. This
+            # correctly selects "frightened for 1 minute" before later text
+            # such as immunity lasting 24 hours.
+            matches.sort(key=lambda item: item[0])
+            return matches[0][1]
+
+    return None
 def _cr_to_float(cr_str: str) -> float:
     s = str(cr_str).strip()
     if "/" in s:
@@ -4077,37 +4614,76 @@ def logLingeringResult(resultID, creatureName, lingType, result):
 def addCondition(condToAdd, creature, resultID):
     if isinstance(creature, dict):
         creature = creature["Statblock"]
+
+    if isinstance(condToAdd, dict):
+        condition_name = str(
+            condToAdd.get("cond", condToAdd.get("name", ""))
+        ).strip()
+    else:
+        condition_name = str(condToAdd).strip()
+
+    if not condition_name:
+        return False
+
     with open(CONDITION_LIST_FILE, "r") as f:
         condData = json.load(f)
-    for condition in condData:
-        if condToAdd.lower() == condition['name'].lower():  # Find condition
-            for activeCond in creature.getActiveConditions():
-                match = False
-                if isinstance(condToAdd, dict):
-                    if isinstance(activeCond, dict):
-                        if condToAdd["cond"].lower() == activeCond["cond"].lower():
-                            match = True
-                    else:
-                        if condToAdd["cond"].lower() == activeCond.lower():
-                            match = True
-                elif isinstance(activeCond, dict):
-                    if condToAdd.lower() == activeCond["cond"].lower():
-                        match = True
-                else:
-                    if condToAdd.lower() == activeCond.lower():
-                        match = True
-                if match:
-                    if isinstance(activeCond, dict):
-                        if any(resultID == rID for rID in activeCond["resultID"]):
-                            return False
-                        activeCond["resultID"].append(resultID)
-                        return True
-                    return False
 
-            condToAdd = {"cond": condToAdd, "resultID": [resultID]}
-            creature.addCondition(condToAdd)
+    if not any(
+        condition_name.lower() == str(condition.get("name", "")).lower()
+        for condition in condData
+        if isinstance(condition, dict)
+    ):
+        return False
+
+    active_conditions = creature.getActiveConditions() or []
+    for index, active_condition in enumerate(active_conditions):
+        if isinstance(active_condition, dict):
+            active_name = str(
+                active_condition.get("cond", active_condition.get("name", ""))
+            ).strip()
+        else:
+            active_name = str(active_condition).strip()
+
+        if active_name.lower() != condition_name.lower():
+            continue
+
+        # Legacy encounters may store a condition as a bare string. Convert it
+        # in place so the source result can be timed and removed correctly.
+        if not isinstance(active_condition, dict):
+            active_conditions[index] = {
+                "cond": active_name or condition_name,
+                "resultID": [resultID],
+            }
             return True
-    return False
+
+        raw_result_ids = ensureList(
+            active_condition.get(
+                "resultID", active_condition.get("resultid", [])
+            )
+        )
+        unique_result_ids = []
+        for current_id in raw_result_ids:
+            if not any(
+                _sameResultID(current_id, existing_id)
+                for existing_id in unique_result_ids
+            ):
+                unique_result_ids.append(current_id)
+
+        result_key = "resultID"
+        active_condition.pop("resultid", None)
+        active_condition[result_key] = unique_result_ids
+
+        if any(
+            _sameResultID(resultID, current_id)
+            for current_id in unique_result_ids
+        ):
+            return False
+
+        unique_result_ids.append(resultID)
+        return True
+
+    creature.addCondition({"cond": condition_name, "resultID": [resultID]})
+    return True
 def removeCondition(condToRemove, creature):
     if isinstance(creature, dict):
         creature = creature["Statblock"]
@@ -4119,55 +4695,510 @@ def removeCondition(condToRemove, creature):
         if condToRemove.lower() == condition["name"].lower():
             return creature.removeCondition(condToRemove)
     return False
+
+
+def _dedupeLingeringEffectData(effect_data) -> bool:
+    """Normalize parallel lingering arrays and keep one entry per result ID."""
+    if not isinstance(effect_data, dict):
+        return False
+
+    original = copy.deepcopy(effect_data)
+    result_ids = ensureList(effect_data.get("resultID", []))
+    raw_actions = effect_data.get("action")
+    if not raw_actions:
+        raw_actions = effect_data.get("spell", [])
+    actions = ensureList(raw_actions)
+    actors = ensureList(effect_data.get("actor", []))
+
+    unique_result_ids = []
+    unique_actions = []
+    unique_actors = []
+
+    for index, result_id in enumerate(result_ids):
+        if result_id in (None, "", -1, "-1"):
+            continue
+        if any(
+            _sameResultID(result_id, existing_id)
+            for existing_id in unique_result_ids
+        ):
+            continue
+
+        action = (
+            actions[index]
+            if index < len(actions)
+            else actions[0] if actions else None
+        )
+        actor = (
+            actors[index]
+            if index < len(actors)
+            else actors[0] if actors else ""
+        )
+
+        unique_result_ids.append(result_id)
+        unique_actions.append(action)
+        unique_actors.append(actor)
+
+    effect_data["resultID"] = unique_result_ids
+    effect_data["action"] = unique_actions
+    effect_data.pop("spell", None)
+
+    if any(actor not in (None, "") for actor in unique_actors):
+        effect_data["actor"] = unique_actors
+    else:
+        effect_data.pop("actor", None)
+
+    return effect_data != original
+
+
+def dedupeCreatureLingeringEffects(creature) -> bool:
+    """Repair duplicate lingering sources already stored on a creature."""
+    creature = creature["Statblock"] if isinstance(creature, dict) else creature
+    changed = False
+
+    for active_effect in creature.getActiveStatusEffects() or []:
+        if not isinstance(active_effect, dict):
+            continue
+        if str(active_effect.get("name", "")).strip().lower() not in {
+            "lingeffect",
+            "lingsave",
+        }:
+            continue
+
+        changed = _dedupeLingeringEffectData(
+            active_effect.setdefault("effect", {})
+        ) or changed
+
+    return changed
+
+
 def addStatusEffect(effect, creature, resultID):
+    """Add or merge one status effect without corrupting parallel result data."""
     effect = copy.deepcopy(effect)
-    if "attribute" in effect["effect"]:
-        effect["effect"]["attribute"] = ensureList(effect["effect"]["attribute"])
-    if isinstance(creature, dict):
-        creature = creature["Statblock"]
-    activeStatusEffects = creature.getActiveStatusEffects()
-    for activeStatus in activeStatusEffects:
-        if activeStatus["name"].lower() == effect["name"].lower():
-            if "attribute" in activeStatus["effect"]:
-                activeStatus["effect"]["attribute"] = ensureList(activeStatus["effect"]["attribute"])
-            if all(item in activeStatus["effect"]["attribute"] for item in effect["effect"]["attribute"]):
-                # All attributes are the exact same.
-                if not any(resultID == rID for rID in activeStatus["effect"]["resultID"]):
-                    activeStatus["effect"]["attribute"].extend(effect["effect"]["attribute"])
-                    for i in range(len(effect["effect"]["attribute"])):
-                        activeStatus["effect"]["resultID"].append(resultID)
-                    return True
-                else:
-                    return False
-            elif any(item in activeStatus["effect"]["attribute"] for item in effect["effect"]["attribute"]):
-                # Any of the attributes match.
-                nonActiveAttr = [item if item not in activeStatus["effect"]["attribute"] else None for item in
-                                 effect["effect"]["attribute"]]
-                for attr in nonActiveAttr:
-                    if attr is not None:
-                        activeStatus["effect"]["attribute"].append(attr)
-                for i in range(len(nonActiveAttr)):
-                    activeStatus["effect"]["resultID"].append(resultID) if nonActiveAttr[
-                                                                               i] is not None and resultID != -1 else False
-                return True
-            if effect["name"].lower() in ["lingeffect", "lingsave"]:
-                # If there is a match AND the effect is lingEffect/lingSave
-                if any(resultID == rID for rID in activeStatus["effect"]["resultID"]):
-                    return False
-                if effect["name"].lower() == "lingeffect":
-                    ling = creature.getActiveStatusEffect("lingEffect")
-                else:
-                    ling = creature.getActiveStatusEffect("lingsave")
-                ling["effect"]["action"].extend(effect["action"])
-                ling["effect"]["resultID"].extend(effect["resultID"])
-    effect["effect"]["resultID"] = [resultID]
+    creature = creature["Statblock"] if isinstance(creature, dict) else creature
+
+    if not isinstance(effect, dict):
+        return False
+
+    effect_name = str(effect.get("name", "")).strip()
+    if not effect_name:
+        return False
+
+    effect_data = effect.setdefault("effect", {})
+    if not isinstance(effect_data, dict):
+        effect_data = {}
+        effect["effect"] = effect_data
+
+    active_status_effects = creature.getActiveStatusEffects() or []
+    existing = next(
+        (
+            active
+            for active in active_status_effects
+            if isinstance(active, dict)
+            and str(active.get("name", "")).lower() == effect_name.lower()
+        ),
+        None,
+    )
+
+    # Lingering effects store parallel action/resultID/actor arrays. Handle
+    # these before the normal attribute-based merge because they do not have
+    # an ``attribute`` field.
+    if effect_name.lower() in {"lingeffect", "lingsave"}:
+        incoming_actions = ensureList(
+            effect_data.get("action", effect_data.get("spell", []))
+        )
+        incoming_result_ids = ensureList(effect_data.get("resultID", []))
+        incoming_actors = ensureList(effect_data.get("actor", []))
+
+        if not incoming_result_ids:
+            incoming_result_ids = [resultID]
+
+        # One action and one actor belong to each result ID. Duplicate a single
+        # supplied value when the payload represents several linked results.
+        if len(incoming_actions) == 1 and len(incoming_result_ids) > 1:
+            incoming_actions = incoming_actions * len(incoming_result_ids)
+        if len(incoming_actors) == 1 and len(incoming_result_ids) > 1:
+            incoming_actors = incoming_actors * len(incoming_result_ids)
+
+        if existing is not None:
+            existing_data = existing.setdefault("effect", {})
+            _dedupeLingeringEffectData(existing_data)
+            existing_actions = existing_data.setdefault("action", [])
+            existing_result_ids = existing_data.setdefault("resultID", [])
+            existing_actors = existing_data.setdefault("actor", [])
+
+            changed = False
+            for index, incoming_result_id in enumerate(incoming_result_ids):
+                if any(
+                    _sameResultID(incoming_result_id, current_result_id)
+                    for current_result_id in existing_result_ids
+                ):
+                    continue
+
+                incoming_action = (
+                    incoming_actions[index]
+                    if index < len(incoming_actions)
+                    else incoming_actions[0] if incoming_actions else None
+                )
+                incoming_actor = (
+                    incoming_actors[index]
+                    if index < len(incoming_actors)
+                    else incoming_actors[0] if incoming_actors else ""
+                )
+
+                existing_result_ids.append(incoming_result_id)
+                existing_actions.append(incoming_action)
+                existing_actors.append(incoming_actor)
+                changed = True
+
+            return changed
+
+        effect_data["action"] = incoming_actions
+        effect_data["resultID"] = incoming_result_ids
+        if incoming_actors:
+            effect_data["actor"] = incoming_actors
+        _dedupeLingeringEffectData(effect_data)
+
+        creature.addStatusEffect(effect)
+        return True
+
+    incoming_attributes = ensureList(effect_data.get("attribute", []))
+    if incoming_attributes:
+        effect_data["attribute"] = incoming_attributes
+
+    if existing is not None:
+        existing_data = existing.setdefault("effect", {})
+        existing_result_ids = ensureList(existing_data.get("resultID", []))
+        existing_data["resultID"] = existing_result_ids
+
+        if not incoming_attributes:
+            if any(
+                _sameResultID(resultID, current_result_id)
+                for current_result_id in existing_result_ids
+            ):
+                return False
+            existing_result_ids.append(resultID)
+            return True
+
+        existing_attributes = ensureList(existing_data.get("attribute", []))
+        existing_data["attribute"] = existing_attributes
+
+        changed = False
+        for attribute in incoming_attributes:
+            if attribute in existing_attributes:
+                continue
+            existing_attributes.append(attribute)
+            existing_result_ids.append(resultID)
+            changed = True
+
+        return changed
+
+    if incoming_attributes:
+        effect_data["resultID"] = [resultID] * len(incoming_attributes)
+    else:
+        effect_data["resultID"] = [resultID]
+
     creature.addStatusEffect(effect)
     return True
+
+
 def removeStatusEffect(name, creature):
     creature = creature["Statblock"] if isinstance(creature, dict) else creature
     for effect in creature.getActiveStatusEffects():
         if name.lower() == effect["name"].lower():
             return creature.removeStatusEffect(name)
+
+
+def _sameResultID(left, right) -> bool:
+    return left == right or str(left) == str(right)
+
+
+def getCreatureResultIDs(creature) -> List[Any]:
+    """Collect unique action-result IDs currently attached to a creature."""
+    creature = creature["Statblock"] if isinstance(creature, dict) else creature
+    result_ids = []
+
+    for condition in creature.getActiveConditions() or []:
+        if not isinstance(condition, dict):
+            continue
+        condition_result_ids = condition.get(
+            "resultID", condition.get("resultid", [])
+        )
+        for result_id in ensureList(condition_result_ids):
+            if result_id in (None, -1, "-1"):
+                continue
+            if not any(_sameResultID(result_id, current) for current in result_ids):
+                result_ids.append(result_id)
+
+    for status_effect in creature.getActiveStatusEffects() or []:
+        if not isinstance(status_effect, dict):
+            continue
+        effect_data = status_effect.get("effect", {})
+        for result_id in ensureList(effect_data.get("resultID", [])):
+            if result_id in (None, -1, "-1"):
+                continue
+            if not any(_sameResultID(result_id, current) for current in result_ids):
+                result_ids.append(result_id)
+
+    return result_ids
+
+
+def removeResultEffects(resultID, creature) -> bool:
+    """Remove every condition/status-effect association created by one result ID."""
+    creature = creature["Statblock"] if isinstance(creature, dict) else creature
+    removed = False
+
+    conditions = creature.getActiveConditions() or []
+    condition_idx = 0
+    while condition_idx < len(conditions):
+        condition = conditions[condition_idx]
+        if not isinstance(condition, dict):
+            condition_idx += 1
+            continue
+
+        result_id_key = "resultID" if "resultID" in condition else "resultid"
+        result_ids = ensureList(condition.get(result_id_key, []))
+        remaining_ids = [
+            current_id
+            for current_id in result_ids
+            if not _sameResultID(current_id, resultID)
+        ]
+
+        if len(remaining_ids) == len(result_ids):
+            condition_idx += 1
+            continue
+
+        removed = True
+        if remaining_ids:
+            condition[result_id_key] = remaining_ids
+            condition_idx += 1
+        else:
+            del conditions[condition_idx]
+
+    status_effects = creature.getActiveStatusEffects() or []
+    status_idx = 0
+    while status_idx < len(status_effects):
+        status_effect = status_effects[status_idx]
+        if not isinstance(status_effect, dict):
+            status_idx += 1
+            continue
+
+        effect_data = status_effect.get("effect", {})
+        raw_result_ids = effect_data.get("resultID", [])
+
+        if isinstance(raw_result_ids, list):
+            original_result_ids = list(raw_result_ids)
+            matching_indices = [
+                idx
+                for idx, current_id in enumerate(original_result_ids)
+                if _sameResultID(current_id, resultID)
+            ]
+
+            if not matching_indices:
+                status_idx += 1
+                continue
+
+            removed = True
+            for idx in reversed(matching_indices):
+                del raw_result_ids[idx]
+
+                for parallel_key in ("attribute", "action", "spell", "actor"):
+                    parallel_values = effect_data.get(parallel_key)
+                    if (
+                        isinstance(parallel_values, list)
+                        and len(parallel_values) == len(original_result_ids)
+                    ):
+                        del parallel_values[idx]
+
+            if raw_result_ids:
+                status_idx += 1
+            else:
+                del status_effects[status_idx]
+            continue
+
+        if _sameResultID(raw_result_ids, resultID):
+            removed = True
+            del status_effects[status_idx]
+            continue
+
+        status_idx += 1
+
+    return removed
+
+
+def _updateLegacyTurnCount(result) -> None:
+    numeric_counts = []
+    for count in result.get("turnCounts", {}).values():
+        try:
+            numeric_counts.append(int(count))
+        except (TypeError, ValueError):
+            continue
+    result["turnCount"] = max(numeric_counts, default=0)
+
+
+def clearCreatureResultTimer(resultID, creature, encounter) -> bool:
+    """Clear one creature's timer metadata for a result that ended early."""
+    creature = creature["Statblock"] if isinstance(creature, dict) else creature
+    result = encounter.getResultByID(resultID)
+    if not result:
+        return False
+
+    creature_key = str(creature.getCID())
+    changed = False
+
+    turn_counts = result.get("turnCounts")
+    if isinstance(turn_counts, dict) and creature_key in turn_counts:
+        del turn_counts[creature_key]
+        changed = True
+
+    expired_creatures = result.get("expiredCreatures")
+    if isinstance(expired_creatures, dict) and creature_key in expired_creatures:
+        del expired_creatures[creature_key]
+        changed = True
+
+    _updateLegacyTurnCount(result)
+    return changed
+
+
+def pruneCreatureTurnCounts(creature, encounter) -> bool:
+    """
+    Remove stale per-creature timer entries after a single effect is removed.
+
+    A result keeps counting when any sibling condition/status effect on the
+    creature still references that result ID.
+    """
+    creature = creature["Statblock"] if isinstance(creature, dict) else creature
+    creature_key = str(creature.getCID())
+    active_result_ids = getCreatureResultIDs(creature)
+    changed = False
+
+    for result_idx in range(encounter.resultSize()):
+        result = encounter.getResultByIdx(result_idx)
+        result_id = result.get("resultID")
+        if result_id in (None, -1, "-1"):
+            continue
+
+        if any(_sameResultID(result_id, active_id) for active_id in active_result_ids):
+            continue
+
+        turn_counts = result.get("turnCounts")
+        if isinstance(turn_counts, dict) and creature_key in turn_counts:
+            del turn_counts[creature_key]
+            changed = True
+
+        expired_creatures = result.get("expiredCreatures")
+        if isinstance(expired_creatures, dict) and creature_key in expired_creatures:
+            del expired_creatures[creature_key]
+            changed = True
+
+        _updateLegacyTurnCount(result)
+
+    return changed
+
+
+def endTimedResultForCreature(resultID, creature, encounter) -> bool:
+    """End all active effects and timer metadata from one result for one creature."""
+    removed_effects = removeResultEffects(resultID, creature)
+    removed_timer = clearCreatureResultTimer(resultID, creature, encounter)
+    return removed_effects or removed_timer
+
+
+def _hasPendingPreTurnResult(resultID, creature) -> bool:
+    creature = creature["Statblock"] if isinstance(creature, dict) else creature
+
+    for status_effect in creature.getActiveStatusEffects() or []:
+        if not isinstance(status_effect, dict):
+            continue
+        if str(status_effect.get("name", "")).strip().lower() not in {
+            "lingeffect",
+            "lingsave",
+        }:
+            continue
+
+        effect_data = status_effect.get("effect", {})
+        if any(
+            _sameResultID(resultID, current_id)
+            for current_id in ensureList(effect_data.get("resultID", []))
+        ):
+            return True
+
+    return False
+
+
+def advanceTimedEffects(creature, encounter) -> List[Any]:
+    """
+    Advance each unique timed result once for this creature's turn.
+
+    The caller may snapshot pre-turn effects before calling this function. A
+    ``1Turn`` result is marked expired as that turn begins. Lingering effects
+    remain attached until their pending pre-turn resolution is submitted;
+    ordinary timed effects are removed immediately. Counts are stored per
+    creature so a multi-target action does not expire early for later targets.
+    """
+    creature = creature["Statblock"] if isinstance(creature, dict) else creature
+    creature_key = str(creature.getCID())
+    expired_result_ids = []
+
+    for result_id in getCreatureResultIDs(creature):
+        result = encounter.getResultByID(result_id)
+        if not result:
+            continue
+
+        try:
+            turn_cap = int(result.get("turnCap", 0))
+        except (TypeError, ValueError):
+            continue
+
+        if turn_cap <= 0:
+            continue
+
+        turn_counts = result.setdefault("turnCounts", {})
+        expired_creatures = result.setdefault("expiredCreatures", {})
+
+        # A lingering save/effect that reached its cap must remain available
+        # until the frontend submits that pre-turn resolution. Repeated reads
+        # must not advance it again while it is pending.
+        if expired_creatures.get(creature_key, False):
+            expired_result_ids.append(result_id)
+            _updateLegacyTurnCount(result)
+            continue
+
+        try:
+            current_count = int(turn_counts.get(creature_key, 0))
+        except (TypeError, ValueError):
+            current_count = 0
+
+        new_count = current_count + 1
+        turn_counts[creature_key] = new_count
+
+        if new_count >= turn_cap:
+            expired_result_ids.append(result_id)
+            expired_creatures[creature_key] = True
+
+            if _concentrationForResult(creature, result_id) is not None:
+                # Duration belongs to the spell source, not merely one target.
+                # Ending it here removes every linked effect and AOE token.
+                endConcentrationForResult(result_id, encounter)
+            elif not _hasPendingPreTurnResult(result_id, creature):
+                removeResultEffects(result_id, creature)
+                turn_counts.pop(creature_key, None)
+
+        _updateLegacyTurnCount(result)
+
+    return expired_result_ids
+
+
+def finalizeTimedResult(resultID, creature, encounter) -> bool:
+    """Remove effects re-applied by an already-expired pre-turn simulation."""
+    creature = creature["Statblock"] if isinstance(creature, dict) else creature
+    result = encounter.getResultByID(resultID)
+    if not result:
+        return False
+
+    creature_key = str(creature.getCID())
+    if not result.get("expiredCreatures", {}).get(creature_key, False):
+        return False
+
+    return endTimedResultForCreature(resultID, creature, encounter)
 def endOfEncounter(initiative):
     allPlayersDead = True
     for playerTurns in initiative:
@@ -4187,88 +5218,221 @@ def endOfEncounter(initiative):
                 break
     return allPlayersDead or allMonstersDead
 def endConcentration(player, concentration, initiative, mapdata):
+    """End concentration and remove every effect linked to its result ID."""
     if isinstance(player, dict):
         player = player["Statblock"]
-    concTargets = concentration["effect"]["concentrationTargets"]
-    summon = False
-    if "summonConc" in concentration["effect"]:
-        summon = True
-    player.removeStatusEffect("concentration")
-    cIdx = 0
-    while cIdx < len(initiative):
-        creature = initiative[cIdx]["Statblock"]
-        summonedCreature = False
-        if creature.getCID() in concTargets:
-            if creature.getActiveStatusEffects():
-                if any(
-                    isinstance(statusEffect["effect"]["resultID"], list)
-                    and concentration["effect"]["resultID"]
-                    in statusEffect["effect"]["resultID"]
-                    for statusEffect in creature.getActiveStatusEffects()
-                ):
-                    # lingEffect has a list of resultIDs. Want to match with the ONE concentrationID, and remove it.
-                    statEffects = creature.getActiveStatusEffects()
-                    for i in range(len(statEffects)):
-                        # Removes creature if it is a summoned creature
-                        if summon:
-                            if (
-                                concentration["effect"]["resultID"]
-                                in statEffects[i]["effect"]["resultID"]
-                            ):
-                                del initiative[cIdx]
-                                summonedCreature = True
-                                break
 
-                        # Skip over any concentration effects the creature currently has
-                        if not isinstance(statEffects[i]["effect"]["resultID"], list):
-                            continue
-                        # Remove any attributes associated with the ID
-                        for j, resID in enumerate(statEffects[i]["effect"]["resultID"]):
-                            if concentration["effect"]["resultID"] == resID:
-                                del statEffects[i]["effect"]["resultID"][j]
-                                if statEffects[i]["name"].lower() not in [
-                                    "lingeffect",
-                                    "lingsave",
-                                ]:
-                                    del statEffects[i]["effect"]["attribute"][j]
-                                else:
-                                    if "spell" in statEffects[i]["effect"]:
-                                        del statEffects[i]["effect"]["spell"][j]
-                                    else:
-                                        del statEffects[i]["effect"]["action"][j]
-                    if summonedCreature:
-                        continue
-                    seIdx = 0
-                    while seIdx < len(statEffects):
-                        statEffect = statEffects[seIdx]
-                        if isinstance(statEffect["effect"]["resultID"], list) and len(
-                                statEffect["effect"]["resultID"]) == 0:
-                            # If no more resultID's left, then statusEffect is no longer active.
-                            creature.removeStatusEffect(statEffect["name"])
-                        else:
-                            seIdx += 1
-            if creature.getActiveConditions():
-                if any(isinstance(condition, dict) and concentration["effect"]["resultID"] in condition["resultID"]
-                       for condition in creature.getActiveConditions()
-                       ):
-                    conditions = creature.getActiveConditions()
-                    cidx = 0
-                    while cidx < len(conditions):
-                        for j in range(len(conditions[cidx]["resultID"])):
-                            if concentration["effect"]["resultID"] == conditions[cidx]["resultID"][j]:
-                                del conditions[cidx]["resultID"][j]
-                                break
-                        if len(conditions[cidx]["resultID"]) == 0:
-                            creature.removeCondition(conditions[cidx]["cond"])
-                            continue
-                        cidx += 1
+    effect = concentration.get("effect", {}) if isinstance(concentration, dict) else {}
+    if not isinstance(effect, dict):
+        effect = {}
 
-        if not summonedCreature:
-            cIdx += 1
+    concentration_targets = effect.get("concentrationTargets", [])
+    if not isinstance(concentration_targets, list):
+        concentration_targets = []
 
-    for tidx, token in enumerate(mapdata["layers"]["aoeTokens"]):
-        if token["resultID"] in concentration["effect"]["resultID"]:
-            del mapdata["layers"]["aoeTokens"][tidx]
+    target_keys = {
+        str(target).strip().lower()
+        for target in concentration_targets
+        if target not in (None, "")
+    }
+
+    result_id = effect.get("resultID")
+    is_summon = bool(effect.get("summonConc"))
+
+    player.removeStatusEffect("Concentration")
+
+    if result_id not in (None, ""):
+        initiative_index = 0
+
+        while initiative_index < len(initiative):
+            entry = initiative[initiative_index]
+            creature = entry.get("Statblock") if isinstance(entry, dict) else None
+
+            if creature is None:
+                initiative_index += 1
+                continue
+
+            has_linked_effect = any(
+                _sameResultID(existing_id, result_id)
+                for existing_id in getCreatureResultIDs(creature)
+            )
+            if not has_linked_effect:
+                initiative_index += 1
+                continue
+
+            if is_summon and creature is not player:
+                creature_keys = {
+                    str(creature.getCID()).strip().lower(),
+                    str(creature.getName()).strip().lower(),
+                }
+                if not target_keys or not target_keys.isdisjoint(creature_keys):
+                    del initiative[initiative_index]
+                    continue
+
+            removeResultEffects(result_id, creature)
+            initiative_index += 1
+
+    if isinstance(mapdata, dict):
+        layers = mapdata.get("layers")
+        if isinstance(layers, dict):
+            tokens = layers.get("aoeTokens")
+            if isinstance(tokens, list) and result_id not in (None, ""):
+                layers["aoeTokens"] = [
+                    token
+                    for token in tokens
+                    if not (
+                        isinstance(token, dict)
+                        and _sameResultID(token.get("resultID"), result_id)
+                    )
+                ]
+
+
+def _concentrationForResult(creature, resultID):
+    creature = creature["Statblock"] if isinstance(creature, dict) else creature
+
+    for status_effect in creature.getActiveStatusEffects() or []:
+        if not isinstance(status_effect, dict):
+            continue
+        if str(status_effect.get("name", "")).strip().lower() != "concentration":
+            continue
+
+        effect_data = status_effect.get("effect", {})
+        if not isinstance(effect_data, dict):
+            continue
+        if _sameResultID(effect_data.get("resultID"), resultID):
+            return status_effect
+
+    return None
+
+
+def _hasNonConcentrationResultEffect(creature, resultID) -> bool:
+    creature = creature["Statblock"] if isinstance(creature, dict) else creature
+
+    for condition in creature.getActiveConditions() or []:
+        if not isinstance(condition, dict):
+            continue
+        result_ids = condition.get("resultID", condition.get("resultid", []))
+        if any(
+            _sameResultID(current_id, resultID)
+            for current_id in ensureList(result_ids)
+        ):
+            return True
+
+    for status_effect in creature.getActiveStatusEffects() or []:
+        if not isinstance(status_effect, dict):
+            continue
+        if str(status_effect.get("name", "")).strip().lower() == "concentration":
+            continue
+
+        effect_data = status_effect.get("effect", {})
+        if not isinstance(effect_data, dict):
+            continue
+        if any(
+            _sameResultID(current_id, resultID)
+            for current_id in ensureList(effect_data.get("resultID", []))
+        ):
+            return True
+
+    return False
+
+
+def _hasActiveAoeTokenForResult(mapdata, resultID) -> bool:
+    if not isinstance(mapdata, dict):
+        return False
+    layers = mapdata.get("layers", {})
+    if not isinstance(layers, dict):
+        return False
+    tokens = layers.get("aoeTokens", [])
+    if not isinstance(tokens, list):
+        return False
+
+    return any(
+        isinstance(token, dict)
+        and _sameResultID(token.get("resultID"), resultID)
+        for token in tokens
+    )
+
+
+def _clearAllResultTimers(resultID, encounter) -> bool:
+    result = encounter.getResultByID(resultID)
+    if not isinstance(result, dict):
+        return False
+
+    changed = False
+    if result.get("turnCounts"):
+        result["turnCounts"] = {}
+        changed = True
+    if result.get("expiredCreatures"):
+        result["expiredCreatures"] = {}
+        changed = True
+    if result.get("turnCount", 0) != 0:
+        result["turnCount"] = 0
+        changed = True
+    return changed
+
+
+def endConcentrationForResult(resultID, encounter) -> bool:
+    """Force-end one concentration source and all linked effects/tokens."""
+    if resultID in (None, "", -1, "-1"):
+        return False
+
+    initiative = setActiveInitiative(encounter)
+    mapdata = encounter.getMapData()
+
+    for entry in initiative:
+        creature = entry.get("Statblock") if isinstance(entry, dict) else entry
+        if creature is None:
+            continue
+
+        concentration = _concentrationForResult(creature, resultID)
+        if concentration is None:
+            continue
+
+        endConcentration(creature, concentration, initiative, mapdata)
+        _clearAllResultTimers(resultID, encounter)
+        return True
+
+    return False
+
+
+def reconcileConcentrationForResult(resultID, encounter) -> bool:
+    """End concentration only when its source no longer owns any live effect.
+
+    A result remains active while at least one creature has a linked condition
+    or status effect, or while a lingering AOE token (for example Moonbeam)
+    remains on the map.
+    """
+    if resultID in (None, "", -1, "-1"):
+        return False
+
+    initiative = setActiveInitiative(encounter)
+    mapdata = encounter.getMapData()
+    concentration_exists = False
+
+    for entry in initiative:
+        creature = entry.get("Statblock") if isinstance(entry, dict) else entry
+        if creature is None:
+            continue
+        if _concentrationForResult(creature, resultID) is not None:
+            concentration_exists = True
+            break
+
+    if not concentration_exists:
+        return False
+
+    if _hasActiveAoeTokenForResult(mapdata, resultID):
+        return False
+
+    for entry in initiative:
+        creature = entry.get("Statblock") if isinstance(entry, dict) else entry
+        if creature is not None and _hasNonConcentrationResultEffect(
+            creature, resultID
+        ):
+            return False
+
+    return endConcentrationForResult(resultID, encounter)
+
+
 def executeAction(actor, action, selectedTargets, actionResult, initiative, mapdata):
     def applyEffectToTarget(creature, succeeded, damage, action, actionResult):
         resultID = actionResult["resultID"]
@@ -4334,21 +5498,25 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, mapd
                 if effect.get("name", "").lower() != "concentration":
                     addStatusEffect(effect, creature, resultID)
 
-            if isinstance(action, Spell) and action.getLingSaves():
+            if hasattr(action, "getLingSaves") and action.getLingSaves():
                 if creature.isActiveStatusEffect("lingsave"):
                     lingSaves = creature.getActiveStatusEffect("lingsave")
                     if not any(resultID == rID for rID in lingSaves["effect"]["resultID"]):
                         if "spell" in lingSaves["effect"]:
                             lingSaves["effect"]["spell"].append(action.toDict())
                         else:
-                            lingSaves["effect"]["action"].append(action.toDict())
+                            lingSaves["effect"].setdefault("action", []).append(action.toDict())
                         lingSaves["effect"]["resultID"].append(actionResult["resultID"])
+                        lingSaves["effect"].setdefault("actor", []).append(
+                            str(actor.getCID() if hasattr(actor, "getCID") else actor.getName())
+                        )
                 else:
                     newLingSave = {
                         "name": "lingSave",
                         "effect": {
                             "action": [action.toDict()],
                             "resultID": [actionResult["resultID"]],
+                            "actor": [str(actor.getCID() if hasattr(actor, "getCID") else actor.getName())],
                         },
                     }
                     addStatusEffect(newLingSave, creature, actionResult["resultID"])
@@ -4401,8 +5569,15 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, mapd
         except (TypeError, ValueError):
             damages[i] = 0
 
-    main_roll_type = "weapon" if isinstance(action, Weapon) else action.getRollType().lower()
-    main_save_dc = actor.getDC() if hasattr(actor, "getDC") else 0
+    main_roll_type = (
+        "weapon"
+        if isinstance(action, Weapon)
+        else action.getRollType().lower()
+    )
+    if isinstance(action, MonAction):
+        main_save_dc = action.getDC()
+    else:
+        main_save_dc = actor.getDC() if hasattr(actor, "getDC") else 0
 
     for i, result in enumerate(list(actionResult["outcome"]["rollResults"])):
         if i >= len(selectedTargets):
@@ -4446,46 +5621,65 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, mapd
                 extra_save_dc,
             )
 
+    # A pre-turn resolution reuses the original spell/action payload. If that
+    # original action required concentration, executing the lingering save or
+    # lingering effect must not start concentration again. Doing so previously
+    # entered the normal concentration setup with a pre-turn request body, which
+    # has no ``actionResult["effect"]`` field and raised ``KeyError: 'effect'``.
+    is_pre_turn_resolution = (
+        str(actionResult.get("actionType", "")).strip().lower() == "preturn"
+    )
+
+    action_status_effects = (
+        action.getStatusEffects()
+        if hasattr(action, "getStatusEffects")
+        else []
+    ) or []
+    starts_concentration = any(
+        isinstance(status_effect, dict)
+        and str(status_effect.get("name", "")).strip().lower() == "concentration"
+        for status_effect in action_status_effects
+    )
+
     if (
         isinstance(action, Spell)
-        and action.getStatusEffects()
-        and "concentration" in [se["name"].lower() for se in action.getStatusEffects()]
+        and starts_concentration
+        and not is_pre_turn_resolution
     ):
-        concEffect = {
+        # Starting a new concentration spell always ends the actor's previous
+        # concentration first. The old target-array mutation code was both
+        # unnecessary and unsafe because ActionRequest/pre-turn payloads do not
+        # contain an ``effect`` object.
+        existing_concentration = next(
+            (
+                status_effect
+                for status_effect in actor.getActiveStatusEffects() or []
+                if isinstance(status_effect, dict)
+                and str(status_effect.get("name", "")).strip().lower()
+                == "concentration"
+            ),
+            None,
+        )
+        if existing_concentration is not None:
+            endConcentration(actor, existing_concentration, initiative, mapdata)
+
+        concentration_targets = [
+            str(
+                target["Statblock"].getCID()
+                if isinstance(target, dict)
+                else target.getCID()
+            )
+            for target in selectedTargets
+        ]
+
+        actor.addStatusEffect({
             "name": "Concentration",
             "effect": {
                 "resultID": actionResult["resultID"],
-                "concentrationTargets": [
-                    t["Statblock"].getCID() if isinstance(t, dict) else t.getCID()
-                    for t in selectedTargets
-                ],
+                "concentrationTargets": concentration_targets,
                 "action": action.toDict(),
             },
-        }
-        for se in actor.getActiveStatusEffects():
-            if se["name"].lower() == "concentration":
-                if any(
-                    effect in se["effect"]["concentrationTargets"]
-                    for effect in concEffect["effect"]["concentrationTargets"]
-                ):
-                    oldTargets = se["effect"]["concentrationTargets"]
-                    endConcentration(actor, se, initiative, mapdata)
-                    cetidx = 0
-                    while cetidx < len(concEffect["effect"]["concentrationTargets"]):
-                        cet = concEffect["effect"]["concentrationTargets"][cetidx]
-                        if cet in oldTargets and cet not in [c["name"] for c in initiative]:
-                            del concEffect["effect"]["concentrationTargets"][cetidx]
-                            del actionResult["targets"][cetidx]
-                            del actionResult["effect"]["action"][cetidx]
-                            del actionResult["outcome"]["diceResults"][cetidx]
-                            del actionResult["outcome"]["rollResults"][cetidx]
-                            del selectedTargets[cetidx]
-                            continue
-                        cetidx += 1
-                else:
-                    endConcentration(actor, se, initiative, mapdata)
-                break
-        actor.addStatusEffect(concEffect)
+        })
 
     main_is_healing = (
         isinstance(action, Spell)
@@ -4546,26 +5740,29 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, mapd
             creature, succeeded, applied_damage, action, actionResult
         )
 
-        if isinstance(action, Spell) and action.getLingEffects():
-            transLingEffect = translateLingEffect(
-                action, action.getLingEffects(), actor.getSpellMod()
+        if hasattr(action, "getLingEffects") and action.getLingEffects():
+            actor_spell_mod = (
+                actor.getSpellMod()
+                if hasattr(actor, "getSpellMod")
+                else 0
             )
-            if creature.isActiveStatusEffect("lingEffect"):
-                lingEffect = creature.getActiveStatusEffect("lingEffect")
-                if "spell" in lingEffect["effect"]:
-                    lingEffect["effect"]["spell"].append(transLingEffect.toDict())
-                else:
-                    lingEffect["effect"]["action"].append(transLingEffect.toDict())
-                lingEffect["effect"]["resultID"].append(actionResult["resultID"])
-            else:
-                newLingEffect = {
-                    "name": "lingEffect",
-                    "effect": {
-                        "action": [transLingEffect.toDict()],
-                        "resultID": [actionResult["resultID"]],
-                    },
-                }
-                addStatusEffect(newLingEffect, creature, actionResult["resultID"])
+            transLingEffect = translateLingEffect(
+                action,
+                action.getLingEffects(),
+                actor_spell_mod,
+            )
+            newLingEffect = {
+                "name": "lingEffect",
+                "effect": {
+                    "action": [transLingEffect.toDict()],
+                    "resultID": [actionResult["resultID"]],
+                    "actor": [str(actor.getCID() if hasattr(actor, "getCID") else actor.getName())],
+                },
+            }
+            # Route both new and existing lingering effects through the same
+            # result-aware merge. Directly appending here created another queue
+            # item every time the same Flaming Sphere source was processed.
+            addStatusEffect(newLingEffect, creature, actionResult["resultID"])
 
     extra = actionResult.get("extraOutcome", None)
     extra_effect = action.getExtraEffect() if hasattr(action, "getExtraEffect") else None
@@ -4643,75 +5840,34 @@ def executeAction(actor, action, selectedTargets, actionResult, initiative, mapd
                             if effect["name"].lower() != "concentration":
                                 addStatusEffect(effect, creature, actionResult["resultID"])
 
-    if isinstance(action, Spell) and action.getSpecialNotes():
-        specialNotes = action.getSpecialNotes()
-        for note in specialNotes:
-            if "turn" in note.lower():
-                actionResult["turnCount"] = 0
-                actionResult["turnCap"] = int(note.lower().split("turn")[0])
-                break
-def endSpellEffect(effect, idx, creature):
-    # Ends any long-lasting effect that a creature has from a given spell
-    # - and ends concentration if nobody else is under that spell.
-    effectID = effect["effect"]["resultID"][idx]
-    # lingEffect = False
+    turn_cap = getTurnCapFromSpecialNotes(action)
+    if turn_cap is not None:
+        actionResult["turnCount"] = 0
+        actionResult["turnCap"] = turn_cap
+        turn_counts = actionResult.setdefault("turnCounts", {})
+        for target in selectedTargets:
+            target_obj = target["Statblock"] if isinstance(target, dict) else target
+            if any(
+                _sameResultID(actionResult.get("resultID"), active_result_id)
+                for active_result_id in getCreatureResultIDs(target_obj)
+            ):
+                turn_counts.setdefault(str(target_obj.getCID()), 0)
 
-    del effect["effect"]["resultID"][idx]
-    if effect["name"].lower() in ["lingsave", "lingeffect"]:
-        if effect["name"].lower() == "lingeffect":
-            lingEffect = True
-        if "spell" in effect["effect"]:
-            del effect["effect"]["spell"][idx]
-        else:
-            del effect["effect"]["action"][idx]
+        if starts_concentration and _concentrationForResult(
+            actor, actionResult.get("resultID")
+        ) is not None:
+            # Area spells can remain active with no creature currently inside
+            # them, so their duration is owned by the concentrating caster.
+            turn_counts.setdefault(str(actor.getCID()), 0)
 
-    # Removes associated statEffects and conditions from creature.
-    for condition in creature.getActiveConditions():
-        if isinstance(condition, dict):
-            for ri, resultID in enumerate(condition["resultID"]):
-                if effectID == resultID:
-                    del condition["resultID"][ri]
-                    break
-            if len(condition["resultID"]) == 0:
-                removeCondition(condition["cond"], creature)
-    statEffects = creature.getActiveStatusEffects()
-    i = 0
-    while i < len(statEffects):
-        se = statEffects[i]
-        if (
-                se["name"].lower() != "concentration"
-                and effectID in se["effect"]["resultID"]
-        ):
-            for ri, resultID in enumerate(se["effect"]["resultID"]):
-                if effectID == resultID:
-                    del statEffects[i]["effect"]["resultID"][ri]
-                    if len(se[i]["effect"]["resultID"]) == 0:
-                        del statEffects[i]
-                    break
-        i += 1
-    #This part is optional from the MTHcap. Do we want to let lingsave concentration die if its not targeting anything?
-    #Or do we leave that to user choice?
-    # if not lingEffect:
-    #     for target in initiative:
-    #         target = target["Statblock"]
-    #         if target.isActiveStatusEffect("concentration"):
-    #             concEffect = target.getActiveStatusEffect("concentration")
-    #             if concEffect["effect"]["resultID"] == effectID:
-    #                 remainingTargets = False
-    #                 for effectTarget in initiative:
-    #                     effectTarget = effectTarget["Statblock"]
-    #                     if (
-    #                         effectTarget.isActiveStatusEffect(effect["name"])
-    #                         and effectID
-    #                         in effectTarget.getActiveStatusEffect(effect["name"])["effect"][
-    #                             "resultID"
-    #                         ]
-    #                     ):
-    #                         remainingTargets = True
-    #                         break
-    #                 if not remainingTargets:
-    #                     endConcentration(target, concEffect, initiative)
-    #                 break
+
+def endSpellEffect(effect, idx, creature, initiative=None):
+    """End one result-linked lingering effect and all effects it created."""
+    result_ids = ensureList(effect.get("effect", {}).get("resultID", []))
+    if idx < 0 or idx >= len(result_ids):
+        return False
+
+    return removeResultEffects(result_ids[idx], creature)
 
 #ENCOUNTER RUNTIME METHODS
 def merge_sort_spells(spell_list):
@@ -5288,7 +6444,7 @@ def rankActions(actions, actor=None, encounter_id=None, use_ml=True):
 
             for i, x in enumerate(enriched, start=1):
                 x["overallRank"] = i
-                x["base_weight"] = float((2.0 if x["pareto"] else 0.0) + x["topsis"])
+                x["base_weight"] = float((1.0 if x["pareto"] else 0.0) + x["topsis"])
 
             return enriched
 
@@ -5642,6 +6798,14 @@ def monsterTurn(creature, initiative, encounter_id=None):
                  "movementRecc": actionMovementReccs[i]})
         except IndexError:
             actionPercentages.insert(i, 0)
+    multiattack_recommendation = buildMonsterMultiattackRecommendation(
+        creature,
+        actions,
+        initiative_entry=mInitEntry,
+    )
+    if multiattack_recommendation is not None:
+        actions.append(multiattack_recommendation)
+
     return rankActions(
         actions,
         actor=creature,
